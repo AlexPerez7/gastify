@@ -43,6 +43,7 @@ export function HelpModal({ onClose }) {
   return (
     <div
       onClick={onClose}
+      className="modal-backdrop"
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
         alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
@@ -50,6 +51,7 @@ export function HelpModal({ onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-panel"
         style={{
           background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
           padding: 24, maxWidth: 480, width: "100%", maxHeight: "min(640px, 85vh)",

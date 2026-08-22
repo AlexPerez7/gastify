@@ -28,6 +28,7 @@ export function Onboarding({ onDone }) {
   return (
     <div
       onClick={onDone}
+      className="modal-backdrop"
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
         alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
@@ -35,6 +36,7 @@ export function Onboarding({ onDone }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="modal-panel"
         style={{
           background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
           padding: 28, maxWidth: 360, width: "100%", textAlign: "center", position: "relative",
@@ -49,17 +51,19 @@ export function Onboarding({ onDone }) {
           <X size={16} />
         </button>
 
-        <div
-          style={{
-            width: 56, height: 56, borderRadius: 14, background: "var(--tint-accent)", display: "flex",
-            alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
-          }}
-        >
-          <Icon size={26} color={TOKENS.accent} />
-        </div>
+        <div key={step} className="tab-panel">
+          <div
+            style={{
+              width: 56, height: 56, borderRadius: 14, background: "var(--tint-accent)", display: "flex",
+              alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
+            }}
+          >
+            <Icon size={26} color={TOKENS.accent} />
+          </div>
 
-        <div className="display" style={{ fontSize: 17, fontWeight: 600, marginBottom: 8 }}>{title}</div>
-        <div style={{ fontSize: 13, color: TOKENS.textMuted, lineHeight: 1.5, marginBottom: 22 }}>{text}</div>
+          <div className="display" style={{ fontSize: 17, fontWeight: 600, marginBottom: 8 }}>{title}</div>
+          <div style={{ fontSize: 13, color: TOKENS.textMuted, lineHeight: 1.5, marginBottom: 22 }}>{text}</div>
+        </div>
 
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
           {STEPS.map((_, i) => (

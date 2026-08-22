@@ -30,7 +30,7 @@ export function ResetPassword({ onDone }) {
   };
 
   return (
-    <div style={{ background: TOKENS.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <div style={{ background: TOKENS.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <form
         onSubmit={handleSubmit}
         style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: 28, width: "100%", maxWidth: 360 }}

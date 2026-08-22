@@ -1,18 +1,55 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tag, ListChecks, LayoutGrid, ScanLine, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle } from "lucide-react";
+import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { pillStyle } from "./Shared.jsx";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
 
+// Conciliación no tiene tab propia en la nav — se llega a ella desde un
+// botón dentro de Movimientos (setTab("conciliacion") sigue siendo un valor
+// válido de `tab`, solo no aparece acá).
 const TAB_ITEMS = [
   { id: "resumen", label: "Resumen", icon: LayoutGrid },
   { id: "movimientos", label: "Movimientos", icon: ListChecks },
-  { id: "conciliacion", label: "Conciliación", icon: ScanLine },
+  { id: "suscripciones", label: "Suscripciones", icon: Repeat },
   { id: "categorias", label: "Categorías", icon: Tag },
 ];
 
-export function Header({ tab, setTab, onSignOut, theme, onToggleTheme }) {
+// "Guardando…" mientras hay algo en vuelo hacia Supabase, "Guardado" un
+// instante después de terminar — para que quede claro cuándo es seguro
+// cerrar o recargar la pestaña sin perder el último cambio.
+function SaveIndicator({ saving }) {
+  const [showSaved, setShowSaved] = useState(false);
+  const wasSaving = useRef(false);
+
+  useEffect(() => {
+    if (wasSaving.current && !saving) {
+      setShowSaved(true);
+      const t = setTimeout(() => setShowSaved(false), 1500);
+      wasSaving.current = saving;
+      return () => clearTimeout(t);
+    }
+    wasSaving.current = saving;
+  }, [saving]);
+
+  if (saving) {
+    return (
+      <span style={{ display: "flex", alignItems: "center", gap: 4, color: TOKENS.textFaint, fontSize: 11.5 }}>
+        <Loader2 size={11} className="spin" /> Guardando…
+      </span>
+    );
+  }
+  if (showSaved) {
+    return (
+      <span style={{ display: "flex", alignItems: "center", gap: 4, color: TOKENS.income, fontSize: 11.5 }}>
+        <Check size={11} /> Guardado
+      </span>
+    );
+  }
+  return null;
+}
+
+export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
     <div style={{ borderBottom: `1px solid ${TOKENS.border}`, background: TOKENS.surface, position: "sticky", top: 0, zIndex: 10 }}>
@@ -21,6 +58,7 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme }) {
           <img src={logo} alt="" width={30} height={30} style={{ display: "block" }} />
           <div className="display" style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>Gastify</div>
           <div className="header-subtitle" style={{ color: TOKENS.textFaint, fontSize: 12, marginLeft: 2 }}>· cuenta corriente CLP</div>
+          <SaveIndicator saving={saving} />
         </div>
         <div className="header-controls" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <nav className="top-tab-nav" style={{ display: "flex", gap: 4, background: TOKENS.surfaceAlt, padding: 4, borderRadius: 10, border: `1px solid ${TOKENS.border}` }}>
@@ -121,7 +159,7 @@ export function BottomNav({ tab, setTab, onManual, onImport }) {
       <div className="bottom-tab-center">
         <button
           ref={btnRef}
-          className="bottom-add-btn"
+          className={`bottom-add-btn${open ? " open" : ""}`}
           aria-label="Agregar movimiento"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}

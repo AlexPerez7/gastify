@@ -28,12 +28,11 @@ export const TOKENS = {
 // heatmap, gráficos ni en el hero — pensado para transferencias entre tus
 // propias cuentas (ahorro, etc.), que salen de la cuenta corriente pero no
 // son consumo real.
-// type: "income" | "expense" | "both" — no filtra los gráficos (esos ya
-// separan por el signo del monto), solo qué categorías se sugieren al
-// cargar un movimiento manual o editar uno, para no mezclar "Comida" con
-// "Sueldo" en el mismo selector. "both" es para categorías que aplican en
-// los dos sentidos (ej. Transferencias: puede que te transfieran a ti o que
-// tú transfieras) — esas se sugieren siempre, sin importar el signo.
+// type: "income" | "expense" — filtra qué categorías se sugieren al cargar
+// un movimiento manual o editar uno, para no mezclar "Comida" con "Sueldo"
+// en el mismo selector. Cada categoría es de un solo tipo — si necesitas
+// algo como "Transferencias" en los dos sentidos, se crean dos categorías
+// separadas (una de gasto, una de ingreso).
 export const DEFAULT_CATEGORIES = [
   { id: "ingreso", label: "Ingresos", color: "#3FBF8F", icon: "TrendingUp", type: "income", excludeFromExpense: false, isSavings: false },
   { id: "comida", label: "Comida y delivery", color: "#E8654F", icon: "Utensils", type: "expense", excludeFromExpense: false, isSavings: false },
@@ -42,26 +41,40 @@ export const DEFAULT_CATEGORIES = [
   { id: "compras", label: "Compras", color: "#5B9BD5", icon: "ShoppingBag", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "servicios", label: "Servicios y cuentas", color: "#D98E52", icon: "Receipt", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "salud", label: "Salud y cuidado personal", color: "#6FCF97", icon: "HeartPulse", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "transferencias", label: "Transferencias personales", color: "#7C8B9C", icon: "ArrowLeftRight", type: "both", excludeFromExpense: true, isSavings: false },
+  { id: "transferencias", label: "Transferencias personales", color: "#7C8B9C", icon: "ArrowLeftRight", type: "expense", excludeFromExpense: true, isSavings: false },
   { id: "efectivo", label: "Retiro de efectivo", color: "#A0A8B4", icon: "Banknote", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "otros", label: "Otros", color: "#57646F", icon: "Shapes", type: "expense", excludeFromExpense: false, isSavings: false },
 ];
 
 // categorías creadas antes de que existiera este campo (o leídas desde una
-// base sin la columna `type` todavía) no tienen `type` guardado — se asume
-// "income" solo para la categoría por defecto de ingresos, "expense" para
-// cualquier otra, así el filtro de los selectores sigue teniendo sentido.
+// base sin la columna `type` todavía, o con el antiguo tipo "both") no
+// tienen un `type` válido guardado — se asume "income" solo para la
+// categoría por defecto de ingresos, "expense" para cualquier otra, así el
+// filtro de los selectores sigue teniendo sentido.
 export function categoryType(cat) {
-  if (cat.type === "income" || cat.type === "expense" || cat.type === "both") return cat.type;
+  if (cat.type === "income" || cat.type === "expense") return cat.type;
   return cat.id === "ingreso" ? "income" : "expense";
 }
 
 // true si esa categoría debería sugerirse para un movimiento del tipo dado
-// ("income"/"expense"): las de tipo "both" (ej. Transferencias) califican
-// para los dos.
+// ("income"/"expense").
 export function categoryMatchesType(cat, wantedType) {
-  const t = categoryType(cat);
-  return t === "both" || t === wantedType;
+  return categoryType(cat) === wantedType;
+}
+
+// nombre a mostrar para una categoría en un selector que puede listar
+// categorías de los dos tipos a la vez (ej. el filtro de Movimientos, o el
+// editor de un movimiento puntual que mantiene visible su categoría actual
+// aunque no calce con el tipo del monto): dos categorías con el mismo
+// nombre pero de tipos distintos (ej. "Transporte" de gasto y "Transporte"
+// de ingreso, para poder distinguir un pasaje de una devolución) son
+// indistinguibles por nombre solo — se les agrega "(gasto)"/"(ingreso)"
+// únicamente cuando ese choque existe en la lista dada, para no ensuciar
+// el resto de las categorías que no lo necesitan.
+export function labelWithTypeIfAmbiguous(cat, allCategories) {
+  const collision = allCategories.some((c) => c.id !== cat.id && c.label === cat.label && categoryType(c) !== categoryType(cat));
+  if (!collision) return cat.label;
+  return `${cat.label} (${categoryType(cat) === "income" ? "ingreso" : "gasto"})`;
 }
 
 export const DEFAULT_CATEGORY_ICON = Shapes;

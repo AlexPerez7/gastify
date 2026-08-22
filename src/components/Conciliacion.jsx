@@ -10,6 +10,23 @@ import { useIsMobile } from "../lib/useIsMobile.js";
 // fila de "posible descuadre" — mismo criterio que las filas de Movimientos.
 const MISMATCH_SWIPE_WIDTH = 128;
 
+// Conciliación no tiene tab propia en la nav (se entra desde un botón en
+// Movimientos) — este es el camino de vuelta.
+function BackToMovimientosButton({ onBack }) {
+  if (!onBack) return null;
+  return (
+    <button
+      onClick={onBack}
+      style={{
+        display: "flex", alignItems: "center", gap: 4, marginBottom: 12, padding: "4px 2px",
+        background: "none", border: "none", color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
+      }}
+    >
+      <ChevronLeft size={14} /> Movimientos
+    </button>
+  );
+}
+
 const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 function fmtMonth(m) {
   if (!m) return "";
@@ -17,7 +34,7 @@ function fmtMonth(m) {
   return `${MONTH_NAMES[parseInt(mo, 10) - 1]} ${y}`;
 }
 
-export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onEditManual, onManualMatch }) {
+export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onEditManual, onManualMatch, onBack }) {
   const [result, setResult] = useState(null);
   const [showBankOnly, setShowBankOnly] = useState(false);
   const isMobile = useIsMobile();
@@ -39,11 +56,14 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 
   if (!currentMonth || !reconcileStats) {
     return (
-      <EmptyState
-        icon={ScanLine}
-        title="Nada que conciliar todavía"
-        text="Importa movimientos del banco para poder revisar qué coincide con tus registros manuales."
-      />
+      <div>
+        <BackToMovimientosButton onBack={onBack} />
+        <EmptyState
+          icon={ScanLine}
+          title="Nada que conciliar todavía"
+          text="Importa movimientos del banco para poder revisar qué coincide con tus registros manuales."
+        />
+      </div>
     );
   }
 
@@ -51,6 +71,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 
   return (
     <div>
+      <BackToMovimientosButton onBack={onBack} />
       <Panel
         title={`Conciliar ${fmtMonth(currentMonth)}`}
         right={

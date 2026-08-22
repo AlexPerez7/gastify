@@ -1,4 +1,7 @@
-import { TOKENS } from "../lib/constants.js";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { ChevronDown, Tags } from "lucide-react";
+import { TOKENS, ICONS, ICON_NAMES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon, labelWithTypeIfAmbiguous } from "../lib/constants.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
   return <div className="skeleton" style={{ width, height, borderRadius: radius, background: TOKENS.surfaceAlt, ...style }} />;
@@ -161,4 +164,263 @@ export function pillStyle(active) {
     color: active ? TOKENS.accent : TOKENS.textMuted,
     textTransform: "capitalize",
   };
+}
+
+// panel compacto para crear una categoría (nombre + color + ícono) sin
+// abandonar el flujo en el que se abrió — se usa tanto en "Nuevo movimiento"
+// como en la pestaña Categorías, mismo look en los dos lados.
+export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
+  const [label, setLabel] = useState("");
+  const [icon, setIcon] = useState("Shapes");
+  const [color, setColor] = useState(PALETTE[0]);
+  const Icon = ICONS[icon] || DEFAULT_CATEGORY_ICON;
+
+  const submit = () => {
+    if (!label.trim()) return;
+    const id = onAddCategory(label.trim(), icon, color, type);
+    onAdd(id);
+  };
+
+  return (
+    <div style={{ marginTop: 14, padding: 12, background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 8, background: `${color}22`, display: "flex",
+          alignItems: "center", justifyContent: "center", flexShrink: 0,
+        }}>
+          <Icon size={15} color={color} />
+        </div>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder={`Nueva categoría de ${type === "expense" ? "gasto" : "ingreso"}`}
+          autoFocus
+          style={{ flex: 1, minWidth: 0, padding: "6px 9px", borderRadius: 6, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 12.5 }}
+        />
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+        {PALETTE.map((col) => (
+          <button
+            key={col}
+            onClick={() => setColor(col)}
+            title={col}
+            aria-label={`Usar color ${col}`}
+            aria-pressed={col === color}
+            style={{
+              width: 20, height: 20, borderRadius: "50%", background: col, cursor: "pointer", padding: 0,
+              border: col === color ? `2px solid ${TOKENS.text}` : "2px solid transparent",
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+        {ICON_NAMES.map((name) => {
+          const OptionIcon = ICONS[name];
+          const selected = icon === name;
+          return (
+            <button
+              key={name}
+              title={name}
+              onClick={() => setIcon(name)}
+              style={{
+                width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center",
+                background: selected ? `${color}33` : "transparent",
+                border: `1px solid ${selected ? color : TOKENS.border}`, cursor: "pointer", padding: 0,
+              }}
+            >
+              <OptionIcon size={13} color={selected ? color : TOKENS.textMuted} />
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={submit}
+          disabled={!label.trim()}
+          style={{
+            padding: "7px 14px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 600,
+            background: TOKENS.accent, color: TOKENS.bg, cursor: label.trim() ? "pointer" : "default", opacity: label.trim() ? 1 : 0.6,
+          }}
+        >
+          Crear y usar
+        </button>
+        <button onClick={onCancel} style={{ padding: "7px 14px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12, cursor: "pointer" }}>
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// selector de categoría con ícono y color — reemplaza a un <select> nativo,
+// que en mobile abre la lista del sistema operativo sin forma de mostrar
+// nada más que el texto. Mismo popover-en-portal que ConfirmDeleteButton,
+// para que no lo recorten los contenedores con overflow:hidden de las
+// listas de la app.
+// allOption: {value, label} opcional — una fila extra al principio (ej.
+// "Todas las categorías" en el filtro) sin ícono de categoría propio.
+export function CategorySelect({ categories, value, onChange, placeholder = "Elegir categoría…", disabled = false, allOption = null }) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState(null);
+  const btnRef = useRef(null);
+  const popRef = useRef(null);
+
+  const POPOVER_MAX_HEIGHT = 260;
+
+  const openPopover = () => {
+    const rect = btnRef.current.getBoundingClientRect();
+    // si no entra hacia abajo (ej. la barra de acciones flotante, anclada
+    // cerca del borde inferior) se abre hacia arriba, para que no quede
+    // recortado fuera de la pantalla.
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < POPOVER_MAX_HEIGHT && rect.top > spaceBelow;
+    setCoords(
+      openUpward
+        ? { bottom: window.innerHeight - rect.top + 4, left: rect.left, width: rect.width }
+        : { top: rect.bottom + 4, left: rect.left, width: rect.width }
+    );
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (popRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    // las coordenadas se calculan una sola vez al abrir (position: fixed,
+    // no sigue al botón) — si la página scrollea, el popover queda
+    // "flotando" en el lugar viejo, ya desconectado del botón que lo abrió.
+    // Se cierra apenas hay scroll fuera del propio popover (que sí puede
+    // scrollear internamente, para no perder esa interacción).
+    const onScroll = (e) => {
+      if (popRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open]);
+
+  const isAllSelected = allOption && value === allOption.value;
+  const selected = categories.find((c) => c.id === value);
+  const SelectedIcon = selected ? resolveCategoryIcon(selected) : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        ref={btnRef}
+        disabled={disabled}
+        onClick={() => (open ? setOpen(false) : openPopover())}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "6px 9px", borderRadius: 7,
+          border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, cursor: disabled ? "default" : "pointer",
+          opacity: disabled ? 0.6 : 1, textAlign: "left",
+        }}
+      >
+        {isAllSelected ? (
+          <>
+            <span style={{
+              width: 20, height: 20, borderRadius: 6, background: TOKENS.surfaceAlt, display: "flex",
+              alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <Tags size={12} color={TOKENS.textFaint} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12.5, color: TOKENS.text }}>
+              {allOption.label}
+            </span>
+          </>
+        ) : selected ? (
+          <>
+            <span style={{
+              width: 20, height: 20, borderRadius: 6, background: `${selected.color}22`, display: "flex",
+              alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <SelectedIcon size={12} color={selected.color} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12.5, color: TOKENS.text }}>
+              {labelWithTypeIfAmbiguous(selected, categories)}
+            </span>
+          </>
+        ) : (
+          <span style={{ flex: 1, fontSize: 12.5, color: TOKENS.textFaint }}>{placeholder}</span>
+        )}
+        <ChevronDown size={13} color={TOKENS.textFaint} style={{ flexShrink: 0 }} />
+      </button>
+
+      {open && coords && createPortal(
+        <div
+          ref={popRef}
+          role="listbox"
+          style={{
+            position: "fixed", left: coords.left, width: Math.max(coords.width, 200), zIndex: 1000,
+            ...(coords.top != null ? { top: coords.top } : { bottom: coords.bottom }),
+            background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10,
+            padding: 5, boxShadow: "0 10px 28px rgba(0,0,0,0.45)", maxHeight: POPOVER_MAX_HEIGHT, overflowY: "auto",
+          }}
+        >
+          {allOption && (
+            <button
+              type="button"
+              role="option"
+              aria-selected={isAllSelected}
+              onClick={() => { onChange(allOption.value); setOpen(false); }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 7,
+                border: "none", background: isAllSelected ? TOKENS.surface : "transparent", cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <span style={{
+                width: 22, height: 22, borderRadius: 6, background: TOKENS.bg, display: "flex",
+                alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <Tags size={12.5} color={TOKENS.textFaint} />
+              </span>
+              <span style={{ fontSize: 12.5, color: isAllSelected ? TOKENS.text : TOKENS.textMuted, fontWeight: isAllSelected ? 600 : 400 }}>
+                {allOption.label}
+              </span>
+            </button>
+          )}
+          {categories.map((c) => {
+            const Icon = resolveCategoryIcon(c);
+            const isSelected = c.id === value;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => { onChange(c.id); setOpen(false); }}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 7,
+                  border: "none", background: isSelected ? TOKENS.surface : "transparent", cursor: "pointer", textAlign: "left",
+                }}
+              >
+                <span style={{
+                  width: 22, height: 22, borderRadius: 6, background: `${c.color}22`, display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Icon size={12.5} color={c.color} />
+                </span>
+                <span style={{ fontSize: 12.5, color: isSelected ? TOKENS.text : TOKENS.textMuted, fontWeight: isSelected ? 600 : 400 }}>
+                  {labelWithTypeIfAmbiguous(c, categories)}
+                </span>
+              </button>
+            );
+          })}
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }

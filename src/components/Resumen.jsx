@@ -8,7 +8,6 @@ import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
 import { formatCLP } from "../lib/utils.js";
 import { Panel, EmptyState, StatCard, FieldInput } from "./Shared.jsx";
 import { SpendHeatmap } from "./Heatmap.jsx";
-import { HeroStat } from "./HeroStat.jsx";
 import { Insights } from "./Insights.jsx";
 import { ErrorBoundary } from "./ErrorBoundary.jsx";
 
@@ -23,6 +22,17 @@ function fmtMonth(m) {
 // como las que maneja formatDateDisplay — se muestra con el formato local.
 function formatSyncDate(iso) {
   return new Date(iso).toLocaleString("es-CL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+// compara lo gastado en lo que va del mes contra el mismo tramo de días del
+// mes calendario anterior ("ritmo habitual") — mismo cálculo que antes vivía
+// en HeroStat.jsx, ahora como texto simple bajo la tarjeta chica.
+function spendPaceSub(heroStat) {
+  if (!heroStat || heroStat.typicalPace == null || heroStat.typicalPace <= 0) return "Sin historial suficiente para comparar";
+  const diffPct = Math.round(((heroStat.spentSoFar - heroStat.typicalPace) / heroStat.typicalPace) * 100);
+  if (diffPct > 5) return `${diffPct}% más que tu ritmo habitual`;
+  if (diffPct < -5) return `${Math.abs(diffPct)}% menos que tu ritmo habitual`;
+  return "en línea con tu ritmo habitual";
 }
 
 export function Resumen({
@@ -90,28 +100,36 @@ export function Resumen({
       <div ref={captureRef}>
       {hasTransactions && <Insights items={insights} />}
 
-      {hasTransactions && heroStat && (
-        <ErrorBoundary>
-          <HeroStat {...heroStat} />
-        </ErrorBoundary>
-      )}
+      <div style={{
+        background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 14,
+        padding: "22px 24px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12,
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, color: TOKENS.textMuted, marginBottom: 6 }}>Saldo actual</div>
+          <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: TOKENS.accent, letterSpacing: "-0.01em", lineHeight: 1.1 }}>
+            {dynamicBalance != null ? formatCLP(dynamicBalance) : "—"}
+          </div>
+          <div style={{ fontSize: 12, color: TOKENS.textFaint, marginTop: 12 }}>
+            {lastSyncDate ? `ajustado el ${formatSyncDate(lastSyncDate)}` : "ajusta tu saldo para verlo actualizado"}
+          </div>
+        </div>
+        <button
+          onClick={() => setShowAdjustModal(true)}
+          aria-label="Ajustar saldo"
+          title="Ajustar saldo"
+          style={{ background: "none", border: "none", cursor: "pointer", color: TOKENS.textFaint, padding: 4, flexShrink: 0 }}
+        >
+          <Pencil size={15} />
+        </button>
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 24 }}>
+      <div className="stagger-fade" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 24 }}>
         <StatCard
-          label="Saldo actual"
-          value={dynamicBalance != null ? formatCLP(dynamicBalance) : "—"}
-          sub={lastSyncDate ? `ajustado el ${formatSyncDate(lastSyncDate)}` : "ajusta tu saldo para verlo actualizado"}
-          accent={TOKENS.accent}
-          action={
-            <button
-              onClick={() => setShowAdjustModal(true)}
-              aria-label="Ajustar saldo"
-              title="Ajustar saldo"
-              style={{ background: "none", border: "none", cursor: "pointer", color: TOKENS.textFaint, padding: 0 }}
-            >
-              <Pencil size={13} />
-            </button>
-          }
+          label={heroStat ? `Gastado en ${fmtMonth(heroStat.monthKey)}${heroStat.isRealCurrentMonth ? ` · día ${heroStat.dayOfMonth}` : ""}` : "Gastado este mes"}
+          value={formatCLP(heroStat?.spentSoFar || 0)}
+          sub={spendPaceSub(heroStat)}
+          icon={ArrowDownRight}
+          accent={TOKENS.expense}
         />
         <StatCard label="Ingresos" value={formatCLP(stats.income)} icon={ArrowUpRight} accent={TOKENS.income} />
         <StatCard label="Gastos" value={formatCLP(stats.expense)} icon={ArrowDownRight} accent={TOKENS.expense} />
@@ -335,12 +353,13 @@ function AdjustBalanceModal({ currentBalance, onAdjust, onClose, pushToast }) {
 
   return (
     <div
+      className="modal-backdrop"
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
         alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
       }}
     >
-      <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
+      <div className="modal-panel" style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Ajustar saldo</div>
           <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
@@ -391,12 +410,13 @@ function AdjustSavingsModal({ currentSavings, onAdjust, onClose, pushToast }) {
 
   return (
     <div
+      className="modal-backdrop"
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
         alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
       }}
     >
-      <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
+      <div className="modal-panel" style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Ajustar total ahorrado</div>
           <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>

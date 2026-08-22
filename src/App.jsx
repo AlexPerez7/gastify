@@ -12,6 +12,7 @@ import {
 
 import { Header, MonthBar, BottomNav } from "./components/Header.jsx";
 import { CategoryManager } from "./components/CategoryManager.jsx";
+import { Subscriptions } from "./components/Subscriptions.jsx";
 import { ToastStack } from "./components/Toast.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import { Onboarding } from "./components/Onboarding.jsx";
@@ -29,9 +30,17 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [merchantRules, setMerchantRules] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [accountSettings, setAccountSettings] = useState(null); // { baseBalance, lastSyncDate } | null (todavía no ajustado)
   const [loaded, setLoaded] = useState(false);
   const [syncError, setSyncError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  // cuenta guardados a Supabase todavía en vuelo — se usa para (1) no dejar
+  // que el refetch automático de loadAllData (ver más abajo) pise con datos
+  // viejos un cambio que se acaba de aplicar localmente pero cuyo guardado
+  // todavía no confirma el servidor, y (2) avisar antes de cerrar/recargar
+  // la pestaña si hay algo en camino, para no perderlo.
+  const pendingSaves = useRef(0);
   const [tab, setTab] = useState("resumen");
   // ids de los movimientos agregados por la ÚLTIMA importación de banco —
   // para que el usuario pueda revisarlos sin tener que buscarlos a mano en
@@ -94,12 +103,20 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // React (`syncError`) no se actualiza a tiempo dentro de la misma función.
   const lastPersistError = useRef(null);
 
+  const beginSave = useCallback(() => { pendingSaves.current += 1; setSaving(true); }, []);
+  const endSave = useCallback(() => {
+    pendingSaves.current = Math.max(0, pendingSaves.current - 1);
+    if (pendingSaves.current === 0) setSaving(false);
+  }, []);
+
   // optimista: aplica el cambio ya, pero si Supabase rechaza el guardado
   // revierte el estado local en vez de dejarlo "aplicado" solo de mentira.
   const persistTx = useCallback(async (next) => {
     const prev = transactions;
     setTransactions(next);
+    beginSave();
     const res = await storage.set("transactions", JSON.stringify(next), prev);
+    endSave();
     lastPersistError.current = res?.error || null;
     if (!res || res.error) {
       setTransactions(prev);
@@ -109,11 +126,13 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     }
     setSyncError(null);
     return true;
-  }, [transactions]);
+  }, [transactions, beginSave, endSave]);
   const persistCats = useCallback(async (next) => {
     const prev = categories;
     setCategories(next);
+    beginSave();
     const res = await storage.set("categories", JSON.stringify(next), prev);
+    endSave();
     if (!res || res.error) {
       setCategories(prev);
       const detail = res?.error ? ` (${res.error})` : "";
@@ -121,11 +140,13 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     } else {
       setSyncError(null);
     }
-  }, [categories]);
+  }, [categories, beginSave, endSave]);
   const persistRules = useCallback(async (next) => {
     const prev = merchantRules;
     setMerchantRules(next);
+    beginSave();
     const res = await storage.set("merchantRules", JSON.stringify(next), prev);
+    endSave();
     if (!res || res.error) {
       setMerchantRules(prev);
       const detail = res?.error ? ` (${res.error})` : "";
@@ -133,7 +154,21 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     } else {
       setSyncError(null);
     }
-  }, [merchantRules]);
+  }, [merchantRules, beginSave, endSave]);
+  const persistSubs = useCallback(async (next) => {
+    const prev = subscriptions;
+    setSubscriptions(next);
+    beginSave();
+    const res = await storage.set("subscriptions", JSON.stringify(next), prev);
+    endSave();
+    if (!res || res.error) {
+      setSubscriptions(prev);
+      const detail = res?.error ? ` (${res.error})` : "";
+      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
+    } else {
+      setSyncError(null);
+    }
+  }, [subscriptions, beginSave, endSave]);
 
   // ---- persistence (Supabase, vía src/lib/storage.js) ----------------------
   const loadAllData = useCallback(async () => {
@@ -151,11 +186,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     const rules = await storage.get("merchantRules");
     if (rules) setMerchantRules(JSON.parse(rules.value));
 
+    const subs = await storage.get("subscriptions");
+    if (subs) setSubscriptions(JSON.parse(subs.value));
+
     // null es un estado válido acá (usuario que nunca ajustó su saldo),
     // así que no cuenta para el syncError de abajo.
     setAccountSettings(await getAccountSettings());
 
-    if (!tx || !cats || !rules) {
+    if (!tx || !cats || !rules || !subs) {
       setSyncError("No se pudieron cargar todos tus datos. Revisa tu conexión y recarga la página.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- persistCats solo se usa para sembrar defaults, no hace falta re-crear esta función si cambia
@@ -168,11 +206,70 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     // una vez al entrar. Si agregaste un movimiento desde el celular y
     // volvés a una pestaña web que ya tenías abierta, se iba a quedar con
     // los datos viejos hasta recargar la página a mano — esto la refresca
-    // sola apenas la pestaña vuelve a estar visible.
-    const onVisible = () => { if (document.visibilityState === "visible") loadAllData(); };
+    // sola apenas la pestaña vuelve a estar visible. Si en ese momento hay
+    // un guardado en curso (pendingSaves > 0), se salta: si no, esta
+    // recarga podría llegar a leer la fila todavía sin el cambio recién
+    // hecho y pisar el estado local optimista con datos viejos.
+    const onVisible = () => { if (document.visibilityState === "visible" && pendingSaves.current === 0) loadAllData(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+
+    // si hay un guardado en curso y el usuario cierra la pestaña o recarga
+    // antes de que termine, el navegador corta el request a mitad de
+    // camino — el cambio queda aplicado solo localmente y se pierde apenas
+    // vuelve a cargar. Este aviso nativo del navegador da la chance de
+    // cancelar y esperar a que termine.
+    const onBeforeUnload = (e) => {
+      if (pendingSaves.current > 0) { e.preventDefault(); e.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
   }, [loadAllData]);
+
+  // genera, una sola vez por sesión, el movimiento manual "pendiente" del mes
+  // en curso para cada suscripción activa cuyo día de cobro ya pasó — ese
+  // movimiento se concilia después con el cargo real del banco igual que
+  // cualquier otro manual (mismo reconcileMonth, mismo match por monto+fecha).
+  // No hace backfill de meses anteriores: si la app no se abrió ese mes, el
+  // cargo real que llegue del banco igual se categoriza por las reglas de
+  // comercio existentes (ver MERCHANT_RULES_DEFAULT), solo queda sin el
+  // vínculo subscriptionId.
+  const subscriptionChargesRanRef = useRef(false);
+  useEffect(() => {
+    if (!loaded || subscriptionChargesRanRef.current || subscriptions.length === 0) return;
+    subscriptionChargesRanRef.current = true;
+
+    const today = new Date();
+    const curMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+
+    const toGenerate = [];
+    for (const sub of subscriptions) {
+      if (!sub.active || today.getDate() < sub.dayOfMonth) continue;
+      const alreadyExists = transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey);
+      if (alreadyExists) continue;
+      const date = `${curMonthKey}-${String(Math.min(sub.dayOfMonth, daysInMonth)).padStart(2, "0")}`;
+      toGenerate.push({
+        id: uid(),
+        key: makeKey(date, sub.name, sub.amount, 0),
+        date,
+        description: sub.name,
+        alias: "",
+        amount: -Math.abs(sub.amount),
+        category: sub.category,
+        source: "manual",
+        reconciled: false,
+        matchedId: null,
+        subscriptionId: sub.id,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    if (toGenerate.length > 0) persistTx([...transactions, ...toGenerate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- corre una sola vez por sesión (ref guard); no hace falta re-crear el efecto con cada cambio de transactions/persistTx
+  }, [loaded, subscriptions]);
 
   // ---- import xls/pdf ---------------------------------------------------------
   const handleFile = useCallback(
@@ -404,12 +501,41 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     [transactions, merchantRules, persistTx, persistRules]
   );
 
+  // marca/desmarca un movimiento como suscripción desde Movimientos: al
+  // marcarlo, crea (o reutiliza si ya existe una activa con el mismo
+  // nombre+monto+categoría, para no duplicar al marcar el mismo cobro dos
+  // meses distintos) una suscripción declarada con sus datos, y linkea el
+  // movimiento a ella — desde ahí aparece en la pestaña Suscripciones y
+  // genera su cargo pendiente los meses siguientes. Al desmarcarlo, solo
+  // desvincula este movimiento puntual; la suscripción en sí (y otros
+  // movimientos ya vinculados a ella) no se tocan.
+  const toggleTxSubscription = useCallback(
+    (txId, isSubscription) => {
+      const tx = transactions.find((t) => t.id === txId);
+      if (!tx) return;
+      if (!isSubscription) {
+        persistTx(transactions.map((t) => (t.id === txId ? { ...t, subscriptionId: null } : t)));
+        return;
+      }
+      const name = tx.alias || tx.description;
+      const amount = Math.abs(tx.amount);
+      const category = tx.category;
+      const dayOfMonth = Number(tx.date.slice(8, 10));
+      const existing = subscriptions.find((s) => s.active && s.name === name && s.amount === amount && s.category === category);
+      const subId = existing ? existing.id : "sub_" + uid();
+      if (!existing) persistSubs([...subscriptions, { id: subId, name, amount, category, dayOfMonth, active: true }]);
+      persistTx(transactions.map((t) => (t.id === txId ? { ...t, subscriptionId: subId } : t)));
+    },
+    [transactions, subscriptions, persistTx, persistSubs]
+  );
+
   // ---- category management ------------------------------------------------------
   const addCategory = useCallback(
     (label, icon, color, type) => {
       const id = "cat_" + uid();
       const resolvedColor = color || PALETTE[categories.length % PALETTE.length];
-      persistCats([...categories, { id, label, color: resolvedColor, icon: icon || "Shapes", type: ["income", "expense", "both"].includes(type) ? type : "expense", excludeFromExpense: false, budget: null }]);
+      persistCats([...categories, { id, label, color: resolvedColor, icon: icon || "Shapes", type: type === "income" ? "income" : "expense", excludeFromExpense: false, budget: null }]);
+      return id;
     },
     [categories, persistCats]
   );
@@ -417,7 +543,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const changeCategoryIcon = useCallback((id, icon) => { persistCats(categories.map((c) => (c.id === id ? { ...c, icon } : c))); }, [categories, persistCats]);
   const changeCategoryColor = useCallback((id, color) => { persistCats(categories.map((c) => (c.id === id ? { ...c, color } : c))); }, [categories, persistCats]);
   const changeCategoryType = useCallback(
-    (id, type) => { persistCats(categories.map((c) => (c.id === id ? { ...c, type: ["income", "expense", "both"].includes(type) ? type : "expense" } : c))); },
+    (id, type) => { persistCats(categories.map((c) => (c.id === id ? { ...c, type: type === "income" ? "income" : "expense" } : c))); },
     [categories, persistCats]
   );
   // budget null/0 = sin presupuesto definido para esa categoría
@@ -437,8 +563,26 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     (id) => {
       persistCats(categories.filter((c) => c.id !== id));
       persistTx(transactions.map((t) => (t.category === id ? { ...t, category: "otros" } : t)));
+      persistSubs(subscriptions.map((s) => (s.category === id ? { ...s, category: "otros" } : s)));
     },
-    [categories, transactions, persistCats, persistTx]
+    [categories, transactions, subscriptions, persistCats, persistTx, persistSubs]
+  );
+
+  // ---- subscriptions (suscripciones declaradas a mano) ------------------------
+  const addSubscription = useCallback(
+    ({ name, amount, category, dayOfMonth }) => {
+      const sub = { id: "sub_" + uid(), name, amount: Math.abs(amount), category, dayOfMonth, active: true };
+      persistSubs([...subscriptions, sub]);
+    },
+    [subscriptions, persistSubs]
+  );
+  const updateSubscription = useCallback(
+    (id, patch) => { persistSubs(subscriptions.map((s) => (s.id === id ? { ...s, ...patch } : s))); },
+    [subscriptions, persistSubs]
+  );
+  const deleteSubscription = useCallback(
+    (id) => { persistSubs(subscriptions.filter((s) => s.id !== id)); },
+    [subscriptions, persistSubs]
   );
 
   // ---- reconciliation ---------------------------------------------------------
@@ -477,7 +621,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
           return sameAmount && dDate >= -2 && dDate <= 5;
         });
         if (match) {
-          bankUpdates.set(match.id, { ...match, matchedId: m.id, category: m.category, alias: m.alias || match.alias });
+          bankUpdates.set(match.id, { ...match, matchedId: m.id, category: m.category, alias: m.alias || match.alias, subscriptionId: m.subscriptionId ?? match.subscriptionId });
           mergedManualIds.add(m.id);
         }
       }
@@ -527,7 +671,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
       if (!manual) return;
       const next = transactions
         .filter((t) => t.id !== manualId)
-        .map((t) => (t.id === bankId ? { ...t, matchedId: manualId, category: manual.category, alias: manual.alias || t.alias } : t));
+        .map((t) => (t.id === bankId ? { ...t, matchedId: manualId, category: manual.category, alias: manual.alias || t.alias, subscriptionId: manual.subscriptionId ?? t.subscriptionId } : t));
       persistTx(next);
     },
     [transactions, persistTx]
@@ -569,6 +713,42 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       });
   }, [monthTx, catFilter, txTypeFilter, search]);
+
+  // posibles duplicados: un manual y un bancario (nunca dos del mismo
+  // origen) con mismo monto (mismo signo) y fecha a menos de 3 días de
+  // distancia, sin estar ya vinculados entre sí por la conciliación — el
+  // caso típico es anotar algo a mano y que el reporte del banco llegue con
+  // una fecha contable distinta, sin calzar dentro de la ventana que usa el
+  // matching automático de reconcileMonth. Comparar bancario contra
+  // bancario NO sirve acá: servicios con tarifa fija (metro, estacionamiento)
+  // generan varios movimientos legítimos con el mismo monto en pocos días, y
+  // los duplicados reales de una reimportación ya se filtran aparte por la
+  // clave única al importar (ver handleFile). Se agrupa por monto redondeado
+  // antes de comparar fechas para no comparar todo contra todo en cuentas
+  // con muchos movimientos.
+  const duplicateIds = useMemo(() => {
+    const byAmount = new Map();
+    for (const t of transactions) {
+      const key = Math.round(Math.abs(t.amount));
+      if (!byAmount.has(key)) byAmount.set(key, []);
+      byAmount.get(key).push(t);
+    }
+    const flagged = new Set();
+    for (const group of byAmount.values()) {
+      if (group.length < 2) continue;
+      for (let i = 0; i < group.length; i++) {
+        for (let j = i + 1; j < group.length; j++) {
+          const a = group[i], b = group[j];
+          if (a.source === b.source) continue;
+          if ((a.amount < 0) !== (b.amount < 0)) continue;
+          if (a.matchedId === b.id || b.matchedId === a.id) continue;
+          const dDays = Math.abs(new Date(a.date) - new Date(b.date)) / 86400000;
+          if (dDays <= 3) { flagged.add(a.id); flagged.add(b.id); }
+        }
+      }
+    }
+    return flagged;
+  }, [transactions]);
 
   // categorías marcadas "no cuenta como gasto" (ej. transferencias a tus
   // propias cuentas) — se excluyen de todo cálculo de gasto, pero siguen
@@ -787,7 +967,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
 
   return (
     <div style={{ background: TOKENS.bg, minHeight: "100vh", color: TOKENS.text, fontFamily: "'Inter', sans-serif" }}>
-      <Header tab={tab} setTab={setTab} onSignOut={onSignOut} theme={theme} onToggleTheme={onToggleTheme} />
+      <Header tab={tab} setTab={setTab} onSignOut={onSignOut} theme={theme} onToggleTheme={onToggleTheme} saving={saving} />
 
       <main className="app-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "28px 24px 80px" }}>
         {syncError && (
@@ -802,18 +982,26 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
             </button>
           </div>
         )}
-        {tab !== "categorias" && (
+        {tab !== "categorias" && tab !== "suscripciones" && (
           <MonthBar
             months={months} monthFilter={monthFilter} setMonthFilter={setMonthFilter}
             monthHealth={tab === "conciliacion" ? monthHealth : undefined}
           />
         )}
 
+        <div key={tab} className="tab-panel">
         {tab === "categorias" && (
           <CategoryManager
             categories={categories} onAdd={addCategory} onRename={renameCategory} onDelete={deleteCategory}
             onIconChange={changeCategoryIcon} onColorChange={changeCategoryColor} onToggleExpense={toggleCategoryExpense}
             onBudgetChange={changeCategoryBudget} onTypeChange={changeCategoryType} onSavingsToggle={toggleCategorySavings}
+          />
+        )}
+
+        {tab === "suscripciones" && (
+          <Subscriptions
+            subscriptions={subscriptions} categories={categories}
+            onAdd={addSubscription} onUpdate={updateSubscription} onDelete={deleteSubscription}
           />
         )}
 
@@ -850,6 +1038,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 showManualForm={showManualForm} setShowManualForm={setShowManualForm}
                 showImportModal={showImportModal} setShowImportModal={setShowImportModal}
                 addManual={addManual}
+                onAddCategory={addCategory}
                 handleFile={handleFile}
                 isImporting={isImporting}
                 pushToast={pushToast}
@@ -857,6 +1046,10 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 onBulkChangeCategory={bulkChangeCategory}
                 recentImportIds={recentImportIds}
                 onClearRecentImports={() => setRecentImportIds([])}
+                duplicateIds={duplicateIds}
+                onOpenConciliacion={() => setTab("conciliacion")}
+                reconcileStats={reconcileStats}
+                onToggleSubscription={toggleTxSubscription}
               />
             </Suspense>
           </ErrorBoundary>
@@ -868,10 +1061,12 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
               <Conciliacion
                 currentMonth={currentMonth} reconcileStats={reconcileStats} reconcileMonth={reconcileMonth}
                 onEditManual={editManualEntry} onManualMatch={manualMatch}
+                onBack={() => setTab("movimientos")}
               />
             </Suspense>
           </ErrorBoundary>
         )}
+        </div>
       </main>
 
       <BottomNav tab={tab} setTab={setTab} onManual={openManualEntry} onImport={openImportFlow} />

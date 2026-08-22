@@ -18,6 +18,7 @@ const TABLES = {
       source: t.source,
       reconciled: t.reconciled,
       matched_id: t.matchedId,
+      subscription_id: t.subscriptionId,
     }),
     fromRow: (r) => ({
       id: r.id,
@@ -30,6 +31,7 @@ const TABLES = {
       source: r.source,
       reconciled: r.reconciled,
       matchedId: r.matched_id,
+      subscriptionId: r.subscription_id,
       createdAt: r.created_at,
     }),
   },
@@ -54,6 +56,11 @@ const TABLES = {
     table: "merchant_rules",
     toRow: (m) => ({ id: m.id, match_text: m.matchText, category_id: m.categoryId, alias: m.alias }),
     fromRow: (r) => ({ id: r.id, matchText: r.match_text, categoryId: r.category_id, alias: r.alias }),
+  },
+  subscriptions: {
+    table: "subscriptions",
+    toRow: (s) => ({ id: s.id, name: s.name, amount: s.amount, category_id: s.category, day_of_month: s.dayOfMonth, active: !!s.active }),
+    fromRow: (r) => ({ id: r.id, name: r.name, amount: Number(r.amount), category: r.category_id, dayOfMonth: r.day_of_month, active: !!r.active }),
   },
 };
 
