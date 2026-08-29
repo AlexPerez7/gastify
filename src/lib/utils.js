@@ -182,18 +182,5 @@ export function computeInsights(transactions, excludedCategoryIds, getCatLabel, 
     );
   }
 
-  let income = 0;
-  for (const t of transactions) {
-    if (monthKey(t.date) === thisMonthKey && t.amount > 0) income += t.amount;
-  }
-  const savings = income - cur.total;
-  if (income > 0 && savings > 0) {
-    list.push(
-      isRealCurrentMonth
-        ? `¡Bien! Llevas ahorrado ${formatCLP(savings)} este mes.`
-        : `¡Bien! Ahorraste ${formatCLP(savings)} ese mes.`
-    );
-  }
-
   return list.slice(0, 3);
 }
