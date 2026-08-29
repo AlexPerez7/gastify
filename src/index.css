@@ -340,6 +340,70 @@ select:focus-visible {
   background: var(--color-surface-alt);
 }
 
+/* ---- menú desplegable compacto (ej. exportar/respaldo) ------------------- */
+
+.overflow-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  animation: modal-panel-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---- filtros de Movimientos como bottom sheet (mobile) ------------------- */
+
+.filter-sheet-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2001;
+  background: var(--color-surface);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-top: 1px solid var(--color-border);
+  padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
+  max-height: 82vh;
+  overflow-y: auto;
+  animation: filter-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes filter-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.filter-seg-row {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+}
+
+.filter-seg-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 0;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  transition: background 150ms ease, color 150ms ease;
+}
+
 /* ---- toasts --------------------------------------------------------------- */
 
 .toast-stack {
@@ -538,7 +602,9 @@ select:focus-visible {
   .modal-panel,
   .tab-panel,
   .stagger-fade > *,
-  .add-sheet {
+  .add-sheet,
+  .filter-sheet-panel,
+  .overflow-menu {
     animation: none !important;
   }
   .tx-row-wrap,

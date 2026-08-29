@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine } from "lucide-react";
+import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, MoreVertical } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect } from "./Shared.jsx";
@@ -27,6 +27,12 @@ export function Movimientos({
 }) {
   const [exportingBackup, setExportingBackup] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
+  // en mobile, categoría/tipo/origen se agrupan en un bottom sheet detrás de
+  // un solo botón de filtro (en vez de 3 selects apilados) — patrón típico
+  // de apps mobile para no competir por ancho con la búsqueda.
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const activeFilterCount = (catFilter !== "all" ? 1 : 0) + (txTypeFilter !== "all" ? 1 : 0) + (sourceFilter !== "all" ? 1 : 0);
+  const clearFilters = () => { setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); };
   // se calcula una sola vez acá arriba y se pasa a cada TxRow — antes cada
   // fila llamaba useIsMobile() por su cuenta, lo que con una lista larga
   // significaba un listener de matchMedia por fila en vez de uno solo.
@@ -126,33 +132,44 @@ export function Movimientos({
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-        <button
-          onClick={handleExportCsv}
-          disabled={exportingCsv}
-          title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
-          style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-            border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-            fontSize: 12, cursor: exportingCsv ? "default" : "pointer", opacity: exportingCsv ? 0.7 : 1,
-          }}
-        >
-          {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
-          {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
-        </button>
-        <button
-          onClick={handleExportBackup}
-          disabled={exportingBackup}
-          title="Descarga un .json con todos tus movimientos y categorías"
-          style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-            border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-            fontSize: 12, cursor: exportingBackup ? "default" : "pointer", opacity: exportingBackup ? 0.7 : 1,
-          }}
-        >
-          {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
-          {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
-        </button>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+        {isMobile ? (
+          <ExportMenu
+            exportingCsv={exportingCsv}
+            exportingBackup={exportingBackup}
+            onExportCsv={handleExportCsv}
+            onExportBackup={handleExportBackup}
+          />
+        ) : (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={handleExportCsv}
+              disabled={exportingCsv}
+              title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+                border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
+                fontSize: 12, cursor: exportingCsv ? "default" : "pointer", opacity: exportingCsv ? 0.7 : 1,
+              }}
+            >
+              {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
+              {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
+            </button>
+            <button
+              onClick={handleExportBackup}
+              disabled={exportingBackup}
+              title="Descarga un .json con todos tus movimientos y categorías"
+              style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+                border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
+                fontSize: 12, cursor: exportingBackup ? "default" : "pointer", opacity: exportingBackup ? 0.7 : 1,
+              }}
+            >
+              {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+              {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* recién al primer uso: sin datos todavía, conviene la invitación grande
@@ -205,66 +222,38 @@ export function Movimientos({
             style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 13 }}
           />
         </div>
-        <div style={{ flex: "0 1 200px", minWidth: 160 }}>
-          <CategorySelect
-            categories={categories}
-            value={catFilter}
-            onChange={(v) => { setCatFilter(v); setTxTypeFilter?.("all"); }}
-            allOption={{ value: "all", label: "Todas las categorías" }}
-          />
-        </div>
-        {setSourceFilter && (
-          <div style={{ flex: "0 1 160px", minWidth: 140 }}>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              style={{
-                width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`,
-                background: TOKENS.surface, color: TOKENS.text, fontSize: 13, cursor: "pointer",
-              }}
-              aria-label="Filtrar por origen del movimiento"
-              title="Filtrar por origen: manual o banco"
-            >
-              <option value="all">Manual y banco</option>
-              <option value="manual">Solo manuales</option>
-              <option value="bank">Solo del banco</option>
-            </select>
-          </div>
-        )}
-        {txTypeFilter !== "all" && (
-          <button
-            onClick={() => setTxTypeFilter?.("all")}
-            title="Quitar filtro de tipo de movimiento"
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 8,
-              border: `1px solid ${txTypeFilter === "income" ? TOKENS.income : TOKENS.expense}`,
-              background: txTypeFilter === "income" ? "var(--tint-income)" : "var(--tint-expense)",
-              color: txTypeFilter === "income" ? TOKENS.income : TOKENS.expense, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap",
-            }}
-          >
-            {txTypeFilter === "income" ? "Solo ingresos" : "Solo gastos"} <X size={12} />
-          </button>
-        )}
-        {hasTransactions && (
+        {isMobile ? (
           <>
             <button
-              onClick={() => setShowImportModal(true)}
-              disabled={isImporting}
-              style={{ ...actionBtnStyle, cursor: isImporting ? "default" : "pointer", opacity: isImporting ? 0.6 : 1 }}
-              title={isImporting ? "Ya hay una importación en curso…" : "Importar movimientos del banco desde un .xls o una cartola .pdf"}
+              onClick={() => setShowFilterSheet(true)}
+              aria-label="Filtros"
+              title="Filtrar por categoría, tipo u origen"
+              style={{ ...actionBtnStyle, position: "relative", padding: "8px 10px" }}
             >
-              {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar Excel
-            </button>
-            <button onClick={() => setShowManualForm((v) => !v)} className="new-record-btn" style={actionBtnStyle} title="Agregar un gasto o ingreso manual">
-              <Plus size={13} /> Nuevo registro
+              <SlidersHorizontal size={15} />
+              {activeFilterCount > 0 && (
+                <span style={{
+                  position: "absolute", top: -5, right: -5, display: "flex", alignItems: "center", justifyContent: "center",
+                  minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: TOKENS.accent, color: TOKENS.bg,
+                  fontSize: 10, fontWeight: 700,
+                }}>
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
             {onOpenConciliacion && (
-              <button onClick={onOpenConciliacion} style={actionBtnStyle} title="Revisar y conciliar movimientos manuales contra el reporte del banco">
-                <ScanLine size={13} /> Conciliación
+              <button
+                onClick={onOpenConciliacion}
+                aria-label="Conciliación"
+                title="Revisar y conciliar movimientos manuales contra el reporte del banco"
+                style={{ ...actionBtnStyle, position: "relative", padding: "8px 10px" }}
+              >
+                <ScanLine size={15} />
                 {reconcileStats?.manuals?.length > 0 && (
                   <span style={{
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 16, height: 16, padding: "0 4px",
-                    borderRadius: 999, background: TOKENS.pending, color: TOKENS.bg, fontSize: 10, fontWeight: 700,
+                    position: "absolute", top: -5, right: -5, display: "flex", alignItems: "center", justifyContent: "center",
+                    minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: TOKENS.pending, color: TOKENS.bg,
+                    fontSize: 10, fontWeight: 700,
                   }}>
                     {reconcileStats.manuals.length}
                   </span>
@@ -272,8 +261,94 @@ export function Movimientos({
               </button>
             )}
           </>
+        ) : (
+          <>
+            <div style={{ flex: "0 1 200px", minWidth: 160 }}>
+              <CategorySelect
+                categories={categories}
+                value={catFilter}
+                onChange={(v) => { setCatFilter(v); setTxTypeFilter?.("all"); }}
+                allOption={{ value: "all", label: "Todas las categorías" }}
+              />
+            </div>
+            {setSourceFilter && (
+              <div style={{ flex: "0 1 160px", minWidth: 140 }}>
+                <select
+                  value={sourceFilter}
+                  onChange={(e) => setSourceFilter(e.target.value)}
+                  style={{
+                    width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`,
+                    background: TOKENS.surface, color: TOKENS.text, fontSize: 13, cursor: "pointer",
+                  }}
+                  aria-label="Filtrar por origen del movimiento"
+                  title="Filtrar por origen: manual o banco"
+                >
+                  <option value="all">Manual y banco</option>
+                  <option value="manual">Solo manuales</option>
+                  <option value="bank">Solo del banco</option>
+                </select>
+              </div>
+            )}
+            {txTypeFilter !== "all" && (
+              <button
+                onClick={() => setTxTypeFilter?.("all")}
+                title="Quitar filtro de tipo de movimiento"
+                style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 8,
+                  border: `1px solid ${txTypeFilter === "income" ? TOKENS.income : TOKENS.expense}`,
+                  background: txTypeFilter === "income" ? "var(--tint-income)" : "var(--tint-expense)",
+                  color: txTypeFilter === "income" ? TOKENS.income : TOKENS.expense, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap",
+                }}
+              >
+                {txTypeFilter === "income" ? "Solo ingresos" : "Solo gastos"} <X size={12} />
+              </button>
+            )}
+            {hasTransactions && (
+              <>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  disabled={isImporting}
+                  style={{ ...actionBtnStyle, cursor: isImporting ? "default" : "pointer", opacity: isImporting ? 0.6 : 1 }}
+                  title={isImporting ? "Ya hay una importación en curso…" : "Importar movimientos del banco desde un .xls o una cartola .pdf"}
+                >
+                  {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar Excel
+                </button>
+                <button onClick={() => setShowManualForm((v) => !v)} className="new-record-btn" style={actionBtnStyle} title="Agregar un gasto o ingreso manual">
+                  <Plus size={13} /> Nuevo registro
+                </button>
+                {onOpenConciliacion && (
+                  <button onClick={onOpenConciliacion} style={actionBtnStyle} title="Revisar y conciliar movimientos manuales contra el reporte del banco">
+                    <ScanLine size={13} /> Conciliación
+                    {reconcileStats?.manuals?.length > 0 && (
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 16, height: 16, padding: "0 4px",
+                        borderRadius: 999, background: TOKENS.pending, color: TOKENS.bg, fontSize: 10, fontWeight: 700,
+                      }}>
+                        {reconcileStats.manuals.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </>
+            )}
+          </>
         )}
       </div>
+
+      {isMobile && showFilterSheet && (
+        <FilterSheet
+          categories={categories}
+          catFilter={catFilter}
+          setCatFilter={setCatFilter}
+          txTypeFilter={txTypeFilter}
+          setTxTypeFilter={setTxTypeFilter}
+          sourceFilter={sourceFilter}
+          setSourceFilter={setSourceFilter}
+          activeFilterCount={activeFilterCount}
+          onClear={clearFilters}
+          onClose={() => setShowFilterSheet(false)}
+        />
+      )}
 
       {recentImportIds.length > 0 && (
         <div style={{
@@ -324,7 +399,7 @@ export function Movimientos({
               title="Sin resultados"
               text="Ninguno de los movimientos recién importados coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); }} style={{
+                <button onClick={() => { setSearch(""); clearFilters(); }} style={{
                   padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
                   color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
                 }}>
@@ -338,7 +413,7 @@ export function Movimientos({
               title="Sin resultados"
               text="Ningún movimiento coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); }} style={{
+                <button onClick={() => { setSearch(""); clearFilters(); }} style={{
                   padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
                   color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
                 }}>
@@ -396,6 +471,155 @@ export function Movimientos({
           onClose={() => setSelectedIds([])}
         />
       )}
+    </div>
+  );
+}
+
+// Menú "⋮" compacto para exportar/respaldar — en mobile reemplaza las 2
+// acciones que en desktop van sueltas, para no sumar otra fila de botones.
+function ExportMenu({ exportingCsv, exportingBackup, onExportCsv, onExportBackup }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (menuRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Más opciones"
+        aria-expanded={open}
+        title="Exportar o respaldar movimientos"
+        style={actionBtnStyle}
+      >
+        <MoreVertical size={15} />
+      </button>
+      {open && (
+        <div ref={menuRef} className="overflow-menu" role="menu">
+          <button role="menuitem" className="add-sheet-btn" disabled={exportingCsv} onClick={() => { setOpen(false); onExportCsv(); }}>
+            {exportingCsv ? <Loader2 size={15} className="spin" /> : <FileSpreadsheet size={15} />}
+            {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
+          </button>
+          <button role="menuitem" className="add-sheet-btn" disabled={exportingBackup} onClick={() => { setOpen(false); onExportBackup(); }}>
+            {exportingBackup ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
+            {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Bottom sheet de filtros (mobile): agrupa categoría/tipo/origen detrás de
+// un solo botón con badge, en vez de 3 controles compitiendo por ancho con
+// la búsqueda — mismo patrón que ya usa el "+" del nav inferior.
+function FilterSheet({
+  categories, catFilter, setCatFilter, txTypeFilter, setTxTypeFilter,
+  sourceFilter, setSourceFilter, activeFilterCount, onClear, onClose,
+}) {
+  const typeOptions = [
+    { v: "all", label: "Todos" },
+    { v: "income", label: "Ingresos" },
+    { v: "expense", label: "Gastos" },
+  ];
+  const sourceOptions = [
+    { v: "all", label: "Todos" },
+    { v: "manual", label: "Manual" },
+    { v: "bank", label: "Banco" },
+  ];
+
+  return (
+    <div onClick={onClose} className="modal-backdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 2000 }}>
+      <div onClick={(e) => e.stopPropagation()} className="filter-sheet-panel">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Filtros</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Categoría</div>
+        <div style={{ marginBottom: 16 }}>
+          <CategorySelect
+            categories={categories}
+            value={catFilter}
+            onChange={(v) => { setCatFilter(v); setTxTypeFilter?.("all"); }}
+            allOption={{ value: "all", label: "Todas las categorías" }}
+          />
+        </div>
+
+        <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Tipo</div>
+        <div className="filter-seg-row" style={{ marginBottom: 16 }}>
+          {typeOptions.map((opt) => (
+            <button
+              key={opt.v}
+              className="filter-seg-btn"
+              onClick={() => setTxTypeFilter?.(opt.v)}
+              style={{
+                background: txTypeFilter === opt.v ? TOKENS.accent : "transparent",
+                color: txTypeFilter === opt.v ? TOKENS.bg : TOKENS.textMuted,
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {setSourceFilter && (
+          <>
+            <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Origen</div>
+            <div className="filter-seg-row" style={{ marginBottom: 20 }}>
+              {sourceOptions.map((opt) => (
+                <button
+                  key={opt.v}
+                  className="filter-seg-btn"
+                  onClick={() => setSourceFilter(opt.v)}
+                  style={{
+                    background: sourceFilter === opt.v ? TOKENS.accent : "transparent",
+                    color: sourceFilter === opt.v ? TOKENS.bg : TOKENS.textMuted,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={onClear}
+            disabled={activeFilterCount === 0}
+            style={{
+              flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
+              color: TOKENS.textMuted, fontSize: 13, cursor: activeFilterCount === 0 ? "default" : "pointer", opacity: activeFilterCount === 0 ? 0.5 : 1,
+            }}
+          >
+            Limpiar filtros
+          </button>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+          >
+            Listo
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
