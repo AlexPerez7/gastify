@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check } from "lucide-react";
+import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { pillStyle } from "./Shared.jsx";
 import { HelpModal } from "./HelpModal.jsx";
@@ -183,7 +183,60 @@ export function BottomNav({ tab, setTab, onManual, onImport }) {
   );
 }
 
-export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth }) {
+// Menú "⋮" compacto para exportar/respaldar movimientos — vive acá, junto a
+// los chips de año, en vez de ocupar su propia fila suelta bajo la búsqueda.
+export function ExportMenu({ exportingCsv, exportingBackup, onExportCsv, onExportBackup }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => {
+      if (menuRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        ref={btnRef}
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Más opciones"
+        aria-expanded={open}
+        title="Exportar o respaldar movimientos"
+        style={{
+          display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 8,
+          border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted, cursor: "pointer",
+        }}
+      >
+        <MoreVertical size={15} />
+      </button>
+      {open && (
+        <div ref={menuRef} className="overflow-menu" role="menu">
+          <button role="menuitem" className="add-sheet-btn" disabled={exportingCsv} onClick={() => { setOpen(false); onExportCsv(); }}>
+            {exportingCsv ? <Loader2 size={15} className="spin" /> : <FileSpreadsheet size={15} />}
+            {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
+          </button>
+          <button role="menuitem" className="add-sheet-btn" disabled={exportingBackup} onClick={() => { setOpen(false); onExportBackup(); }}>
+            {exportingBackup ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
+            {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rightSlot }) {
   const [yearOverride, setYearOverride] = useState(null);
   const names = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   const label = (m) => { const [, mo] = m.split("-"); return names[parseInt(mo, 10) - 1]; };
@@ -197,20 +250,25 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth }) {
 
   return (
     <div style={{ marginBottom: 22 }}>
-      {years.length > 1 && (
-        <div className="chip-scroll-row" style={{ display: "flex", gap: 4, background: TOKENS.surfaceAlt, padding: 4, borderRadius: 10, border: `1px solid ${TOKENS.border}`, width: "fit-content", maxWidth: "100%", marginBottom: 10 }}>
-          {years.map((y) => {
-            const active = y === selectedYear;
-            return (
-              <button key={y} onClick={() => setYearOverride(y)} style={{
-                padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
-                fontSize: 12.5, fontWeight: 500, flexShrink: 0,
-                background: active ? TOKENS.bg : "transparent", color: active ? TOKENS.text : TOKENS.textMuted,
-              }}>
-                {y}
-              </button>
-            );
-          })}
+      {(years.length > 1 || rightSlot) && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+          {years.length > 1 ? (
+            <div className="chip-scroll-row" style={{ display: "flex", gap: 4, background: TOKENS.surfaceAlt, padding: 4, borderRadius: 10, border: `1px solid ${TOKENS.border}`, width: "fit-content", maxWidth: "100%" }}>
+              {years.map((y) => {
+                const active = y === selectedYear;
+                return (
+                  <button key={y} onClick={() => setYearOverride(y)} style={{
+                    padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
+                    fontSize: 12.5, fontWeight: 500, flexShrink: 0,
+                    background: active ? TOKENS.bg : "transparent", color: active ? TOKENS.text : TOKENS.textMuted,
+                  }}>
+                    {y}
+                  </button>
+                );
+              })}
+            </div>
+          ) : <div />}
+          {rightSlot}
         </div>
       )}
       <div className="chip-scroll-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

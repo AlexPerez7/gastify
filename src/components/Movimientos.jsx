@@ -1,13 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, MoreVertical } from "lucide-react";
+import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { useIsMobile } from "../lib/useIsMobile.js";
-import { exportBackup } from "../lib/exportBackup.js";
-import { exportCsv } from "../lib/exportCsv.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 
@@ -24,9 +22,8 @@ export function Movimientos({
   saveTxEdit, deleteTransaction, showManualForm, setShowManualForm, showImportModal, setShowImportModal,
   addManual, onAddCategory, handleFile, isImporting, pushToast, onBulkDelete, onBulkChangeCategory,
   recentImportIds = [], onClearRecentImports, duplicateIds, onOpenConciliacion, reconcileStats, onToggleSubscription,
+  exportingCsv, exportingBackup, onExportCsv, onExportBackup,
 }) {
-  const [exportingBackup, setExportingBackup] = useState(false);
-  const [exportingCsv, setExportingCsv] = useState(false);
   // en mobile, categoría/tipo/origen se agrupan en un bottom sheet detrás de
   // un solo botón de filtro (en vez de 3 selects apilados) — patrón típico
   // de apps mobile para no competir por ancho con la búsqueda.
@@ -104,73 +101,41 @@ export function Movimientos({
     return ok;
   };
 
-  const handleExportBackup = async () => {
-    if (exportingBackup) return;
-    setExportingBackup(true);
-    try {
-      await exportBackup();
-    } catch (e) {
-      console.error(e);
-      pushToast?.("error", "No se pudo generar el respaldo. Revisa tu conexión e inténtalo de nuevo.");
-    } finally {
-      setExportingBackup(false);
-    }
-  };
-
-  const handleExportCsv = async () => {
-    if (exportingCsv) return;
-    setExportingCsv(true);
-    try {
-      await exportCsv();
-    } catch (e) {
-      console.error(e);
-      pushToast?.("error", "No se pudo generar el CSV. Revisa tu conexión e inténtalo de nuevo.");
-    } finally {
-      setExportingCsv(false);
-    }
-  };
-
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-        {isMobile ? (
-          <ExportMenu
-            exportingCsv={exportingCsv}
-            exportingBackup={exportingBackup}
-            onExportCsv={handleExportCsv}
-            onExportBackup={handleExportBackup}
-          />
-        ) : (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              onClick={handleExportCsv}
-              disabled={exportingCsv}
-              title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-                border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-                fontSize: 12, cursor: exportingCsv ? "default" : "pointer", opacity: exportingCsv ? 0.7 : 1,
-              }}
-            >
-              {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
-              {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
-            </button>
-            <button
-              onClick={handleExportBackup}
-              disabled={exportingBackup}
-              title="Descarga un .json con todos tus movimientos y categorías"
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-                border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-                fontSize: 12, cursor: exportingBackup ? "default" : "pointer", opacity: exportingBackup ? 0.7 : 1,
-              }}
-            >
-              {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
-              {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
-            </button>
-          </div>
-        )}
-      </div>
+      {/* en mobile, exportar/respaldar vive en el "⋮" de la fila de meses
+          (arriba, junto a los chips de año) — acá solo queda en desktop,
+          donde sí hay ancho de sobra para 2 botones sueltos. */}
+      {!isMobile && (
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={onExportCsv}
+            disabled={exportingCsv}
+            title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+              border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
+              fontSize: 12, cursor: exportingCsv ? "default" : "pointer", opacity: exportingCsv ? 0.7 : 1,
+            }}
+          >
+            {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
+            {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
+          </button>
+          <button
+            onClick={onExportBackup}
+            disabled={exportingBackup}
+            title="Descarga un .json con todos tus movimientos y categorías"
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+              border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
+              fontSize: 12, cursor: exportingBackup ? "default" : "pointer", opacity: exportingBackup ? 0.7 : 1,
+            }}
+          >
+            {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
+            {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
+          </button>
+        </div>
+      )}
 
       {/* recién al primer uso: sin datos todavía, conviene la invitación grande
           a importar/agregar. Una vez que hay movimientos, esas dos áreas
@@ -470,56 +435,6 @@ export function Movimientos({
           onChangeCategory={handleBulkCategoryChange}
           onClose={() => setSelectedIds([])}
         />
-      )}
-    </div>
-  );
-}
-
-// Menú "⋮" compacto para exportar/respaldar — en mobile reemplaza las 2
-// acciones que en desktop van sueltas, para no sumar otra fila de botones.
-function ExportMenu({ exportingCsv, exportingBackup, onExportCsv, onExportBackup }) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef(null);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e) => {
-      if (menuRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
-      setOpen(false);
-    };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div style={{ position: "relative" }}>
-      <button
-        ref={btnRef}
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Más opciones"
-        aria-expanded={open}
-        title="Exportar o respaldar movimientos"
-        style={actionBtnStyle}
-      >
-        <MoreVertical size={15} />
-      </button>
-      {open && (
-        <div ref={menuRef} className="overflow-menu" role="menu">
-          <button role="menuitem" className="add-sheet-btn" disabled={exportingCsv} onClick={() => { setOpen(false); onExportCsv(); }}>
-            {exportingCsv ? <Loader2 size={15} className="spin" /> : <FileSpreadsheet size={15} />}
-            {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
-          </button>
-          <button role="menuitem" className="add-sheet-btn" disabled={exportingBackup} onClick={() => { setOpen(false); onExportBackup(); }}>
-            {exportingBackup ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
-            {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
-          </button>
-        </div>
       )}
     </div>
   );
@@ -854,25 +769,37 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
             style={{ accentColor: TOKENS.accent, cursor: "pointer", width: 18, height: 18 }}
           />
         </div>
-        <div className="tx-desc" style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {t.alias ? (
-            <>
-              <span style={{ fontWeight: 500 }}>{t.alias}</span>
-              <span style={{ color: TOKENS.textFaint, fontSize: 11.5 }}> · {t.description}</span>
-            </>
-          ) : t.description}
-          <span style={{ marginLeft: 8, fontSize: 10, color: TOKENS.textFaint, border: `1px solid ${TOKENS.border}`, borderRadius: 4, padding: "1px 5px" }}>
-            {t.source === "bank" ? "banco" : "manual"}
+        <div className="tx-desc" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, minWidth: 0 }}>
+          {/* el texto trunca solo a sí mismo (flex 1 + min-width 0) — así el
+              tag de origen y los avisos de "nuevo"/duplicado quedan siempre
+              enteros al lado, en vez de cortarse junto con la descripción. */}
+          <span style={{ flex: "1 1 0%", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {t.alias ? (
+              <>
+                <span style={{ fontWeight: 500 }}>{t.alias}</span>
+                <span style={{ color: TOKENS.textFaint, fontSize: 11.5 }}> · {t.description}</span>
+              </>
+            ) : t.description}
+          </span>
+          <span
+            title={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
+            aria-label={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
+            style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18,
+              borderRadius: 5, border: `1px solid ${TOKENS.border}`, color: TOKENS.textFaint, flexShrink: 0,
+            }}
+          >
+            {t.source === "bank" ? <Landmark size={10} /> : <PenLine size={10} />}
           </span>
           {isRecent && (
-            <span style={{ marginLeft: 5, fontSize: 10, color: TOKENS.accent, border: `1px solid ${TOKENS.accent}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600 }}>
+            <span style={{ fontSize: 10, color: TOKENS.accent, border: `1px solid ${TOKENS.accent}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600, flexShrink: 0 }}>
               nuevo
             </span>
           )}
           {isDuplicate && (
             <span
               title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces (uno a mano y otro del banco, por ejemplo)."
-              style={{ marginLeft: 5, fontSize: 10, color: TOKENS.pending, border: `1px solid ${TOKENS.pending}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600 }}
+              style={{ fontSize: 10, color: TOKENS.pending, border: `1px solid ${TOKENS.pending}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600, flexShrink: 0 }}
             >
               posible duplicado
             </span>

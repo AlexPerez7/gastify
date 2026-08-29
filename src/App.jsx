@@ -5,12 +5,15 @@ import { storage } from "./lib/storage.js";
 import { getAccountSettings, saveAccountSettings, saveSavingsBase } from "./lib/accountSettings.js";
 import { useToasts } from "./lib/useToasts.js";
 import { readFileWithProgress } from "./lib/readFile.js";
+import { useIsMobile } from "./lib/useIsMobile.js";
+import { exportBackup } from "./lib/exportBackup.js";
+import { exportCsv } from "./lib/exportCsv.js";
 import {
   autoCategory, applyMerchantRules, parseClpNumber, parseBankDate,
   makeKey, monthKey, nextMonthKey, uid, computeInsights, formatCLP,
 } from "./lib/utils.js";
 
-import { Header, MonthBar, BottomNav } from "./components/Header.jsx";
+import { Header, MonthBar, BottomNav, ExportMenu } from "./components/Header.jsx";
 import { CategoryManager } from "./components/CategoryManager.jsx";
 import { Subscriptions } from "./components/Subscriptions.jsx";
 import { ToastStack } from "./components/Toast.jsx";
@@ -51,6 +54,35 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const [catFilter, setCatFilter] = useState("all");
   const [txTypeFilter, setTxTypeFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const isMobile = useIsMobile();
+  const [exportingCsv, setExportingCsv] = useState(false);
+  const [exportingBackup, setExportingBackup] = useState(false);
+
+  const handleExportCsv = async () => {
+    if (exportingCsv) return;
+    setExportingCsv(true);
+    try {
+      await exportCsv();
+    } catch (e) {
+      console.error(e);
+      pushToast("error", "No se pudo generar el CSV. Revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setExportingCsv(false);
+    }
+  };
+
+  const handleExportBackup = async () => {
+    if (exportingBackup) return;
+    setExportingBackup(true);
+    try {
+      await exportBackup();
+    } catch (e) {
+      console.error(e);
+      pushToast("error", "No se pudo generar el respaldo. Revisa tu conexión e inténtalo de nuevo.");
+    } finally {
+      setExportingBackup(false);
+    }
+  };
   const { toasts, push: pushToast, update: updateToast, dismiss: dismissToast } = useToasts();
   const [showManualForm, setShowManualForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -988,6 +1020,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
           <MonthBar
             months={months} monthFilter={monthFilter} setMonthFilter={setMonthFilter}
             monthHealth={tab === "conciliacion" ? monthHealth : undefined}
+            rightSlot={tab === "movimientos" && isMobile && transactions.length > 0 ? (
+              <ExportMenu
+                exportingCsv={exportingCsv}
+                exportingBackup={exportingBackup}
+                onExportCsv={handleExportCsv}
+                onExportBackup={handleExportBackup}
+              />
+            ) : undefined}
           />
         )}
 
@@ -1053,6 +1093,8 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 onOpenConciliacion={() => setTab("conciliacion")}
                 reconcileStats={reconcileStats}
                 onToggleSubscription={toggleTxSubscription}
+                exportingCsv={exportingCsv} exportingBackup={exportingBackup}
+                onExportCsv={handleExportCsv} onExportBackup={handleExportBackup}
               />
             </Suspense>
           </ErrorBoundary>
