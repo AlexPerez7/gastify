@@ -50,6 +50,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [txTypeFilter, setTxTypeFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const { toasts, push: pushToast, update: updateToast, dismiss: dismissToast } = useToasts();
   const [showManualForm, setShowManualForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -705,6 +706,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     return monthTx
       .filter((t) => catFilter === "all" || t.category === catFilter)
       .filter((t) => txTypeFilter === "all" || (txTypeFilter === "income" ? t.amount > 0 : t.amount < 0))
+      .filter((t) => sourceFilter === "all" || t.source === sourceFilter)
       .filter((t) => !search || t.description.toLowerCase().includes(search.toLowerCase()) || (t.alias || "").toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
         if (a.date !== b.date) return a.date < b.date ? 1 : -1;
@@ -712,7 +714,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
         // app va arriba, no el orden en que vino en el archivo del banco.
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       });
-  }, [monthTx, catFilter, txTypeFilter, search]);
+  }, [monthTx, catFilter, txTypeFilter, sourceFilter, search]);
 
   // posibles duplicados: un manual y un bancario (nunca dos del mismo
   // origen) con mismo monto (mismo signo) y fecha a menos de 3 días de
@@ -1033,6 +1035,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 search={search} setSearch={setSearch}
                 catFilter={catFilter} setCatFilter={setCatFilter}
                 txTypeFilter={txTypeFilter} setTxTypeFilter={setTxTypeFilter}
+                sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
                 saveTxEdit={saveTxEdit}
                 deleteTransaction={deleteTransaction}
                 showManualForm={showManualForm} setShowManualForm={setShowManualForm}

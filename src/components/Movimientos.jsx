@@ -20,6 +20,7 @@ const actionBtnStyle = {
 export function Movimientos({
   filteredTx, hasTransactions, categories, getCat, search, setSearch, catFilter, setCatFilter,
   txTypeFilter = "all", setTxTypeFilter,
+  sourceFilter = "all", setSourceFilter,
   saveTxEdit, deleteTransaction, showManualForm, setShowManualForm, showImportModal, setShowImportModal,
   addManual, onAddCategory, handleFile, isImporting, pushToast, onBulkDelete, onBulkChangeCategory,
   recentImportIds = [], onClearRecentImports, duplicateIds, onOpenConciliacion, reconcileStats, onToggleSubscription,
@@ -212,6 +213,24 @@ export function Movimientos({
             allOption={{ value: "all", label: "Todas las categorías" }}
           />
         </div>
+        {setSourceFilter && (
+          <div style={{ flex: "0 1 160px", minWidth: 140 }}>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`,
+                background: TOKENS.surface, color: TOKENS.text, fontSize: 13, cursor: "pointer",
+              }}
+              aria-label="Filtrar por origen del movimiento"
+              title="Filtrar por origen: manual o banco"
+            >
+              <option value="all">Manual y banco</option>
+              <option value="manual">Solo manuales</option>
+              <option value="bank">Solo del banco</option>
+            </select>
+          </div>
+        )}
         {txTypeFilter !== "all" && (
           <button
             onClick={() => setTxTypeFilter?.("all")}
@@ -305,7 +324,7 @@ export function Movimientos({
               title="Sin resultados"
               text="Ninguno de los movimientos recién importados coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); }} style={{
+                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); }} style={{
                   padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
                   color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
                 }}>
@@ -313,13 +332,13 @@ export function Movimientos({
                 </button>
               }
             />
-          ) : search || catFilter !== "all" || txTypeFilter !== "all" ? (
+          ) : search || catFilter !== "all" || txTypeFilter !== "all" || sourceFilter !== "all" ? (
             <EmptyState
               icon={SearchX}
               title="Sin resultados"
               text="Ningún movimiento coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); }} style={{
+                <button onClick={() => { setSearch(""); setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); }} style={{
                   padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
                   color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
                 }}>
