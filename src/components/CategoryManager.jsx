@@ -13,18 +13,17 @@ export function CategoryManager({ categories, onAdd, onRename, onDelete, onIconC
   const cats = categories.filter((c) => categoryType(c) === type);
 
   return (
-    <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: 18, marginBottom: 16 }}>
-      <div style={{
-        display: "flex", gap: 3, padding: 3, marginBottom: 16, borderRadius: 999,
-        background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`,
-      }}>
+    <div className="bg-surface border border-border rounded-xl p-[18px] mb-4">
+      <div className="flex gap-[3px] p-[3px] mb-4 rounded-full bg-surface-alt border border-border">
         {["expense", "income"].map((v) => (
-          <button key={v} onClick={() => { setType(v); setPickerFor(null); }} style={{
-            flex: 1, padding: "8px 0", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
-            background: type === v ? (v === "expense" ? TOKENS.expense : TOKENS.income) : "transparent",
-            color: type === v ? TOKENS.bg : TOKENS.textMuted,
-            transition: "background 150ms ease, color 150ms ease",
-          }}>
+          <button
+            key={v}
+            onClick={() => { setType(v); setPickerFor(null); }}
+            className={`flex-1 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 transition-colors duration-150 ${
+              type === v ? "text-bg" : "bg-transparent text-muted"
+            }`}
+            style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
+          >
             {v === "expense" ? "Gasto" : "Ingreso"}
           </button>
         ))}
@@ -50,7 +49,7 @@ function CategorySection({
 
   return (
     <div className="tab-panel">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 12 }}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-3">
         {cats.map((c) => {
           const CatIcon = resolveCategoryIcon(c);
           const open = pickerFor === c.id;
@@ -61,19 +60,21 @@ function CategorySection({
               aria-pressed={open}
               aria-expanded={open}
               title={`Editar ${c.label}`}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+              className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
             >
-              <div style={{
-                width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                background: open ? c.color : `${c.color}22`,
-                boxShadow: open ? `0 0 0 2px ${c.color}` : "none",
-              }}>
+              <div
+                className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
+                style={{
+                  background: open ? c.color : `${c.color}22`,
+                  boxShadow: open ? `0 0 0 2px ${c.color}` : "none",
+                }}
+              >
                 <CatIcon size={19} color={open ? TOKENS.bg : c.color} />
               </div>
-              <div style={{
-                fontSize: 10.5, color: open ? TOKENS.text : TOKENS.textMuted, textAlign: "center", lineHeight: 1.2,
-                overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-              }}>
+              <div
+                className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${open ? "text-ink" : "text-muted"}`}
+                style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+              >
                 {c.label}
               </div>
             </button>
@@ -85,16 +86,16 @@ function CategorySection({
           aria-pressed={addingNew}
           aria-expanded={addingNew}
           title={`Crear categoría de ${type === "expense" ? "gasto" : "ingreso"}`}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+          className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
         >
-          <div style={{
-            width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-            background: addingNew ? TOKENS.accent : "transparent",
-            border: `1.5px dashed ${addingNew ? TOKENS.accent : TOKENS.border}`,
-          }}>
+          <div
+            className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${
+              addingNew ? "bg-accent border-accent" : "bg-transparent border-border"
+            }`}
+          >
             <Plus size={19} color={addingNew ? TOKENS.bg : TOKENS.textFaint} />
           </div>
-          <div style={{ fontSize: 10.5, color: TOKENS.textMuted, textAlign: "center", lineHeight: 1.2 }}>
+          <div className="text-[10.5px] text-muted text-center leading-[1.2]">
             Nueva
           </div>
         </button>
@@ -136,13 +137,13 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
   const isExpense = type === "expense";
 
   return (
-    <div style={{ marginTop: 14, padding: 12, background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+    <div className="mt-3.5 p-3 bg-surface-alt border border-border rounded-[10px]">
+      <div className="flex items-center gap-2 mb-3">
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onBlur={() => { if (label.trim() && label.trim() !== cat.label) onRename(cat.id, label.trim()); }}
-          style={{ flex: 1, minWidth: 0, padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 13 }}
+          className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
         />
         <ConfirmDeleteButton
           onConfirm={() => { onDelete(cat.id); onClose(); }}
@@ -151,8 +152,8 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         />
       </div>
 
-      <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginBottom: 8 }}>Tipo</div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <div className="text-[10.5px] text-faint mb-2">Tipo</div>
+      <div className="flex gap-2 mb-3">
         {[["expense", "Gasto", TOKENS.expense], ["income", "Ingreso", TOKENS.income]].map(([v, text, accent]) => {
           const selected = type === v;
           return (
@@ -160,11 +161,11 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
               key={v}
               onClick={() => onTypeChange(cat.id, v)}
               aria-pressed={selected}
+              className="flex-1 py-[7px] rounded-[7px] text-xs font-semibold cursor-pointer border"
               style={{
-                flex: 1, padding: "7px 0", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                border: `1px solid ${selected ? accent : TOKENS.border}`,
+                borderColor: selected ? accent : "var(--c-border)",
                 background: selected ? `${accent}22` : "transparent",
-                color: selected ? accent : TOKENS.textMuted,
+                color: selected ? accent : "var(--c-text-muted)",
               }}
             >
               {text}
@@ -173,7 +174,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         })}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+      <div className="flex flex-wrap gap-2 mb-3">
         {PALETTE.map((col) => {
           const selected = col === cat.color;
           return (
@@ -183,17 +184,19 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
               title={col}
               aria-label={`Usar color ${col}`}
               aria-pressed={selected}
+              className="w-[26px] h-[26px] rounded-full cursor-pointer p-0 border-2"
               style={{
-                width: 26, height: 26, borderRadius: "50%", background: col, cursor: "pointer", padding: 0,
-                border: selected ? `2px solid ${TOKENS.text}` : "2px solid transparent", boxShadow: selected ? `0 0 0 1px ${TOKENS.surface}` : "none",
+                background: col,
+                borderColor: selected ? "var(--c-text)" : "transparent",
+                boxShadow: selected ? "0 0 0 1px var(--c-surface)" : "none",
               }}
             />
           );
         })}
       </div>
 
-      <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginBottom: 8 }}>Ícono</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+      <div className="text-[10.5px] text-faint mb-2">Ícono</div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {ICON_NAMES.map((name) => {
           const OptionIcon = ICONS[name];
           const selected = (cat.icon || "Shapes") === name;
@@ -202,10 +205,10 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
               key={name}
               title={name}
               onClick={() => onIconChange(cat.id, name)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center border cursor-pointer p-0"
               style={{
-                width: 32, height: 32, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
                 background: selected ? `${cat.color}33` : "transparent",
-                border: `1px solid ${selected ? cat.color : TOKENS.border}`, cursor: "pointer", padding: 0,
+                borderColor: selected ? cat.color : "var(--c-border)",
               }}
             >
               <OptionIcon size={15} color={selected ? cat.color : TOKENS.textMuted} />
@@ -216,7 +219,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
 
       {isExpense && (
         <>
-          <div style={{ width: "100%", height: 1, background: TOKENS.border, margin: "4px 0 12px" }} />
+          <div className="w-full h-px bg-border mt-1 mb-3" />
           <FieldInput
             label="Presupuesto mensual (CLP, opcional)"
             type="number"
@@ -226,8 +229,8 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
             placeholder="Sin límite"
             style={{ marginBottom: 12 }}
           />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: TOKENS.text }}>Cuenta como gasto en resúmenes y gráficos</div>
+          <div className="flex items-center justify-between gap-2.5 mb-3">
+            <div className="text-xs text-ink">Cuenta como gasto en resúmenes y gráficos</div>
             <ToggleSwitch
               checked={!cat.excludeFromExpense}
               onChange={() => onToggleExpense(cat.id)}
@@ -237,11 +240,11 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         </>
       )}
 
-      <div style={{ width: "100%", height: 1, background: TOKENS.border, margin: "4px 0 12px" }} />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+      <div className="w-full h-px bg-border mt-1 mb-3" />
+      <div className="flex items-center justify-between gap-2.5">
         <div>
-          <div style={{ fontSize: 12, color: TOKENS.text }}>Suma al "Total ahorrado"</div>
-          <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginTop: 2, lineHeight: 1.4 }}>
+          <div className="text-xs text-ink">Suma al "Total ahorrado"</div>
+          <div className="text-[10.5px] text-faint mt-0.5 leading-[1.4]">
             Sus movimientos se acumulan en una tarjeta aparte en Resumen, sin contar como gasto.
           </div>
         </div>

@@ -150,6 +150,12 @@ export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaL
   );
 }
 
+// botones compactos de formulario, mismo look en toda la app
+export const BTN_PRIMARY =
+  "px-3.5 py-[7px] rounded-[7px] border-0 text-xs font-semibold bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer";
+export const BTN_GHOST =
+  "px-3.5 py-[7px] rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer";
+
 export function pillClass(active) {
   return `px-[13px] py-1.5 rounded-full text-[12.5px] font-medium cursor-pointer capitalize border ${
     active ? "border-accent bg-tint-accent text-accent" : "border-border bg-transparent text-muted"
@@ -223,17 +229,10 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
         })}
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={submit}
-          disabled={!label.trim()}
-          className="px-3.5 py-[7px] rounded-[7px] border-0 text-xs font-semibold bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
-        >
+        <button onClick={submit} disabled={!label.trim()} className={BTN_PRIMARY}>
           Crear y usar
         </button>
-        <button
-          onClick={onCancel}
-          className="px-3.5 py-[7px] rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer"
-        >
+        <button onClick={onCancel} className={BTN_GHOST}>
           Cancelar
         </button>
       </div>
