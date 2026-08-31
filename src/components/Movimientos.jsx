@@ -354,7 +354,7 @@ export function Movimientos({
             onClick={onClearRecentImports}
             aria-label="Descartar aviso de importación reciente"
             title="Descartar"
-            className="bg-none border-0 text-faint cursor-pointer p-1"
+            className="bg-transparent border-0 text-faint cursor-pointer p-1"
           >
             <X size={14} />
           </button>
@@ -470,7 +470,7 @@ function FilterSheet({
       <div onClick={(e) => e.stopPropagation()} className="filter-sheet-panel">
         <div className="flex justify-between items-center mb-4">
           <div className="display text-[14.5px] font-semibold">Filtros</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -617,7 +617,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
         disabled={busy}
         aria-label="Cerrar selección"
         title="Cerrar selección"
-        className="bg-none border-0 text-faint cursor-pointer p-1"
+        className="bg-transparent border-0 text-faint cursor-pointer p-1"
       >
         <X size={15} />
       </button>
@@ -668,7 +668,7 @@ function ImportModal({ onClose, onFile }) {
       <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[420px] w-full">
         <div className="flex justify-between items-center mb-3.5">
           <div className="display text-[14.5px] font-semibold">Importar movimientos</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -792,7 +792,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
           {formatCLP(t.amount)}
         </div>
         <div className="tx-actions flex">
-          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-none border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
+          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
             <Pencil size={13} />
           </button>
           <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={13} />
@@ -927,7 +927,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
       >
         <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
           <div className="display text-[14.5px] font-semibold">Nuevo movimiento</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer"><X size={16} /></button>
         </div>
 
         <div className="flex gap-[3px] p-[3px] mt-3.5 mx-5 rounded-full box-border bg-surface-alt border border-border shrink-0">
@@ -957,7 +957,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
                   onClick={() => { setCategory(c.id); setAddingCategory(false); }}
                   aria-pressed={selected}
                   title={c.label}
-                  className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
+                  className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
                 >
                   <div
                     className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
@@ -983,7 +983,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
                 aria-pressed={addingCategory}
                 aria-expanded={addingCategory}
                 title="Crear categoría nueva"
-                className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
+                className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
               >
                 <div
                   className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${

@@ -29,7 +29,7 @@ export function ToastStack({ toasts, onDismiss }) {
                 <button
                   onClick={() => onDismiss(t.id)}
                   aria-label="Cerrar notificación"
-                  className="bg-none border-0 cursor-pointer text-faint p-0 shrink-0 mt-px"
+                  className="bg-transparent border-0 cursor-pointer text-faint p-0 shrink-0 mt-px"
                 >
                   <X size={14} />
                 </button>

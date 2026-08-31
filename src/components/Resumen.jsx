@@ -111,7 +111,7 @@ export function Resumen({
           onClick={() => setShowAdjustModal(true)}
           aria-label="Ajustar saldo"
           title="Ajustar saldo"
-          className="bg-none border-0 cursor-pointer text-faint p-1 shrink-0"
+          className="bg-transparent border-0 cursor-pointer text-faint p-1 shrink-0"
         >
           <Pencil size={15} />
         </button>
@@ -140,7 +140,7 @@ export function Resumen({
                 onClick={() => setShowAdjustSavingsModal(true)}
                 aria-label="Ajustar total ahorrado"
                 title="Ajustar total ahorrado"
-                className="bg-none border-0 cursor-pointer text-faint p-0"
+                className="bg-transparent border-0 cursor-pointer text-faint p-0"
               >
                 <Pencil size={13} />
               </button>
@@ -248,7 +248,7 @@ export function Resumen({
                   key={c.id}
                   onClick={() => onCategoryClick?.(c.id, "expense")}
                   title={`Ver movimientos de ${c.name}`}
-                  className={`bg-none border-0 p-0 text-left w-full ${onCategoryClick ? "cursor-pointer" : "cursor-default"}`}
+                  className={`bg-transparent border-0 p-0 text-left w-full ${onCategoryClick ? "cursor-pointer" : "cursor-default"}`}
                 >
                   <div className="flex items-center justify-between mb-1.5 text-[12.5px]">
                     <div className="flex items-center gap-[7px] text-ink">
@@ -345,7 +345,7 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
               key={c.id}
               onClick={() => onCategoryClick?.(c.id)}
               title={`Ver movimientos de ${c.name}`}
-              className={`category-legend-row flex items-center justify-between text-[12.5px] bg-none border-0 px-1.5 py-1 -mx-1.5 rounded-[7px] w-[calc(100%+12px)] text-left overflow-hidden ${
+              className={`category-legend-row flex items-center justify-between text-[12.5px] bg-transparent border-0 px-1.5 py-1 -mx-1.5 rounded-[7px] w-[calc(100%+12px)] text-left overflow-hidden ${
                 onCategoryClick ? "cursor-pointer" : "cursor-default"
               }`}
             >
@@ -393,7 +393,7 @@ function AdjustBalanceModal({ currentBalance, onAdjust, onClose, pushToast }) {
       <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
         <div className="flex justify-between items-center mb-1.5">
           <div className="display text-[14.5px] font-semibold">Ajustar saldo</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -444,7 +444,7 @@ function AdjustSavingsModal({ currentSavings, onAdjust, onClose, pushToast }) {
       <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
         <div className="flex justify-between items-center mb-1.5">
           <div className="display text-[14.5px] font-semibold">Ajustar total ahorrado</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>

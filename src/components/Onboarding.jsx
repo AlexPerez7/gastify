@@ -39,7 +39,7 @@ export function Onboarding({ onDone }) {
           onClick={onDone}
           aria-label="Saltar introducción"
           title="Saltar"
-          className="absolute top-3.5 right-3.5 bg-none border-0 text-faint cursor-pointer p-1"
+          className="absolute top-3.5 right-3.5 bg-transparent border-0 text-faint cursor-pointer p-1"
         >
           <X size={16} />
         </button>

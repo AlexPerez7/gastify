@@ -66,7 +66,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
               <button
                 onClick={() => { setAdding(false); setEditingId(open ? null : sub.id); }}
                 aria-expanded={open}
-                className={`w-full flex items-center gap-3 px-1 py-3 bg-none border-0 cursor-pointer text-left ${
+                className={`w-full flex items-center gap-3 px-1 py-3 bg-transparent border-0 cursor-pointer text-left ${
                   i > 0 ? "border-t border-border" : ""
                 } ${sub.active ? "opacity-100" : "opacity-50"}`}
               >

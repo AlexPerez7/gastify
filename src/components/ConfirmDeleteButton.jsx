@@ -39,7 +39,7 @@ export function ConfirmDeleteButton({ onConfirm, text = "¿Eliminar?", size = 13
         title={title}
         aria-label={title}
         onClick={(e) => { e.stopPropagation(); openPopover(); }}
-        className="bg-none border-0 cursor-pointer p-2"
+        className="bg-transparent border-0 cursor-pointer p-2"
         style={{ color: color || TOKENS.textFaint }}
       >
         <Trash2 size={size} />

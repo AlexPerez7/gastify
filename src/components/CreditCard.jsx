@@ -222,7 +222,7 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
           {formatCLP(t.amount)}
         </div>
         <div className="flex">
-          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-none border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
+          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
             <Pencil size={13} />
           </button>
           <ConfirmDeleteButton onConfirm={() => onDelete(t.id)} text="¿Eliminar este movimiento de la tarjeta?" title="Eliminar movimiento" size={13} />
@@ -303,7 +303,7 @@ function CreditImportModal({ title, accept, helpTitle, helpText, onClose, onImpo
       <div onClick={(e) => e.stopPropagation()} className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[420px] w-full">
         <div className="flex justify-between items-center mb-3.5">
           <div className="display text-[14.5px] font-semibold">{title}</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>

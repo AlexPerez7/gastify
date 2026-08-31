@@ -60,7 +60,7 @@ function CategorySection({
               aria-pressed={open}
               aria-expanded={open}
               title={`Editar ${c.label}`}
-              className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
+              className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
             >
               <div
                 className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
@@ -86,7 +86,7 @@ function CategorySection({
           aria-pressed={addingNew}
           aria-expanded={addingNew}
           title={`Crear categoría de ${type === "expense" ? "gasto" : "ingreso"}`}
-          className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
+          className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
         >
           <div
             className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${

@@ -53,7 +53,7 @@ export function HelpModal({ onClose }) {
       >
         <div className="flex justify-between items-center mb-1 shrink-0">
           <div className="display text-base font-semibold">Cómo usar Gastify</div>
-          <button onClick={onClose} aria-label="Cerrar ayuda" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer p-1">
+          <button onClick={onClose} aria-label="Cerrar ayuda" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer p-1">
             <X size={17} />
           </button>
         </div>

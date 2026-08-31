@@ -17,7 +17,7 @@ function BackToMovimientosButton({ onBack }) {
   return (
     <button
       onClick={onBack}
-      className="flex items-center gap-1 mb-3 px-0.5 py-1 bg-none border-0 text-muted text-[12.5px] cursor-pointer"
+      className="flex items-center gap-1 mb-3 px-0.5 py-1 bg-transparent border-0 text-muted text-[12.5px] cursor-pointer"
     >
       <ChevronLeft size={14} /> Movimientos
     </button>
@@ -133,7 +133,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
             <button
               onClick={() => setShowBankOnly((v) => !v)}
               aria-expanded={showBankOnly}
-              className="flex items-center gap-[5px] bg-none border-0 text-muted text-xs cursor-pointer p-1"
+              className="flex items-center gap-[5px] bg-transparent border-0 text-muted text-xs cursor-pointer p-1"
             >
               {showBankOnly ? "Ocultar" : "Mostrar"}
               {showBankOnly ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -254,7 +254,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
               onClick={openEdit}
               title="Corregir fecha o monto"
               aria-label="Corregir fecha o monto"
-              className={`bg-none border-0 cursor-pointer p-[5px] ${mode === "edit" ? "text-accent" : "text-faint"}`}
+              className={`bg-transparent border-0 cursor-pointer p-[5px] ${mode === "edit" ? "text-accent" : "text-faint"}`}
             >
               <Pencil size={13} />
             </button>
@@ -263,7 +263,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
               title="Vincular a mano con un movimiento del banco"
               aria-label="Vincular a mano con un movimiento del banco"
               disabled={bankCandidates.length === 0}
-              className={`bg-none border-0 p-[5px] disabled:opacity-40 disabled:cursor-default enabled:cursor-pointer ${
+              className={`bg-transparent border-0 p-[5px] disabled:opacity-40 disabled:cursor-default enabled:cursor-pointer ${
                 mode === "link" ? "text-accent" : "text-faint"
               }`}
             >
