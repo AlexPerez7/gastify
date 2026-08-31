@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TOKENS } from "../lib/constants.js";
 import { FieldInput } from "./Shared.jsx";
 import { supabase } from "../lib/supabaseClient.js";
 import logo from "../assets/logo.png";
@@ -74,16 +73,16 @@ export function Auth({ initialError }) {
   const submitLabels = { signin: "Entrar", signup: "Crear cuenta", forgot: "Enviar link de recuperación" };
 
   return (
-    <div style={{ background: TOKENS.bg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <div className="bg-bg min-h-screen flex flex-col items-center justify-center p-6">
       <form
         onSubmit={handleSubmit}
-        style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: 28, width: "100%", maxWidth: 360 }}
+        className="bg-surface border border-border rounded-xl p-7 w-full max-w-[360px]"
       >
-        <img src={logo} alt="" width={40} height={40} style={{ display: "block", marginBottom: 14 }} />
-        <div className="display" style={{ fontSize: 17, fontWeight: 600, color: TOKENS.text, marginBottom: 4 }}>
+        <img src={logo} alt="" width={40} height={40} className="block mb-3.5" />
+        <div className="display text-[17px] font-semibold text-ink mb-1">
           {titles[mode]}
         </div>
-        <div style={{ fontSize: 12.5, color: TOKENS.textMuted, marginBottom: 20 }}>
+        <div className="text-[12.5px] text-muted mb-5">
           {mode === "forgot"
             ? "Escribe tu email y te mandamos un link para elegir una nueva contraseña."
             : "Tus movimientos y categorías, sincronizados entre tus dispositivos."}
@@ -95,38 +94,29 @@ export function Auth({ initialError }) {
             autoComplete={mode === "signin" ? "current-password" : "new-password"} style={{ marginBottom: 16 }} />
         )}
 
-        {error && <div style={{ fontSize: 12.5, color: TOKENS.expense, marginBottom: 14 }}>{error}</div>}
-        {info && <div style={{ fontSize: 12.5, color: TOKENS.income, marginBottom: 14 }}>{info}</div>}
+        {error && <div className="text-[12.5px] text-expense mb-3.5">{error}</div>}
+        {info && <div className="text-[12.5px] text-income mb-3.5">{info}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          style={{
-            width: "100%", padding: "10px 0", borderRadius: 8, border: "none",
-            background: TOKENS.accent, color: TOKENS.bg, fontSize: 13.5, fontWeight: 600,
-            cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1,
-          }}
+          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg text-[13.5px] font-semibold disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
         >
           {loading ? "Un momento…" : submitLabels[mode]}
         </button>
 
         {mode !== "forgot" && (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
-              <div style={{ flex: 1, height: 1, background: TOKENS.border }} />
-              <span style={{ fontSize: 11, color: TOKENS.textFaint }}>o</span>
-              <div style={{ flex: 1, height: 1, background: TOKENS.border }} />
+            <div className="flex items-center gap-2.5 my-4">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[11px] text-faint">o</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={googleLoading}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 9,
-                padding: "9px 0", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: TOKENS.bg,
-                color: TOKENS.text, fontSize: 13, fontWeight: 500, cursor: googleLoading ? "default" : "pointer",
-                opacity: googleLoading ? 0.6 : 1,
-              }}
+              className="w-full flex items-center justify-center gap-[9px] py-[9px] rounded-lg border border-border bg-bg text-ink text-[13px] font-medium disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
             >
               <GoogleIcon size={16} />
               {googleLoading ? "Redirigiendo…" : "Continuar con Google"}
@@ -135,18 +125,18 @@ export function Auth({ initialError }) {
         )}
 
         {mode === "signin" && (
-          <div style={{ marginTop: 12, textAlign: "center", fontSize: 12, color: TOKENS.textFaint }}>
-            <span onClick={() => switchMode("forgot")} style={{ cursor: "pointer" }}>¿Olvidaste tu contraseña?</span>
+          <div className="mt-3 text-center text-xs text-faint">
+            <span onClick={() => switchMode("forgot")} className="cursor-pointer">¿Olvidaste tu contraseña?</span>
           </div>
         )}
 
-        <div style={{ marginTop: 16, textAlign: "center", fontSize: 12.5, color: TOKENS.textMuted }}>
+        <div className="mt-4 text-center text-[12.5px] text-muted">
           {mode === "forgot" ? (
-            <span onClick={() => switchMode("signin")} style={{ color: TOKENS.accent, cursor: "pointer" }}>Volver a iniciar sesión</span>
+            <span onClick={() => switchMode("signin")} className="text-accent cursor-pointer">Volver a iniciar sesión</span>
           ) : (
             <>
               {mode === "signin" ? "¿No tienes cuenta? " : "¿Ya tienes cuenta? "}
-              <span onClick={() => switchMode(mode === "signin" ? "signup" : "signin")} style={{ color: TOKENS.accent, cursor: "pointer" }}>
+              <span onClick={() => switchMode(mode === "signin" ? "signup" : "signin")} className="text-accent cursor-pointer">
                 {mode === "signin" ? "Crear una" : "Inicia sesión"}
               </span>
             </>
