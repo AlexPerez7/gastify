@@ -7,12 +7,16 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 /* Sin preflight, las utilidades `border`/`divide` de Tailwind no pintan nada
-   porque el border-style por defecto del navegador es `none`. Esto es lo
-   único de preflight que necesitamos para que las clases funcionen. */
+   porque el border-style por defecto del navegador es `none`. Se replica lo
+   mínimo de preflight: border-width 0 (si no, el `border-width: medium` por
+   defecto del navegador dibuja un recuadro en CADA elemento al forzar
+   border-style: solid) + border-style solid, para que solo las clases
+   `border-*` de Tailwind pinten. */
 @layer base {
   *,
   ::before,
   ::after {
+    border-width: 0;
     border-style: solid;
   }
 }
