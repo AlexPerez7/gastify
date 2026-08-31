@@ -43,40 +43,30 @@ export function HelpModal({ onClose }) {
   return (
     <div
       onClick={onClose}
-      className="modal-backdrop"
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-      }}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="modal-panel"
-        style={{
-          background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
-          padding: 24, maxWidth: 480, width: "100%", maxHeight: "min(640px, 85vh)",
-          display: "flex", flexDirection: "column",
-        }}
+        className="modal-panel bg-surface border border-border rounded-2xl p-6 max-w-[480px] w-full flex flex-col"
+        style={{ maxHeight: "min(640px, 85vh)" }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flexShrink: 0 }}>
-          <div className="display" style={{ fontSize: 16, fontWeight: 600 }}>Cómo usar Gastify</div>
-          <button onClick={onClose} aria-label="Cerrar ayuda" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer", padding: 4 }}>
+        <div className="flex justify-between items-center mb-1 shrink-0">
+          <div className="display text-base font-semibold">Cómo usar Gastify</div>
+          <button onClick={onClose} aria-label="Cerrar ayuda" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer p-1">
             <X size={17} />
           </button>
         </div>
 
-        <div style={{ overflowY: "auto", marginTop: 12, paddingRight: 4 }}>
+        <div className="overflow-y-auto mt-3 pr-1">
           {SECTIONS.map(({ icon: Icon, title, text }, i) => (
-            <div key={title} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i === 0 ? "none" : `1px solid ${TOKENS.border}` }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, background: "var(--tint-accent)", display: "flex",
-                alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
+            <div key={title} className={`flex gap-3 py-3 ${i === 0 ? "" : "border-t border-border"}`}>
+              <div className="w-8 h-8 rounded-lg bg-tint-accent flex items-center justify-center shrink-0">
                 <Icon size={16} color={TOKENS.accent} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{title}</div>
-                <div style={{ fontSize: 12, color: TOKENS.textMuted, lineHeight: 1.5 }}>{text}</div>
+                <div className="text-[13px] font-semibold mb-[3px]">{title}</div>
+                <div className="text-xs text-muted leading-[1.5]">{text}</div>
               </div>
             </div>
           ))}

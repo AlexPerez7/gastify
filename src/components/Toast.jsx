@@ -16,25 +16,31 @@ export function ToastStack({ toasts, onDismiss }) {
         const { icon: Icon, color, spin } = KIND[t.type] || KIND.ok;
         const showProgress = t.type === "loading" && typeof t.progress === "number";
         return (
-          <div key={t.id} role="status" className={`toast${t.leaving ? " toast-leaving" : ""}`} style={{
-            display: "flex", flexDirection: "column", gap: 6, padding: "11px 12px", borderRadius: 10,
-            background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, boxShadow: "0 10px 28px rgba(0,0,0,0.4)",
-          }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <Icon size={16} color={color} className={spin ? "spin" : undefined} style={{ flexShrink: 0, marginTop: 1 }} />
-              <div style={{ fontSize: 12.5, color: TOKENS.text, flex: 1, lineHeight: 1.4 }}>{t.text}</div>
+          <div
+            key={t.id}
+            role="status"
+            className={`toast flex flex-col gap-1.5 px-3 py-[11px] rounded-[10px] bg-surface border border-border${t.leaving ? " toast-leaving" : ""}`}
+            style={{ boxShadow: "0 10px 28px rgba(0,0,0,0.4)" }}
+          >
+            <div className="flex items-start gap-2.5">
+              <Icon size={16} color={color} className={`shrink-0 mt-px${spin ? " spin" : ""}`} />
+              <div className="text-[12.5px] text-ink flex-1 leading-[1.4]">{t.text}</div>
               {t.type !== "loading" && (
-                <button onClick={() => onDismiss(t.id)} aria-label="Cerrar notificación" style={{ background: "none", border: "none", cursor: "pointer", color: TOKENS.textFaint, padding: 0, flexShrink: 0, marginTop: 1 }}>
+                <button
+                  onClick={() => onDismiss(t.id)}
+                  aria-label="Cerrar notificación"
+                  className="bg-none border-0 cursor-pointer text-faint p-0 shrink-0 mt-px"
+                >
                   <X size={14} />
                 </button>
               )}
             </div>
             {showProgress && (
-              <div style={{ height: 4, borderRadius: 999, background: TOKENS.surfaceAlt, overflow: "hidden", marginLeft: 26 }}>
-                <div style={{
-                  height: "100%", width: `${t.progress}%`, background: TOKENS.accent,
-                  borderRadius: 999, transition: "width 120ms ease-out",
-                }} />
+              <div className="h-1 rounded-full bg-surface-alt overflow-hidden ml-[26px]">
+                <div
+                  className="h-full bg-accent rounded-full transition-[width] duration-[120ms] ease-out"
+                  style={{ width: `${t.progress}%` }}
+                />
               </div>
             )}
           </div>

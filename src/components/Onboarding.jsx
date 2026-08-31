@@ -28,68 +28,51 @@ export function Onboarding({ onDone }) {
   return (
     <div
       onClick={onDone}
-      className="modal-backdrop"
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-      }}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="modal-panel"
-        style={{
-          background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
-          padding: 28, maxWidth: 360, width: "100%", textAlign: "center", position: "relative",
-        }}
+        className="modal-panel bg-surface border border-border rounded-2xl p-7 max-w-[360px] w-full text-center relative"
       >
         <button
           onClick={onDone}
           aria-label="Saltar introducción"
           title="Saltar"
-          style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer", padding: 4 }}
+          className="absolute top-3.5 right-3.5 bg-none border-0 text-faint cursor-pointer p-1"
         >
           <X size={16} />
         </button>
 
         <div key={step} className="tab-panel">
-          <div
-            style={{
-              width: 56, height: 56, borderRadius: 14, background: "var(--tint-accent)", display: "flex",
-              alignItems: "center", justifyContent: "center", margin: "0 auto 18px",
-            }}
-          >
+          <div className="w-14 h-14 rounded-[14px] bg-tint-accent flex items-center justify-center mx-auto mb-[18px]">
             <Icon size={26} color={TOKENS.accent} />
           </div>
 
-          <div className="display" style={{ fontSize: 17, fontWeight: 600, marginBottom: 8 }}>{title}</div>
-          <div style={{ fontSize: 13, color: TOKENS.textMuted, lineHeight: 1.5, marginBottom: 22 }}>{text}</div>
+          <div className="display text-[17px] font-semibold mb-2">{title}</div>
+          <div className="text-[13px] text-muted leading-[1.5] mb-[22px]">{text}</div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
+        <div className="flex justify-center gap-1.5 mb-5">
           {STEPS.map((_, i) => (
             <div
               key={i}
-              style={{
-                width: i === step ? 18 : 6, height: 6, borderRadius: 3,
-                background: i === step ? TOKENS.accent : TOKENS.border, transition: "width 180ms ease",
-              }}
+              className={`h-1.5 rounded-[3px] transition-[width] duration-[180ms] ${
+                i === step ? "w-[18px] bg-accent" : "w-1.5 bg-border"
+              }`}
             />
           ))}
         </div>
 
         <button
           onClick={() => (isLast ? onDone() : setStep((s) => s + 1))}
-          style={{
-            width: "100%", padding: "10px 0", borderRadius: 8, border: "none", cursor: "pointer",
-            background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          }}
+          className="w-full py-2.5 rounded-lg border-0 cursor-pointer bg-accent text-bg font-semibold text-[13px] flex items-center justify-center gap-1.5"
         >
           {isLast ? "Empezar" : "Siguiente"}
           {!isLast && <ChevronRight size={14} />}
         </button>
 
-        <div style={{ fontSize: 11, color: TOKENS.textFaint, marginTop: 14 }}>
+        <div className="text-[11px] text-faint mt-3.5">
           ¿Necesitas verlo de nuevo? Búscalo en el botón <strong>?</strong> de arriba.
         </div>
       </div>
