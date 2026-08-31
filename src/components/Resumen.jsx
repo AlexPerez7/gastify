@@ -82,15 +82,11 @@ export function Resumen({
   return (
     <div>
       {hasTransactions && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <div className="flex justify-end mb-3">
           <button
             onClick={handleExport}
             disabled={exporting}
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-              fontSize: 12, cursor: exporting ? "default" : "pointer", opacity: exporting ? 0.7 : 1,
-            }}
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exporting ? <Loader2 size={13} className="spin" /> : <ImageDown size={13} />}
             {exporting ? "Generando…" : "Guardar resumen"}
@@ -101,16 +97,13 @@ export function Resumen({
       <div ref={captureRef}>
       {hasTransactions && <Insights items={insights} />}
 
-      <div style={{
-        background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 14,
-        padding: "22px 24px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12,
-      }}>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, color: TOKENS.textMuted, marginBottom: 6 }}>Saldo actual</div>
-          <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: TOKENS.accent, letterSpacing: "-0.01em", lineHeight: 1.1 }}>
+      <div className="bg-surface border border-border rounded-[14px] px-6 py-[22px] mb-5 flex justify-between items-start gap-3">
+        <div className="min-w-0">
+          <div className="text-[12.5px] text-muted mb-1.5">Saldo actual</div>
+          <div className="mono text-[34px] font-bold text-accent tracking-[-0.01em] leading-[1.1]">
             {dynamicBalance != null ? formatCLP(dynamicBalance) : "—"}
           </div>
-          <div style={{ fontSize: 12, color: TOKENS.textFaint, marginTop: 12 }}>
+          <div className="text-xs text-faint mt-3">
             {lastSyncDate ? `ajustado el ${formatSyncDate(lastSyncDate)}` : "ajusta tu saldo para verlo actualizado"}
           </div>
         </div>
@@ -118,13 +111,13 @@ export function Resumen({
           onClick={() => setShowAdjustModal(true)}
           aria-label="Ajustar saldo"
           title="Ajustar saldo"
-          style={{ background: "none", border: "none", cursor: "pointer", color: TOKENS.textFaint, padding: 4, flexShrink: 0 }}
+          className="bg-none border-0 cursor-pointer text-faint p-1 shrink-0"
         >
           <Pencil size={15} />
         </button>
       </div>
 
-      <div className="stagger-fade" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, marginBottom: 24 }}>
+      <div className="stagger-fade grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 mb-6">
         <StatCard
           label={heroStat ? `Gastado en ${fmtMonth(heroStat.monthKey)}${heroStat.isRealCurrentMonth ? ` · día ${heroStat.dayOfMonth}` : ""}` : "Gastado este mes"}
           value={formatCLP(heroStat?.spentSoFar || 0)}
@@ -147,7 +140,7 @@ export function Resumen({
                 onClick={() => setShowAdjustSavingsModal(true)}
                 aria-label="Ajustar total ahorrado"
                 title="Ajustar total ahorrado"
-                style={{ background: "none", border: "none", cursor: "pointer", color: TOKENS.textFaint, padding: 0 }}
+                className="bg-none border-0 cursor-pointer text-faint p-0"
               >
                 <Pencil size={13} />
               </button>
@@ -164,45 +157,43 @@ export function Resumen({
           App.jsx: latestCreditStatement es el ciclo más reciente, sin
           relación con el mes seleccionado acá arriba. */}
       {creditStatement && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: TOKENS.textFaint, textTransform: "uppercase", letterSpacing: "0.03em", fontWeight: 600, marginBottom: 8 }}>
+        <div className="mb-6">
+          <div className="text-[11px] text-faint uppercase tracking-[0.03em] font-semibold mb-2">
             Tarjeta de crédito
           </div>
           <button
             onClick={onGoToCredit}
             title="Ver tarjeta de crédito"
-            style={{
-              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap",
-              background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: "14px 16px",
-              cursor: onGoToCredit ? "pointer" : "default", textAlign: "left",
-            }}
+            className={`w-full flex items-center justify-between gap-5 flex-wrap bg-surface border border-border rounded-xl px-4 py-3.5 text-left ${
+              onGoToCredit ? "cursor-pointer" : "cursor-default"
+            }`}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: TOKENS.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center shrink-0">
                 <CreditCardIcon size={15} color={TOKENS.textMuted} />
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: TOKENS.textMuted, marginBottom: 2 }}>
+              <div className="min-w-0">
+                <div className="text-[11px] text-muted mb-0.5">
                   {creditStatement.payBy ? `Paga hasta ${formatDateDisplay(creditStatement.payBy)}` : "Total facturado"}
                 </div>
-                <div className="mono" style={{ fontSize: 18, fontWeight: 600, color: TOKENS.expense }}>{formatCLP(creditStatement.totalToPay)}</div>
+                <div className="mono text-lg font-semibold text-expense">{formatCLP(creditStatement.totalToPay)}</div>
               </div>
             </div>
             {creditStatement.cupoAvailable != null && (
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, color: TOKENS.textMuted, marginBottom: 2 }}>Cupo disponible</div>
-                <div className="mono" style={{ fontSize: 14, color: TOKENS.text }}>
+              <div className="text-right">
+                <div className="text-[11px] text-muted mb-0.5">Cupo disponible</div>
+                <div className="mono text-sm text-ink">
                   {formatCLP(creditStatement.cupoAvailable)}
-                  {creditStatement.cupoTotal != null && <span style={{ color: TOKENS.textFaint }}> / {formatCLP(creditStatement.cupoTotal)}</span>}
+                  {creditStatement.cupoTotal != null && <span className="text-faint"> / {formatCLP(creditStatement.cupoTotal)}</span>}
                 </div>
               </div>
             )}
-            {onGoToCredit && <ArrowRight size={15} color={TOKENS.textFaint} style={{ flexShrink: 0 }} />}
+            {onGoToCredit && <ArrowRight size={15} color={TOKENS.textFaint} className="shrink-0" />}
           </button>
         </div>
       )}
 
-      <div className="resumen-charts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 16 }}>
+      <div className="resumen-charts-grid grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 mb-4">
         <Panel title={`Gasto por categoría${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>
           <CategoryDonut
             data={byCategory} onCategoryClick={onCategoryClick ? (id) => onCategoryClick(id, "expense") : undefined}
@@ -246,7 +237,7 @@ export function Resumen({
 
       {budgetedCategories.length > 0 && (
         <Panel title={`Presupuestos${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="flex flex-col gap-3.5">
             {budgetedCategories.map((c) => {
               const pct = Math.min(100, (c.spent / c.budget) * 100);
               const over = c.spent > c.budget;
@@ -257,27 +248,27 @@ export function Resumen({
                   key={c.id}
                   onClick={() => onCategoryClick?.(c.id, "expense")}
                   title={`Ver movimientos de ${c.name}`}
-                  style={{ background: "none", border: "none", padding: 0, textAlign: "left", width: "100%", cursor: onCategoryClick ? "pointer" : "default" }}
+                  className={`bg-none border-0 p-0 text-left w-full ${onCategoryClick ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, fontSize: 12.5 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, color: TOKENS.text }}>
-                      <span style={{
-                        width: 18, height: 18, borderRadius: 5, background: `${c.color}22`, display: "flex",
-                        alignItems: "center", justifyContent: "center", flexShrink: 0,
-                      }}>
+                  <div className="flex items-center justify-between mb-1.5 text-[12.5px]">
+                    <div className="flex items-center gap-[7px] text-ink">
+                      <span
+                        className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center shrink-0"
+                        style={{ background: `${c.color}22` }}
+                      >
                         <CatIcon size={11} color={c.color} />
                       </span>
                       {c.name}
                     </div>
-                    <span className="mono" style={{ color: over ? TOKENS.expense : TOKENS.textMuted }}>
-                      {formatCLP(c.spent)} <span style={{ color: TOKENS.textFaint }}>/ {formatCLP(c.budget)}</span>
+                    <span className={`mono ${over ? "text-expense" : "text-muted"}`}>
+                      {formatCLP(c.spent)} <span className="text-faint">/ {formatCLP(c.budget)}</span>
                     </span>
                   </div>
-                  <div style={{ height: 6, borderRadius: 3, background: TOKENS.surfaceAlt, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 3 }} />
+                  <div className="h-1.5 rounded-[3px] bg-surface-alt overflow-hidden">
+                    <div className="h-full rounded-[3px]" style={{ width: `${pct}%`, background: barColor }} />
                   </div>
                   {over && (
-                    <div style={{ fontSize: 11, color: TOKENS.expense, marginTop: 4 }}>
+                    <div className="text-[11px] text-expense mt-1">
                       {formatCLP(c.spent - c.budget)} sobre el presupuesto
                     </div>
                   )}
@@ -326,8 +317,8 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
     return <EmptyState icon={emptyIcon} title={emptyTitle} text={emptyText} />;
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ width: "100%", maxWidth: 220, margin: "0 auto" }}>
+    <div className="flex flex-col gap-3">
+      <div className="w-full max-w-[220px] mx-auto">
         <ResponsiveContainer width="100%" height={190}>
           <PieChart>
             <Pie
@@ -346,7 +337,7 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      <div className="flex flex-col gap-[7px]">
         {data.slice(0, 6).map((c) => {
           const CatIcon = c.icon;
           return (
@@ -354,24 +345,20 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
               key={c.id}
               onClick={() => onCategoryClick?.(c.id)}
               title={`Ver movimientos de ${c.name}`}
-              className="category-legend-row"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12.5,
-                background: "none", border: "none", padding: "4px 6px", margin: "0 -6px", borderRadius: 7,
-                width: "calc(100% + 12px)", cursor: onCategoryClick ? "pointer" : "default", textAlign: "left",
-                overflow: "hidden",
-              }}
+              className={`category-legend-row flex items-center justify-between text-[12.5px] bg-none border-0 px-1.5 py-1 -mx-1.5 rounded-[7px] w-[calc(100%+12px)] text-left overflow-hidden ${
+                onCategoryClick ? "cursor-pointer" : "cursor-default"
+              }`}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 7, color: TOKENS.textMuted, minWidth: 0, overflow: "hidden" }}>
-                <span style={{
-                  width: 18, height: 18, borderRadius: 5, background: `${c.color}22`, display: "flex",
-                  alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
+              <div className="flex items-center gap-[7px] text-muted min-w-0 overflow-hidden">
+                <span
+                  className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center shrink-0"
+                  style={{ background: `${c.color}22` }}
+                >
                   <CatIcon size={11} color={c.color} />
                 </span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{c.name}</span>
               </div>
-              <span className="mono" style={{ color: TOKENS.text, flexShrink: 0, marginLeft: 8, whiteSpace: "nowrap" }}>{formatCLP(c.value)}</span>
+              <span className="mono text-ink shrink-0 ml-2 whitespace-nowrap">{formatCLP(c.value)}</span>
             </button>
           );
         })}
@@ -400,30 +387,24 @@ function AdjustBalanceModal({ currentBalance, onAdjust, onClose, pushToast }) {
 
   return (
     <div
-      className="modal-backdrop"
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-      }}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
     >
-      <div className="modal-panel" style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Ajustar saldo</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
+      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
+        <div className="flex justify-between items-center mb-1.5">
+          <div className="display text-[14.5px] font-semibold">Ajustar saldo</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
-        <div style={{ fontSize: 12, color: TOKENS.textMuted, marginBottom: 14, lineHeight: 1.4 }}>
+        <div className="text-xs text-muted mb-3.5 leading-[1.4]">
           Ingresa el saldo real de tu cuenta ahora mismo (el que muestra tu banco). Desde este momento, la app suma o resta tus movimientos manuales para mantenerlo actualizado.
         </div>
         <FieldInput label="Saldo actual (CLP)" type="number" value={value} onChange={setValue} placeholder="0" style={{ marginBottom: 14 }} />
         <button
           onClick={submit}
           disabled={saving || value === ""}
-          style={{
-            width: "100%", padding: "10px 0", borderRadius: 8, border: "none", cursor: saving ? "default" : "pointer",
-            background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13, opacity: saving ? 0.7 : 1,
-          }}
+          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
         >
           {saving ? "Guardando…" : "Guardar saldo"}
         </button>
@@ -457,30 +438,24 @@ function AdjustSavingsModal({ currentSavings, onAdjust, onClose, pushToast }) {
 
   return (
     <div
-      className="modal-backdrop"
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-      }}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
     >
-      <div className="modal-panel" style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16, padding: 22, maxWidth: 360, width: "100%" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Ajustar total ahorrado</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
+      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
+        <div className="flex justify-between items-center mb-1.5">
+          <div className="display text-[14.5px] font-semibold">Ajustar total ahorrado</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
-        <div style={{ fontSize: 12, color: TOKENS.textMuted, marginBottom: 14, lineHeight: 1.4 }}>
+        <div className="text-xs text-muted mb-3.5 leading-[1.4]">
           Ingresa lo que ya tienes ahorrado ahora mismo (por ejemplo, si empezaste a ahorrar antes de usar la app). Desde este momento, la app suma o resta arriba de este número lo que pase en tus categorías de ahorro.
         </div>
         <FieldInput label="Total ahorrado (CLP)" type="number" value={value} onChange={setValue} placeholder="0" style={{ marginBottom: 14 }} />
         <button
           onClick={submit}
           disabled={saving || value === ""}
-          style={{
-            width: "100%", padding: "10px 0", borderRadius: 8, border: "none", cursor: saving ? "default" : "pointer",
-            background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13, opacity: saving ? 0.7 : 1,
-          }}
+          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
         >
           {saving ? "Guardando…" : "Guardar total ahorrado"}
         </button>
