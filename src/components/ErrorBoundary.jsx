@@ -24,15 +24,12 @@ export class ErrorBoundary extends Component {
     if (this.state.error) {
       if (this.props.fallback) return this.props.fallback(this.handleReset);
       return (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-          padding: "40px 20px", textAlign: "center", color: TOKENS.textFaint, fontSize: 12.5,
-        }}>
+        <div className="flex flex-col items-center gap-2.5 px-5 py-10 text-center text-faint text-[12.5px]">
           <AlertTriangle size={20} color={TOKENS.expense} />
           <div>Esta sección tuvo un problema y no se pudo mostrar.</div>
           <button
             onClick={this.handleReset}
-            style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12, cursor: "pointer" }}
+            className="px-3 py-1.5 rounded-lg border border-border bg-transparent text-muted text-xs cursor-pointer"
           >
             Reintentar
           </button>

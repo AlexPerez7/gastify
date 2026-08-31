@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { TOKENS } from "../lib/constants.js";
 import { useTheme } from "../lib/useTheme.js";
 import { supabase } from "../lib/supabaseClient.js";
 import { Auth } from "./Auth.jsx";
@@ -32,7 +31,7 @@ export function AuthGate() {
 
   if (session === undefined) {
     return (
-      <div style={{ background: TOKENS.bg, color: TOKENS.textMuted, height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="bg-bg text-muted h-screen flex items-center justify-center">
         Cargando…
       </div>
     );
