@@ -9,14 +9,14 @@ export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
 
 export function AppShellSkeleton() {
   return (
-    <div style={{ background: TOKENS.bg, minHeight: "100vh" }} aria-hidden="true">
-      <div style={{ borderBottom: `1px solid ${TOKENS.border}`, padding: "16px 24px" }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div className="bg-bg min-h-screen" aria-hidden="true">
+      <div className="border-b border-border px-6 py-4">
+        <div className="max-w-[1080px] mx-auto flex items-center justify-between">
           <Skeleton width={110} height={24} radius={6} />
           <Skeleton width={160} height={32} radius={8} />
         </div>
       </div>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "28px 24px" }}>
+      <div className="max-w-[1080px] mx-auto px-6 py-7">
         <ResumenSkeleton />
       </div>
     </div>
@@ -27,12 +27,12 @@ export function ResumenSkeleton() {
   return (
     <div aria-hidden="true">
       <Skeleton height={92} radius={12} style={{ marginBottom: 16 }} />
-      <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="flex gap-3 mb-4 flex-wrap">
         <Skeleton height={64} radius={12} style={{ flex: "1 1 160px" }} />
         <Skeleton height={64} radius={12} style={{ flex: "1 1 160px" }} />
         <Skeleton height={64} radius={12} style={{ flex: "1 1 160px" }} />
       </div>
-      <div className="resumen-charts-grid" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="resumen-charts-grid grid grid-cols-[1.1fr_1fr] gap-4 mb-4">
         <Skeleton height={220} radius={12} />
         <Skeleton height={220} radius={12} />
       </div>
@@ -44,15 +44,18 @@ export function ResumenSkeleton() {
 export function MovimientosSkeleton() {
   return (
     <div aria-hidden="true">
-      <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+      <div className="flex gap-2.5 mb-3.5">
         <Skeleton height={36} radius={8} style={{ flex: "1 1 220px" }} />
         <Skeleton height={36} radius={8} width={140} />
       </div>
-      <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 4 ? `1px solid ${TOKENS.border}` : "none" }}>
+          <div
+            key={i}
+            className={`flex items-center gap-3 px-4 py-3.5 ${i < 4 ? "border-b border-border" : ""}`}
+          >
             <Skeleton width={32} height={32} radius={8} />
-            <div style={{ flex: 1 }}>
+            <div className="flex-1">
               <Skeleton height={12} width="55%" style={{ marginBottom: 6 }} />
               <Skeleton height={10} width="30%" />
             </div>
@@ -124,7 +127,6 @@ export function FieldInput({ label, style, ...props }) {
 // Interruptor on/off — reemplaza a los checkboxes nativos donde se necesita
 // una afirmación/negación visualmente clara (ej. "cuenta como gasto").
 export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaLabel }) {
-  const width = 34, height = 18, knob = 14, pad = 2;
   return (
     <button
       type="button"
@@ -134,20 +136,15 @@ export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaL
       title={title}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      style={{
-        width, height, borderRadius: height / 2, border: "none", padding: 0, position: "relative", flexShrink: 0,
-        background: checked && !disabled ? TOKENS.accent : TOKENS.border,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.45 : 1,
-        transition: "background 150ms ease",
-      }}
+      className={`relative shrink-0 w-[34px] h-[18px] rounded-full border-0 p-0 transition-colors duration-150 ${
+        disabled ? "opacity-45 cursor-not-allowed" : "cursor-pointer"
+      } ${checked && !disabled ? "bg-accent" : "bg-border"}`}
     >
       <span
-        style={{
-          position: "absolute", top: pad, left: checked ? width - knob - pad : pad,
-          width: knob, height: knob, borderRadius: "50%", background: "#fff",
-          transition: "left 150ms ease", boxShadow: "0 1px 2px rgba(0,0,0,0.35)",
-        }}
+        className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-[left] duration-150 ${
+          checked ? "left-[18px]" : "left-0.5"
+        }`}
+        style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.35)" }}
       />
     </button>
   );
@@ -179,12 +176,12 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
   };
 
   return (
-    <div style={{ marginTop: 14, padding: 12, background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 8, background: `${color}22`, display: "flex",
-          alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
+    <div className="mt-3.5 p-3 bg-surface-alt border border-border rounded-[10px]">
+      <div className="flex items-center gap-2 mb-2.5">
+        <div
+          className="w-[30px] h-[30px] rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: `${color}22` }}
+        >
           <Icon size={15} color={color} />
         </div>
         <input
@@ -193,10 +190,10 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
           placeholder={`Nueva categoría de ${type === "expense" ? "gasto" : "ingreso"}`}
           autoFocus
-          style={{ flex: 1, minWidth: 0, padding: "6px 9px", borderRadius: 6, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 12.5 }}
+          className="flex-1 min-w-0 px-[9px] py-1.5 rounded-md border border-border bg-surface text-ink text-[12.5px]"
         />
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+      <div className="flex flex-wrap gap-1.5 mb-2.5">
         {PALETTE.map((col) => (
           <button
             key={col}
@@ -204,14 +201,12 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
             title={col}
             aria-label={`Usar color ${col}`}
             aria-pressed={col === color}
-            style={{
-              width: 20, height: 20, borderRadius: "50%", background: col, cursor: "pointer", padding: 0,
-              border: col === color ? `2px solid ${TOKENS.text}` : "2px solid transparent",
-            }}
+            className="w-5 h-5 rounded-full cursor-pointer p-0 border-2"
+            style={{ background: col, borderColor: col === color ? "var(--c-text)" : "transparent" }}
           />
         ))}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {ICON_NAMES.map((name) => {
           const OptionIcon = ICONS[name];
           const selected = icon === name;
@@ -220,10 +215,10 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
               key={name}
               title={name}
               onClick={() => setIcon(name)}
+              className="w-7 h-7 rounded-[7px] flex items-center justify-center border cursor-pointer p-0"
               style={{
-                width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center",
                 background: selected ? `${color}33` : "transparent",
-                border: `1px solid ${selected ? color : TOKENS.border}`, cursor: "pointer", padding: 0,
+                borderColor: selected ? color : "var(--c-border)",
               }}
             >
               <OptionIcon size={13} color={selected ? color : TOKENS.textMuted} />
@@ -231,18 +226,18 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="flex gap-2">
         <button
           onClick={submit}
           disabled={!label.trim()}
-          style={{
-            padding: "7px 14px", borderRadius: 7, border: "none", fontSize: 12, fontWeight: 600,
-            background: TOKENS.accent, color: TOKENS.bg, cursor: label.trim() ? "pointer" : "default", opacity: label.trim() ? 1 : 0.6,
-          }}
+          className="px-3.5 py-[7px] rounded-[7px] border-0 text-xs font-semibold bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
         >
           Crear y usar
         </button>
-        <button onClick={onCancel} style={{ padding: "7px 14px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12, cursor: "pointer" }}>
+        <button
+          onClick={onCancel}
+          className="px-3.5 py-[7px] rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer"
+        >
           Cancelar
         </button>
       </div>
