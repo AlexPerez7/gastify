@@ -1,26 +1,74 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+/* Import explícito SIN preflight — el reset de Tailwind pisaría estilos base
+   que la app ya define a mano (botones, headings, etc). Se puede activar
+   más adelante, cuando la migración esté avanzada. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Sin preflight, las utilidades `border`/`divide` de Tailwind no pintan nada
+   porque el border-style por defecto del navegador es `none`. Esto es lo
+   único de preflight que necesitamos para que las clases funcionen. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-style: solid;
+  }
+}
+
+/* `data-theme` siempre está seteado (ver src/lib/useTheme.js); el default
+   visual es oscuro. Esto hace que `dark:` de Tailwind siga a nuestro toggle
+   manual en vez de a prefers-color-scheme. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Mapea nuestros tokens de tema a utilidades de Tailwind (bg-surface,
+   text-muted, border-border, …). `inline` = Tailwind mete el `var(--…)` en
+   la clase en vez del valor resuelto, así el cambio de tema en runtime
+   sigue funcionando. Los valores reales viven en los :root de abajo. */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-alt: var(--c-surface-alt);
+  --color-border: var(--c-border);
+  --color-ink: var(--c-text);
+  --color-muted: var(--c-text-muted);
+  --color-faint: var(--c-text-faint);
+  --color-income: var(--c-income);
+  --color-expense: var(--c-expense);
+  --color-pending: var(--c-pending);
+  --color-accent: var(--c-accent);
+  --color-tint-accent: var(--tint-accent);
+  --color-tint-accent-soft: var(--tint-accent-soft);
+  --color-tint-income: var(--tint-income);
+  --color-tint-expense: var(--tint-expense);
+
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
 
 /* ---- theme tokens — paleta "fintech esmeralda", oscuro por defecto ---- */
 
 :root {
-  --color-bg: #0c1210;
-  --color-surface: #131b17;
-  --color-surface-alt: #19231d;
-  --color-border: #263329;
-  --color-text: #e9f2ec;
-  --color-text-muted: #8fa89d;
-  --color-text-faint: #57685f;
-  --color-income: #34d399;
-  --color-expense: #e5484d;
-  --color-pending: #f0b94a;
-  --color-accent: #1f9d6f;
+  --c-bg: #0c1210;
+  --c-surface: #131b17;
+  --c-surface-alt: #19231d;
+  --c-border: #263329;
+  --c-text: #e9f2ec;
+  --c-text-muted: #8fa89d;
+  --c-text-faint: #57685f;
+  --c-income: #34d399;
+  --c-expense: #e5484d;
+  --c-pending: #f0b94a;
+  --c-accent: #1f9d6f;
 
   --tint-accent: rgba(31, 157, 111, 0.12);
   --tint-accent-soft: rgba(31, 157, 111, 0.06);
   --tint-income: rgba(52, 211, 153, 0.12);
   --tint-expense: rgba(229, 72, 77, 0.12);
 
-  --heat-0: var(--color-surface-alt);
+  --heat-0: var(--c-surface-alt);
   --heat-1: #482324;
   --heat-2: #78302f;
   --heat-3: #ac3d3c;
@@ -28,24 +76,24 @@
 }
 
 :root[data-theme="light"] {
-  --color-bg: #f3f7f4;
-  --color-surface: #ffffff;
-  --color-surface-alt: #eaf2ec;
-  --color-border: #d7e3da;
-  --color-text: #14231b;
-  --color-text-muted: #4d6358;
-  --color-text-faint: #86988d;
-  --color-income: #1f9d6f;
-  --color-expense: #d43d42;
-  --color-pending: #c98a1f;
-  --color-accent: #17805c;
+  --c-bg: #f3f7f4;
+  --c-surface: #ffffff;
+  --c-surface-alt: #eaf2ec;
+  --c-border: #d7e3da;
+  --c-text: #14231b;
+  --c-text-muted: #4d6358;
+  --c-text-faint: #86988d;
+  --c-income: #1f9d6f;
+  --c-expense: #d43d42;
+  --c-pending: #c98a1f;
+  --c-accent: #17805c;
 
   --tint-accent: rgba(23, 128, 92, 0.1);
   --tint-accent-soft: rgba(23, 128, 92, 0.05);
   --tint-income: rgba(31, 157, 111, 0.1);
   --tint-expense: rgba(212, 61, 66, 0.1);
 
-  --heat-0: var(--color-surface-alt);
+  --heat-0: var(--c-surface-alt);
   --heat-1: #f7d4d3;
   --heat-2: #eba8a6;
   --heat-3: #de7a78;
@@ -59,8 +107,8 @@
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--c-bg);
+  color: var(--c-text);
 }
 
 .mono {
@@ -75,7 +123,7 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--c-border);
   border-radius: 4px;
 }
 
@@ -109,12 +157,12 @@ button:not(:disabled):active {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--c-accent);
   outline-offset: 1px;
 }
 
 .category-legend-row:hover {
-  background: var(--color-surface-alt) !important;
+  background: var(--c-surface-alt) !important;
 }
 
 /* ---- responsive layout — breakpoint at 640px ---------------------------- */
@@ -206,8 +254,8 @@ select:focus-visible {
     bottom: 0;
     z-index: 20;
     justify-content: space-around;
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
+    background: var(--c-surface);
+    border-top: 1px solid var(--c-border);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     /* en páginas largas (ej. Categorías, con muchas filas) algunos
        navegadores móviles "despegan" momentáneamente los elementos con
@@ -280,9 +328,9 @@ select:focus-visible {
   height: 50px;
   margin-top: -26px;
   border-radius: 50%;
-  border: 3px solid var(--color-surface);
-  background: var(--color-accent);
-  color: var(--color-bg);
+  border: 3px solid var(--c-surface);
+  background: var(--c-accent);
+  color: var(--c-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,8 +363,8 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
@@ -330,14 +378,14 @@ select:focus-visible {
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--color-text);
+  color: var(--c-text);
   font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
 
 .add-sheet-btn:active {
-  background: var(--color-surface-alt);
+  background: var(--c-surface-alt);
 }
 
 /* ---- menú desplegable compacto (ej. exportar/respaldo) ------------------- */
@@ -351,8 +399,8 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
@@ -367,10 +415,10 @@ select:focus-visible {
   right: 0;
   bottom: 0;
   z-index: 2001;
-  background: var(--color-surface);
+  background: var(--c-surface);
   border-top-left-radius: 18px;
   border-top-right-radius: 18px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--c-border);
   padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
   max-height: 82vh;
   overflow-y: auto;
@@ -387,8 +435,8 @@ select:focus-visible {
   gap: 3px;
   padding: 3px;
   border-radius: 999px;
-  background: var(--color-surface-alt);
-  border: 1px solid var(--color-border);
+  background: var(--c-surface-alt);
+  border: 1px solid var(--c-border);
 }
 
 .filter-seg-btn {
@@ -503,7 +551,7 @@ select:focus-visible {
   .tx-swipe-hint {
     display: flex;
     align-items: center;
-    color: var(--color-text-faint);
+    color: var(--c-text-faint);
     opacity: 0.45;
     flex-shrink: 0;
     grid-area: actions;
@@ -523,15 +571,15 @@ select:focus-visible {
 }
 
 .tx-swipe-edit {
-  background: var(--color-accent);
+  background: var(--c-accent);
 }
 
 .tx-swipe-delete {
-  background: var(--color-expense);
+  background: var(--c-expense);
 }
 
 .tx-swipe-link {
-  background: var(--color-pending);
+  background: var(--c-pending);
 }
 
 @keyframes row-in {

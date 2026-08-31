@@ -65,7 +65,7 @@ export function Resumen({
     setExporting(true);
     try {
       const { toPng } = await import("html-to-image"); // solo se descarga al exportar el resumen
-      const bg = getComputedStyle(document.documentElement).getPropertyValue("--color-bg").trim();
+      const bg = getComputedStyle(document.documentElement).getPropertyValue("--c-bg").trim();
       const dataUrl = await toPng(captureRef.current, { backgroundColor: bg || undefined, pixelRatio: 2, skipFonts: true });
       const link = document.createElement("a");
       link.download = `resumen-${new Date().toISOString().slice(0, 10)}.png`;

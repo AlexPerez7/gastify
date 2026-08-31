@@ -66,9 +66,9 @@ export function MovimientosSkeleton() {
 
 export function Panel({ title, right, children }) {
   return (
-    <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <div className="display" style={{ fontSize: 13.5, fontWeight: 600 }}>{title}</div>
+    <div className="bg-surface border border-border rounded-xl p-[18px]">
+      <div className="flex justify-between items-center mb-3.5">
+        <div className="display text-[13.5px] font-semibold">{title}</div>
         {right}
       </div>
       {children}
@@ -77,21 +77,18 @@ export function Panel({ title, right, children }) {
 }
 
 export function EmptyNote({ text }) {
-  return <div style={{ color: TOKENS.textFaint, fontSize: 12.5, padding: "30px 0", textAlign: "center" }}>{text}</div>;
+  return <div className="text-faint text-[12.5px] py-[30px] text-center">{text}</div>;
 }
 
 export function EmptyState({ icon: Icon, title, text, action }) {
   return (
-    <div style={{ textAlign: "center", padding: "40px 20px" }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: 12, background: TOKENS.surfaceAlt, display: "flex",
-        alignItems: "center", justifyContent: "center", margin: "0 auto 14px",
-      }}>
+    <div className="text-center px-5 py-10">
+      <div className="w-11 h-11 rounded-xl bg-surface-alt flex items-center justify-center mx-auto mb-3.5">
         <Icon size={20} color={TOKENS.textFaint} />
       </div>
-      <div className="display" style={{ fontSize: 14, fontWeight: 600, color: TOKENS.text, marginBottom: 5 }}>{title}</div>
-      <div style={{ fontSize: 12.5, color: TOKENS.textFaint, maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>{text}</div>
-      {action && <div style={{ marginTop: 16 }}>{action}</div>}
+      <div className="display text-sm font-semibold text-ink mb-[5px]">{title}</div>
+      <div className="text-[12.5px] text-faint max-w-[320px] mx-auto leading-[1.5]">{text}</div>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
@@ -100,13 +97,13 @@ export function EmptyState({ icon: Icon, title, text, action }) {
 // number de arriba es el que debe destacar, estas son contexto de apoyo.
 export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
   return (
-    <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: "13px 16px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ fontSize: 11, color: TOKENS.textMuted, marginBottom: 6, lineHeight: 1.4 }}>{label}</div>
+    <div className="bg-surface border border-border rounded-xl px-4 py-[13px]">
+      <div className="flex justify-between items-start">
+        <div className="text-[11px] text-muted mb-1.5 leading-[1.4]">{label}</div>
         {action || (Icon && <Icon size={13} color={accent} />)}
       </div>
-      <div className="mono" style={{ fontSize: 17, fontWeight: 600, color: accent }}>{value}</div>
-      {sub && <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginTop: 3 }}>{sub}</div>}
+      <div className="mono text-[17px] font-semibold" style={{ color: accent }}>{value}</div>
+      {sub && <div className="text-[10.5px] text-faint mt-[3px]">{sub}</div>}
     </div>
   );
 }
@@ -114,11 +111,11 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
 export function FieldInput({ label, style, ...props }) {
   return (
     <div style={style}>
-      <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 4 }}>{label}</div>
+      <div className="text-[11px] text-faint mb-1">{label}</div>
       <input
         {...props}
         onChange={(e) => props.onChange(e.target.value)}
-        style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 13 }}
+        className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
       />
     </div>
   );

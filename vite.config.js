@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const BASE_PATH = "/gastify/";
@@ -8,6 +9,7 @@ export default defineConfig({
   base: BASE_PATH,
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
       // registramos el SW a mano en main.jsx (chequeo periódico de updates)

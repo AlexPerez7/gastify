@@ -11,17 +11,17 @@ import {
 // Los valores son CSS custom properties (definidas en index.css para modo
 // oscuro y claro) para que cambiar de tema no requiera tocar cada componente.
 export const TOKENS = {
-  bg: "var(--color-bg)",
-  surface: "var(--color-surface)",
-  surfaceAlt: "var(--color-surface-alt)",
-  border: "var(--color-border)",
-  text: "var(--color-text)",
-  textMuted: "var(--color-text-muted)",
-  textFaint: "var(--color-text-faint)",
-  income: "var(--color-income)",
-  expense: "var(--color-expense)",
-  pending: "var(--color-pending)",
-  accent: "var(--color-accent)",
+  bg: "var(--c-bg)",
+  surface: "var(--c-surface)",
+  surfaceAlt: "var(--c-surface-alt)",
+  border: "var(--c-border)",
+  text: "var(--c-text)",
+  textMuted: "var(--c-text-muted)",
+  textFaint: "var(--c-text-faint)",
+  income: "var(--c-income)",
+  expense: "var(--c-expense)",
+  pending: "var(--c-pending)",
+  accent: "var(--c-accent)",
 };
 
 // excludeFromExpense: true = esta categoría no cuenta como gasto en stats,
