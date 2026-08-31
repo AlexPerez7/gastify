@@ -39,30 +39,28 @@ export function ConfirmDeleteButton({ onConfirm, text = "¿Eliminar?", size = 13
         title={title}
         aria-label={title}
         onClick={(e) => { e.stopPropagation(); openPopover(); }}
-        style={{ background: "none", border: "none", cursor: "pointer", color: color || TOKENS.textFaint, padding: 8 }}
+        className="bg-none border-0 cursor-pointer p-2"
+        style={{ color: color || TOKENS.textFaint }}
       >
         <Trash2 size={size} />
       </button>
       {open && coords && createPortal(
         <div
           ref={popRef}
-          style={{
-            position: "fixed", top: coords.top, right: coords.right, zIndex: 1000, width: 190,
-            background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10,
-            padding: 10, boxShadow: "0 10px 28px rgba(0,0,0,0.45)",
-          }}
+          className="fixed z-[1000] w-[190px] bg-surface-alt border border-border rounded-[10px] p-2.5"
+          style={{ top: coords.top, right: coords.right, boxShadow: "0 10px 28px rgba(0,0,0,0.45)" }}
         >
-          <div style={{ fontSize: 12, color: TOKENS.text, marginBottom: 8, lineHeight: 1.4 }}>{text}</div>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div className="text-xs text-ink mb-2 leading-[1.4]">{text}</div>
+          <div className="flex gap-1.5">
             <button
               onClick={() => { setOpen(false); onConfirm(); }}
-              style={{ flex: 1, padding: "6px 0", borderRadius: 6, border: "none", background: TOKENS.expense, color: "#fff", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
+              className="flex-1 py-1.5 rounded-md border-0 bg-expense text-white text-[11.5px] font-semibold cursor-pointer"
             >
               Eliminar
             </button>
             <button
               onClick={() => setOpen(false)}
-              style={{ flex: 1, padding: "6px 0", borderRadius: 6, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 11.5, cursor: "pointer" }}
+              className="flex-1 py-1.5 rounded-md border border-border bg-transparent text-muted text-[11.5px] cursor-pointer"
             >
               Cancelar
             </button>
