@@ -17,10 +17,7 @@ function BackToMovimientosButton({ onBack }) {
   return (
     <button
       onClick={onBack}
-      style={{
-        display: "flex", alignItems: "center", gap: 4, marginBottom: 12, padding: "4px 2px",
-        background: "none", border: "none", color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-      }}
+      className="flex items-center gap-1 mb-3 px-0.5 py-1 bg-none border-0 text-muted text-[12.5px] cursor-pointer"
     >
       <ChevronLeft size={14} /> Movimientos
     </button>
@@ -75,42 +72,42 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
       <Panel
         title={`Conciliar ${fmtMonth(currentMonth)}`}
         right={
-          <button onClick={() => { const n = reconcileMonth(currentMonth); setResult(n); }} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: TOKENS.accent, color: TOKENS.bg, fontSize: 12.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={() => { const n = reconcileMonth(currentMonth); setResult(n); }} className="px-3.5 py-[7px] rounded-lg border-0 bg-accent text-bg text-[12.5px] font-semibold cursor-pointer flex items-center gap-1.5">
             <ScanLine size={13} /> Conciliar mes
           </button>
         }
       >
-        <div style={{ fontSize: 12.5, color: TOKENS.textMuted, marginBottom: 4 }}>
+        <div className="text-[12.5px] text-muted mb-1">
           El reporte del banco es la fuente oficial: compara tus movimientos manuales contra él (mismo monto, hasta 5 días después por la fecha contable del banco) y confirma los que calzan.
         </div>
         {result !== null && (
-          <div style={{ fontSize: 12, color: TOKENS.income, marginTop: 6 }}>
+          <div className="text-xs text-income mt-1.5">
             {result > 0 ? `${result} movimiento${result === 1 ? "" : "s"} confirmado${result === 1 ? "" : "s"} en esta pasada.` : "No se encontraron nuevas coincidencias."}
           </div>
         )}
         {!bankExists && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: TOKENS.pending, marginTop: 8 }}>
+          <div className="flex items-center gap-1.5 text-xs text-pending mt-2">
             <Info size={13} /> Todavía no has importado el reporte del banco de este mes — no se puede confirmar nada hasta que lo subas.
           </div>
         )}
       </Panel>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+      <div className="grid grid-cols-2 gap-4 mt-4">
         {/* min-width:0 en cada celda: por default una celda de grid no se
             achica más allá del contenido de su fila (ej. una descripción
             larga sin salto de línea), así que sin esto la columna con un
             movimiento confirmado se ensanchaba a costa de la otra columna. */}
-        <div style={{ minWidth: 0 }}>
+        <div className="min-w-0">
           <Panel title={`Confirmados (${confirmed.length})`}>
             {confirmed.length === 0 ? <EmptyNote text="Aún ninguno." /> : confirmed.map((t) => <ReconcileRow key={t.id} t={t} icon={Check} color={TOKENS.income} />)}
           </Panel>
         </div>
 
-        <div style={{ minWidth: 0 }}>
+        <div className="min-w-0">
           <Panel title={`Sin reporte del banco (${pendingNoReport.length})`}>
             {pendingNoReport.length === 0 ? <EmptyNote text="—" /> : (
               <>
-                <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 8 }}>Aún no importas el .xls de este mes, así que no se pueden comparar todavía.</div>
+                <div className="text-[11px] text-faint mb-2">Aún no importas el .xls de este mes, así que no se pueden comparar todavía.</div>
                 {pendingNoReport.map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
               </>
             )}
@@ -120,7 +117,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 
       {bankExists && pendingMismatch.length > 0 && (
         <Panel title={`⚠ Posible descuadre — no coinciden con el reporte (${pendingMismatch.length})`} right={null}>
-          <div style={{ fontSize: 11.5, color: TOKENS.textFaint, marginBottom: 10 }}>
+          <div className="text-[11.5px] text-faint mb-2.5">
             Ya subiste el reporte de este mes, pero estos movimientos manuales no encontraron un cargo o abono equivalente. Revisa el monto, la fecha, o si el banco aún no procesa ese movimiento.
           </div>
           {pendingMismatch.map((t) => (
@@ -136,23 +133,20 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
             <button
               onClick={() => setShowBankOnly((v) => !v)}
               aria-expanded={showBankOnly}
-              style={{
-                display: "flex", alignItems: "center", gap: 5, background: "none", border: "none",
-                color: TOKENS.textMuted, fontSize: 12, cursor: "pointer", padding: 4,
-              }}
+              className="flex items-center gap-[5px] bg-none border-0 text-muted text-xs cursor-pointer p-1"
             >
               {showBankOnly ? "Ocultar" : "Mostrar"}
               {showBankOnly ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           }
         >
-          <div style={{ fontSize: 11.5, color: TOKENS.textFaint, marginBottom: showBankOnly ? 10 : 0 }}>
+          <div className={`text-[11.5px] text-faint ${showBankOnly ? "mb-2.5" : "mb-0"}`}>
             Es normal: son movimientos que solo conoces por la cartola (compras con tarjeta, cargos automáticos, etc.) — no requieren nada de ti.
           </div>
           {showBankOnly && (
             <>
               {bankOnly.slice(0, 8).map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
-              {bankOnly.length > 8 && <div style={{ fontSize: 11.5, color: TOKENS.textFaint, marginTop: 6 }}>+ {bankOnly.length - 8} más</div>}
+              {bankOnly.length > 8 && <div className="text-[11.5px] text-faint mt-1.5">+ {bankOnly.length - 8} más</div>}
             </>
           )}
         </Panel>
@@ -163,13 +157,13 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 
 function ReconcileRow({ t, icon: Icon, color }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: `1px solid ${TOKENS.border}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, overflow: "hidden", flex: 1, minWidth: 0 }}>
-        {Icon && <Icon size={13} color={color} style={{ flexShrink: 0 }} />}
-        <span className="mono" style={{ color: TOKENS.textFaint, fontSize: 11, flexShrink: 0 }}>{formatDateDisplay(t.date)}</span>
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{t.alias || t.description}</span>
+    <div className="flex items-center justify-between py-[7px] border-b border-border">
+      <div className="flex items-center gap-2 text-[12.5px] overflow-hidden flex-1 min-w-0">
+        {Icon && <Icon size={13} color={color} className="shrink-0" />}
+        <span className="mono text-faint text-[11px] shrink-0">{formatDateDisplay(t.date)}</span>
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{t.alias || t.description}</span>
       </div>
-      <span className="mono" style={{ fontSize: 12, color: t.amount >= 0 ? TOKENS.income : TOKENS.expense, flexShrink: 0, marginLeft: 8 }}>
+      <span className={`mono text-xs shrink-0 ml-2 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
         {formatCLP(t.amount)}
       </span>
     </div>
@@ -218,7 +212,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const Row = isMobile ? motion.div : "div";
 
   return (
-    <div style={{ borderBottom: `1px solid ${TOKENS.border}` }}>
+    <div className="border-b border-border">
       <div className="tx-swipe-clip">
         {isMobile && (
           <div className="tx-swipe-actions" style={{ width: MISMATCH_SWIPE_WIDTH }}>
@@ -238,10 +232,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           </div>
         )}
         <Row
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-            padding: "7px 0", background: TOKENS.surface, touchAction: "pan-y", position: "relative",
-          }}
+          className="flex items-center justify-between gap-2 py-[7px] bg-surface touch-pan-y relative"
           {...(isMobile ? {
             drag: "x",
             dragConstraints: { left: -MISMATCH_SWIPE_WIDTH, right: 0 },
@@ -250,20 +241,20 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
             onDragEnd: handleDragEnd,
           } : {})}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, overflow: "hidden", flex: 1, minWidth: 0 }}>
-            <AlertTriangle size={13} color={TOKENS.pending} style={{ flexShrink: 0 }} />
-            <span className="mono" style={{ color: TOKENS.textFaint, fontSize: 11 }}>{formatDateDisplay(t.date)}</span>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.alias || t.description}</span>
+          <div className="flex items-center gap-2 text-[12.5px] overflow-hidden flex-1 min-w-0">
+            <AlertTriangle size={13} color={TOKENS.pending} className="shrink-0" />
+            <span className="mono text-faint text-[11px]">{formatDateDisplay(t.date)}</span>
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap">{t.alias || t.description}</span>
           </div>
-          <span className="mono" style={{ fontSize: 12, color: t.amount >= 0 ? TOKENS.income : TOKENS.expense, flexShrink: 0 }}>
+          <span className={`mono text-xs shrink-0 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
             {formatCLP(t.amount)}
           </span>
-          <div className="tx-actions" style={{ display: "flex", gap: 2, flexShrink: 0 }}>
+          <div className="tx-actions flex gap-0.5 shrink-0">
             <button
               onClick={openEdit}
               title="Corregir fecha o monto"
               aria-label="Corregir fecha o monto"
-              style={{ background: "none", border: "none", cursor: "pointer", color: mode === "edit" ? TOKENS.accent : TOKENS.textFaint, padding: 5 }}
+              className={`bg-none border-0 cursor-pointer p-[5px] ${mode === "edit" ? "text-accent" : "text-faint"}`}
             >
               <Pencil size={13} />
             </button>
@@ -272,12 +263,9 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
               title="Vincular a mano con un movimiento del banco"
               aria-label="Vincular a mano con un movimiento del banco"
               disabled={bankCandidates.length === 0}
-              style={{
-                background: "none", border: "none", padding: 5,
-                cursor: bankCandidates.length === 0 ? "default" : "pointer",
-                color: mode === "link" ? TOKENS.accent : TOKENS.textFaint,
-                opacity: bankCandidates.length === 0 ? 0.4 : 1,
-              }}
+              className={`bg-none border-0 p-[5px] disabled:opacity-40 disabled:cursor-default enabled:cursor-pointer ${
+                mode === "link" ? "text-accent" : "text-faint"
+              }`}
             >
               <Link2 size={13} />
             </button>
@@ -287,16 +275,16 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
       </div>
 
       {mode === "edit" && (
-        <div style={{ marginTop: 8, padding: "10px 12px", background: TOKENS.surfaceAlt, borderRadius: 8 }}>
-          <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+        <div className="mt-2 px-3 py-2.5 bg-surface-alt rounded-lg">
+          <div className="form-grid-2 grid grid-cols-2 gap-2 mb-2">
             <FieldInput label="Fecha" type="date" value={date} onChange={setDate} />
             <FieldInput label="Monto (CLP)" type="number" value={amount} onChange={setAmount} />
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={saveEdit} style={{ flex: 1, padding: "8px 12px", borderRadius: 7, border: "none", background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
+          <div className="flex gap-2">
+            <button onClick={saveEdit} className="flex-1 px-3 py-2 rounded-[7px] border-0 bg-accent text-bg font-semibold text-xs cursor-pointer">
               Guardar
             </button>
-            <button onClick={close} aria-label="Cancelar" style={{ padding: 8, borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, cursor: "pointer" }}>
+            <button onClick={close} aria-label="Cancelar" className="p-2 rounded-[7px] border border-border bg-transparent text-muted cursor-pointer">
               <X size={14} />
             </button>
           </div>
@@ -304,11 +292,11 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
       )}
 
       {mode === "link" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "10px 12px", background: TOKENS.surfaceAlt, borderRadius: 8, flexWrap: "wrap" }}>
+        <div className="flex items-center gap-2 mt-2 px-3 py-2.5 bg-surface-alt rounded-lg flex-wrap">
           <select
             value={bankId}
             onChange={(e) => setBankId(e.target.value)}
-            style={{ flex: "1 1 220px", padding: "7px 9px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 12.5 }}
+            className="flex-[1_1_220px] px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-[12.5px]"
           >
             <option value="">Elige el movimiento del banco…</option>
             {bankCandidates.map((b) => (
@@ -320,14 +308,11 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           <button
             onClick={confirmMatch}
             disabled={!bankId}
-            style={{
-              padding: "8px 12px", borderRadius: 7, border: "none", fontWeight: 600, fontSize: 12,
-              background: TOKENS.accent, color: TOKENS.bg, cursor: bankId ? "pointer" : "default", opacity: bankId ? 1 : 0.6,
-            }}
+            className="px-3 py-2 rounded-[7px] border-0 font-semibold text-xs bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
           >
             Vincular
           </button>
-          <button onClick={close} aria-label="Cancelar" style={{ padding: 8, borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, cursor: "pointer" }}>
+          <button onClick={close} aria-label="Cancelar" className="p-2 rounded-[7px] border border-border bg-transparent text-muted cursor-pointer">
             <X size={14} />
           </button>
         </div>
