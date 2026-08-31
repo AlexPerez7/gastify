@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download } from "lucide-react";
-import { TOKENS } from "../lib/constants.js";
 import { pillClass } from "./Shared.jsx";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
@@ -34,14 +33,14 @@ function SaveIndicator({ saving }) {
 
   if (saving) {
     return (
-      <span style={{ display: "flex", alignItems: "center", gap: 4, color: TOKENS.textFaint, fontSize: 11.5 }}>
+      <span className="flex items-center gap-1 text-faint text-[11.5px]">
         <Loader2 size={11} className="spin" /> Guardando…
       </span>
     );
   }
   if (showSaved) {
     return (
-      <span style={{ display: "flex", alignItems: "center", gap: 4, color: TOKENS.income, fontSize: 11.5 }}>
+      <span className="flex items-center gap-1 text-income text-[11.5px]">
         <Check size={11} /> Guardado
       </span>
     );
@@ -49,28 +48,36 @@ function SaveIndicator({ saving }) {
   return null;
 }
 
+// botón de ícono suelto de la barra superior (ayuda, tema, cerrar sesión)
+const HEADER_ICON_BTN =
+  "flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-transparent text-muted text-[12.5px] cursor-pointer";
+
 export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
-    <div style={{ borderBottom: `1px solid ${TOKENS.border}`, background: TOKENS.surface, position: "sticky", top: 0, zIndex: 10 }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src={logo} alt="" width={30} height={30} style={{ display: "block" }} />
-          <div className="display" style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>Gastify</div>
-          <div className="header-subtitle" style={{ color: TOKENS.textFaint, fontSize: 12, marginLeft: 2 }}>· cuenta corriente CLP</div>
+    <div className="border-b border-border bg-surface sticky top-0 z-10">
+      <div className="max-w-[1080px] mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <img src={logo} alt="" width={30} height={30} className="block" />
+          <div className="display text-lg font-bold tracking-[-0.02em]">Gastify</div>
+          <div className="header-subtitle text-faint text-xs ml-0.5">· cuenta corriente CLP</div>
           <SaveIndicator saving={saving} />
         </div>
-        <div className="header-controls" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <nav className="top-tab-nav" style={{ display: "flex", gap: 4, background: TOKENS.surfaceAlt, padding: 4, borderRadius: 10, border: `1px solid ${TOKENS.border}` }}>
+        <div className="header-controls flex items-center gap-2.5">
+          <nav className="top-tab-nav flex gap-1 bg-surface-alt p-1 rounded-[10px] border border-border">
             {TAB_ITEMS.map((it) => {
               const Icon = it.icon;
               const active = tab === it.id;
               return (
-                <button key={it.id} onClick={() => setTab(it.id)} aria-label={it.label} aria-current={active ? "page" : undefined} style={{
-                  display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 7,
-                  border: "none", cursor: "pointer", fontSize: 13, fontWeight: 500,
-                  background: active ? TOKENS.bg : "transparent", color: active ? TOKENS.text : TOKENS.textMuted,
-                }}>
+                <button
+                  key={it.id}
+                  onClick={() => setTab(it.id)}
+                  aria-label={it.label}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-1.5 px-3 py-[7px] rounded-[7px] border-0 cursor-pointer text-[13px] font-medium ${
+                    active ? "bg-bg text-ink" : "bg-transparent text-muted"
+                  }`}
+                >
                   <Icon size={14} /> <span>{it.label}</span>
                 </button>
               );
@@ -80,10 +87,8 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
             onClick={() => setShowHelp(true)}
             title="Cómo usar la app"
             aria-label="Cómo usar la app"
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-            }}>
+            className={HEADER_ICON_BTN}
+          >
             <HelpCircle size={13} />
           </button>
           {onToggleTheme && (
@@ -91,18 +96,13 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
               onClick={onToggleTheme}
               title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
               aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-            }}>
+              className={HEADER_ICON_BTN}
+            >
               {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
             </button>
           )}
           {onSignOut && (
-            <button onClick={onSignOut} title="Cerrar sesión" aria-label="Cerrar sesión" style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-            }}>
+            <button onClick={onSignOut} title="Cerrar sesión" aria-label="Cerrar sesión" className={HEADER_ICON_BTN}>
               <LogOut size={13} />
             </button>
           )}
@@ -121,8 +121,7 @@ function BottomTabButton({ it, tab, setTab }) {
       onClick={() => setTab(it.id)}
       aria-label={it.label}
       aria-current={active ? "page" : undefined}
-      className="bottom-tab-btn"
-      style={{ color: active ? TOKENS.text : TOKENS.textFaint }}
+      className={`bottom-tab-btn ${active ? "text-ink" : "text-faint"}`}
     >
       <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />
       <span>{it.label}</span>
@@ -206,17 +205,14 @@ export function ExportMenu({ exportingCsv, exportingBackup, onExportCsv, onExpor
   }, [open]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
         aria-label="Más opciones"
         aria-expanded={open}
         title="Exportar o respaldar movimientos"
-        style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 8,
-          border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted, cursor: "pointer",
-        }}
+        className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-border bg-surface text-muted cursor-pointer"
       >
         <MoreVertical size={15} />
       </button>
@@ -249,19 +245,21 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rig
   const monthsInYear = months.filter((m) => m.startsWith(selectedYear));
 
   return (
-    <div style={{ marginBottom: 22 }}>
+    <div className="mb-[22px]">
       {(years.length > 1 || rightSlot) && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+        <div className="flex items-center justify-between gap-2.5 mb-2.5">
           {years.length > 1 ? (
-            <div className="chip-scroll-row" style={{ display: "flex", gap: 4, background: TOKENS.surfaceAlt, padding: 4, borderRadius: 10, border: `1px solid ${TOKENS.border}`, width: "fit-content", maxWidth: "100%" }}>
+            <div className="chip-scroll-row flex gap-1 bg-surface-alt p-1 rounded-[10px] border border-border w-fit max-w-full">
               {years.map((y) => {
                 const active = y === selectedYear;
                 return (
-                  <button key={y} onClick={() => setYearOverride(y)} style={{
-                    padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
-                    fontSize: 12.5, fontWeight: 500, flexShrink: 0,
-                    background: active ? TOKENS.bg : "transparent", color: active ? TOKENS.text : TOKENS.textMuted,
-                  }}>
+                  <button
+                    key={y}
+                    onClick={() => setYearOverride(y)}
+                    className={`px-3 py-[5px] rounded-[7px] border-0 cursor-pointer text-[12.5px] font-medium shrink-0 ${
+                      active ? "bg-bg text-ink" : "bg-transparent text-muted"
+                    }`}
+                  >
                     {y}
                   </button>
                 );
@@ -271,21 +269,18 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rig
           {rightSlot}
         </div>
       )}
-      <div className="chip-scroll-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="chip-scroll-row flex gap-2 flex-wrap">
         <button onClick={() => setMonthFilter("all")} className={pillClass(monthFilter === "all")}>Todo</button>
         {monthsInYear.map((m) => {
           const health = monthHealth?.[m];
           return (
             <button key={m} onClick={() => setMonthFilter(m)} className={pillClass(monthFilter === m)}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <span className="inline-flex items-center gap-[5px]">
                 {label(m)}
                 {health && (
                   <span
                     title={health === "warn" ? "Con movimientos manuales sin conciliar" : "Mes conciliado"}
-                    style={{
-                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                      background: health === "warn" ? TOKENS.pending : TOKENS.income,
-                    }}
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${health === "warn" ? "bg-pending" : "bg-income"}`}
                   />
                 )}
               </span>
