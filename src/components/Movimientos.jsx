@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine } from "lucide-react";
+import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
+import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../lib/useIsMobile.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
@@ -23,6 +24,14 @@ export function Movimientos({
   addManual, onAddCategory, handleFile, isImporting, pushToast, onBulkDelete, onBulkChangeCategory,
   recentImportIds = [], onClearRecentImports, duplicateIds, onOpenConciliacion, reconcileStats, onToggleSubscription,
   exportingCsv, exportingBackup, onExportCsv, onExportBackup,
+  // tarjeta de crédito (CMR) — dataset y handlers separados de los de
+  // débito de arriba, ver App.jsx (nunca se mezclan).
+  creditTx = [], creditMonths = [], currentCreditMonth = "", onSetCreditMonth,
+  creditStats, saveCreditTxEdit, deleteCreditTransaction, handleCreditFile, isImportingCredit,
+  creditStatement, handleCreditStatementFile, isImportingStatement,
+  // "Débito" / "Crédito": vive en App.jsx (no local) para poder abrirse
+  // directo en "Crédito" desde afuera (ver la card de la tarjeta en Resumen).
+  viewMode, setViewMode,
 }) {
   // en mobile, categoría/tipo/origen se agrupan en un bottom sheet detrás de
   // un solo botón de filtro (en vez de 3 selects apilados) — patrón típico
@@ -103,6 +112,50 @@ export function Movimientos({
 
   return (
     <div>
+      <div style={{
+        display: "flex", gap: 3, padding: 3, marginBottom: 16, borderRadius: 999, width: "fit-content", boxSizing: "border-box",
+        background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`,
+      }}>
+        {[
+          { v: "debito", label: "Débito", icon: Wallet },
+          { v: "credito", label: "Crédito", icon: CreditCardIcon },
+        ].map(({ v, label, icon: Icon }) => (
+          <button
+            key={v}
+            onClick={() => setViewMode(v)}
+            aria-pressed={viewMode === v}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, border: "none",
+              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+              background: viewMode === v ? TOKENS.accent : "transparent",
+              color: viewMode === v ? TOKENS.bg : TOKENS.textMuted,
+            }}
+          >
+            <Icon size={13} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {viewMode === "credito" ? (
+        <CreditCard
+          tx={creditTx}
+          months={creditMonths}
+          currentMonth={currentCreditMonth}
+          onSetMonth={onSetCreditMonth}
+          stats={creditStats}
+          categories={categories}
+          getCat={getCat}
+          onAddCategory={onAddCategory}
+          saveTxEdit={saveCreditTxEdit}
+          onDelete={deleteCreditTransaction}
+          onImportFile={handleCreditFile}
+          isImporting={isImportingCredit}
+          statement={creditStatement}
+          onImportStatementFile={handleCreditStatementFile}
+          isImportingStatement={isImportingStatement}
+        />
+      ) : (
+      <>
       {/* en mobile, exportar/respaldar vive en el "⋮" de la fila de meses
           (arriba, junto a los chips de año) — acá solo queda en desktop,
           donde sí hay ancho de sobra para 2 botones sueltos. */}
@@ -435,6 +488,8 @@ export function Movimientos({
           onChangeCategory={handleBulkCategoryChange}
           onClose={() => setSelectedIds([])}
         />
+      )}
+      </>
       )}
     </div>
   );

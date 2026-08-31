@@ -10,7 +10,7 @@ import { exportBackup } from "./lib/exportBackup.js";
 import { exportCsv } from "./lib/exportCsv.js";
 import {
   autoCategory, applyMerchantRules, parseClpNumber, parseBankDate,
-  makeKey, monthKey, nextMonthKey, uid, computeInsights, formatCLP,
+  makeKey, makeCreditKey, monthKey, nextMonthKey, uid, computeInsights, formatCLP,
 } from "./lib/utils.js";
 
 import { Header, MonthBar, BottomNav, ExportMenu } from "./components/Header.jsx";
@@ -31,6 +31,15 @@ const ONBOARDING_KEY = "gastify:onboarding-done";
 
 export default function App({ onSignOut, theme, onToggleTheme }) {
   const [transactions, setTransactions] = useState([]);
+  // tarjeta de crédito (CMR) — deliberadamente separada de `transactions`:
+  // no entra en stats/dynamicBalance/isRealExpense/heroStat/insights/
+  // conciliación, para no duplicar el gasto (el pago de la tarjeta ya
+  // aparece como cargo real en el débito). Ver toggle Débito/Crédito en
+  // Movimientos.jsx.
+  const [creditTransactions, setCreditTransactions] = useState([]);
+  // resumen del Estado de Cuenta CMR (PDF) — cupo, fechas, totales; una fila
+  // por ciclo, independiente de creditTransactions (ver handleCreditStatementFile).
+  const [creditStatements, setCreditStatements] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [merchantRules, setMerchantRules] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
@@ -45,6 +54,11 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // la pestaña si hay algo en camino, para no perderlo.
   const pendingSaves = useRef(0);
   const [tab, setTab] = useState("resumen");
+  // qué dataset se ve dentro de la pestaña Movimientos (débito/crédito) —
+  // lifted acá (no local a Movimientos.jsx) por lo mismo que showManualForm/
+  // showImportModal: hace falta poder abrirlo desde afuera (ver goToCredito,
+  // usado por la card de la tarjeta en Resumen).
+  const [movementsView, setMovementsView] = useState("debito");
   // ids de los movimientos agregados por la ÚLTIMA importación de banco —
   // para que el usuario pueda revisarlos sin tener que buscarlos a mano en
   // la lista completa (ver banner + filtro "Ver solo estos" en Movimientos).
@@ -114,6 +128,12 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     setTab("movimientos");
     setShowImportModal(true);
   }, []);
+  // desde la card informativa de la tarjeta CMR en Resumen: salta a
+  // Movimientos ya con el toggle en "Crédito".
+  const goToCredito = useCallback(() => {
+    setTab("movimientos");
+    setMovementsView("credito");
+  }, []);
   // desde el gráfico/leyenda de "Gasto por categoría" o "Ingresos por
   // categoría" en Resumen: salta a Movimientos ya filtrado por esa
   // categoría y por el tipo de movimiento del gráfico donde se hizo clic
@@ -160,6 +180,38 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     setSyncError(null);
     return true;
   }, [transactions, beginSave, endSave]);
+  const persistCreditTx = useCallback(async (next) => {
+    const prev = creditTransactions;
+    setCreditTransactions(next);
+    beginSave();
+    const res = await storage.set("creditTransactions", JSON.stringify(next), prev);
+    endSave();
+    lastPersistError.current = res?.error || null;
+    if (!res || res.error) {
+      setCreditTransactions(prev);
+      const detail = res?.error ? ` (${res.error})` : "";
+      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
+      return false;
+    }
+    setSyncError(null);
+    return true;
+  }, [creditTransactions, beginSave, endSave]);
+  const persistCreditStatements = useCallback(async (next) => {
+    const prev = creditStatements;
+    setCreditStatements(next);
+    beginSave();
+    const res = await storage.set("creditStatements", JSON.stringify(next), prev);
+    endSave();
+    lastPersistError.current = res?.error || null;
+    if (!res || res.error) {
+      setCreditStatements(prev);
+      const detail = res?.error ? ` (${res.error})` : "";
+      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
+      return false;
+    }
+    setSyncError(null);
+    return true;
+  }, [creditStatements, beginSave, endSave]);
   const persistCats = useCallback(async (next) => {
     const prev = categories;
     setCategories(next);
@@ -208,6 +260,12 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     const tx = await storage.get("transactions");
     if (tx) setTransactions(JSON.parse(tx.value));
 
+    const creditTx = await storage.get("creditTransactions");
+    if (creditTx) setCreditTransactions(JSON.parse(creditTx.value));
+
+    const creditStmts = await storage.get("creditStatements");
+    if (creditStmts) setCreditStatements(JSON.parse(creditStmts.value));
+
     const cats = await storage.get("categories");
     if (cats) {
       const parsedCats = JSON.parse(cats.value);
@@ -226,7 +284,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     // así que no cuenta para el syncError de abajo.
     setAccountSettings(await getAccountSettings());
 
-    if (!tx || !cats || !rules || !subs) {
+    if (!tx || !cats || !rules || !subs || !creditTx || !creditStmts) {
       setSyncError("No se pudieron cargar todos tus datos. Revisa tu conexión y recarga la página.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- persistCats solo se usa para sembrar defaults, no hace falta re-crear esta función si cambia
@@ -465,6 +523,148 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     [transactions, merchantRules, persistTx, pushToast, updateToast, accountSettings]
   );
 
+  // ---- import xlsx tarjeta de crédito (CMR) --------------------------------
+  // candado análogo al de handleFile (ver su comentario) — evita doble
+  // importación si el usuario suelta/selecciona el archivo dos veces antes
+  // de que la primera pasada termine de guardar.
+  const importingCreditRef = useRef(false);
+  const [isImportingCredit, setIsImportingCredit] = useState(false);
+  const handleCreditFile = useCallback(
+    async (file) => {
+      if (importingCreditRef.current) return;
+      importingCreditRef.current = true;
+      setIsImportingCredit(true);
+      const toastId = pushToast("loading", "Leyendo cartola…", 0);
+      try {
+        const buf = await readFileWithProgress(file, (pct) => updateToast(toastId, "loading", "Leyendo cartola…", pct));
+        updateToast(toastId, "loading", "Procesando movimientos…");
+
+        const { parseCreditCardRows } = await import("./lib/parseCreditCardXlsx.js");
+        const rows = await parseCreditCardRows(buf);
+
+        if (rows.length === 0) {
+          updateToast(toastId, "error", "No se reconocieron movimientos en este archivo.");
+          return;
+        }
+
+        // el ciclo/cartola no viene explícito en el archivo (FECHA es la
+        // fecha de compra original, que se repite en cada cartola siguiente
+        // para una compra en cuotas — ver makeCreditKey), pero la cartola
+        // siempre incluye al menos un movimiento reciente: el mes de la
+        // fecha MÁS RECIENTE del archivo es un proxy confiable del ciclo al
+        // que pertenece, sin tener que preguntárselo al usuario.
+        const statementMonth = rows.reduce((max, r) => (!max || r.date > max ? r.date : max), null).slice(0, 7);
+
+        const existingKeys = new Set(creditTransactions.map((t) => t.key));
+        const imported = [];
+        const importedAt = new Date().toISOString();
+
+        for (const r of rows) {
+          // statementMonth es parte de la clave: ver comentario arriba y en
+          // makeCreditKey (utils.js) sobre por qué hace falta.
+          const key = makeCreditKey(statementMonth, r.date, r.description, r.montoTotal, r.cuotasPendientes, r.valorCuota);
+          if (existingKeys.has(key)) continue;
+          existingKeys.add(key);
+          const rule = applyMerchantRules(r.description, merchantRules);
+          imported.push({
+            id: uid(),
+            key,
+            statementMonth,
+            date: r.date,
+            description: r.description,
+            alias: rule ? rule.alias : "",
+            // CMR reporta una compra como VALOR CUOTA positivo (lo que se te
+            // cobra), pero la convención del resto de la app es la del
+            // débito: negativo = gasto, positivo = ingreso/abono (ver
+            // handleFile). Se invierte acá para que el mismo TOKENS.expense/
+            // income y el mismo formatCLP con signo sirvan sin casos
+            // especiales en la UI.
+            amount: -r.valorCuota,
+            totalAmount: r.montoTotal,
+            installmentsPending: r.cuotasPendientes,
+            holder: r.holder,
+            category: rule ? rule.categoryId : autoCategory(r.description),
+            createdAt: importedAt,
+          });
+        }
+
+        if (imported.length === 0) {
+          updateToast(toastId, "ok", "Sin movimientos nuevos (ya estaban todos importados).");
+          return;
+        }
+
+        const persisted = await persistCreditTx([...creditTransactions, ...imported]);
+        if (!persisted) {
+          const detail = lastPersistError.current ? ` (${lastPersistError.current})` : "";
+          updateToast(toastId, "error", `No se pudieron guardar los movimientos importados. Intenta de nuevo.${detail}`);
+          return;
+        }
+        updateToast(toastId, "ok", `${imported.length} movimiento${imported.length === 1 ? "" : "s"} importado${imported.length === 1 ? "" : "s"}.`);
+      } catch (e) {
+        console.error(e);
+        updateToast(toastId, "error", 'No se pudo leer el archivo. ¿Es el Excel de "Movimientos Facturados" de CMR?');
+      } finally {
+        importingCreditRef.current = false;
+        setIsImportingCredit(false);
+      }
+    },
+    [creditTransactions, merchantRules, persistCreditTx, pushToast, updateToast]
+  );
+
+  // ---- import PDF Estado de Cuenta CMR (cupo, fechas, totales) ------------
+  const importingStatementRef = useRef(false);
+  const [isImportingStatement, setIsImportingStatement] = useState(false);
+  const handleCreditStatementFile = useCallback(
+    async (file) => {
+      if (importingStatementRef.current) return;
+      importingStatementRef.current = true;
+      setIsImportingStatement(true);
+      const toastId = pushToast("loading", "Leyendo estado de cuenta…", 0);
+      try {
+        const buf = await readFileWithProgress(file, (pct) => updateToast(toastId, "loading", "Leyendo estado de cuenta…", pct));
+        updateToast(toastId, "loading", "Procesando…");
+
+        const { parseCreditStatementPdf } = await import("./lib/parseCreditStatementPdf.js");
+        const parsed = await parseCreditStatementPdf(buf);
+        if (!parsed) {
+          updateToast(toastId, "error", "No se pudo leer este PDF. ¿Es el Estado de Cuenta CMR?");
+          return;
+        }
+
+        const statementMonth = monthKey(parsed.statementDate);
+        // reimportar el mismo ciclo reemplaza la fila anterior en vez de
+        // duplicarla — el diffing de storage.js ya borra el id viejo (no
+        // queda en `next`) e inserta el nuevo.
+        const next = [...creditStatements.filter((s) => s.statementMonth !== statementMonth), {
+          id: uid(),
+          statementMonth,
+          ...parsed,
+          createdAt: new Date().toISOString(),
+        }];
+
+        const persisted = await persistCreditStatements(next);
+        if (!persisted) {
+          const detail = lastPersistError.current ? ` (${lastPersistError.current})` : "";
+          updateToast(toastId, "error", `No se pudo guardar el estado de cuenta. Intenta de nuevo.${detail}`);
+          return;
+        }
+        updateToast(
+          toastId, "ok",
+          parsed.cupoAvailable != null
+            ? `Estado de cuenta actualizado. Cupo disponible: ${formatCLP(parsed.cupoAvailable)}.`
+            : "Estado de cuenta actualizado."
+        );
+      } catch (e) {
+        console.error(e);
+        updateToast(toastId, "error", "No se pudo leer el archivo. ¿Es el Estado de Cuenta CMR en PDF?");
+      } finally {
+        importingStatementRef.current = false;
+        setIsImportingStatement(false);
+      }
+    },
+    [creditStatements, persistCreditStatements, pushToast, updateToast]
+  );
+
   // ---- manual entries ---------------------------------------------------------
   const addManual = useCallback(
     async (entry) => {
@@ -532,6 +732,35 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
       await persistTx(next);
     },
     [transactions, merchantRules, persistTx, persistRules]
+  );
+
+  // ---- tarjeta de crédito: edición y borrado -------------------------------
+  // mismo patrón que saveTxEdit/deleteTransaction, pero sobre
+  // creditTransactions — comparte merchantRules con el débito (muchas
+  // descripciones se repiten entre ambas tarjetas, ej. "FALABELLA.COM").
+  const editCreditTxEntry = useCallback(
+    async (txId, { category, alias, remember, matchText }) => {
+      let nextRules = merchantRules;
+      if (remember && matchText && matchText.trim()) {
+        const mt = matchText.trim();
+        const others = merchantRules.filter((r) => r.matchText.toUpperCase() !== mt.toUpperCase());
+        nextRules = [...others, { id: uid(), matchText: mt, categoryId: category, alias: alias || "" }];
+        await persistRules(nextRules);
+      }
+      const next = creditTransactions.map((t) => {
+        if (t.id === txId) return { ...t, category, alias: alias || "" };
+        if (remember && matchText && t.description.toUpperCase().includes(matchText.trim().toUpperCase())) {
+          return { ...t, category, alias: alias || t.alias };
+        }
+        return t;
+      });
+      await persistCreditTx(next);
+    },
+    [creditTransactions, merchantRules, persistCreditTx, persistRules]
+  );
+  const deleteCreditTransaction = useCallback(
+    (id) => { persistCreditTx(creditTransactions.filter((t) => t.id !== id)); },
+    [creditTransactions, persistCreditTx]
   );
 
   // marca/desmarca un movimiento como suscripción desde Movimientos: al
@@ -728,6 +957,59 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   }, [months]);
 
   const currentMonth = monthFilter === "all" ? months[0] : monthFilter;
+
+  // ---- tarjeta de crédito: derivados ---------------------------------------
+  // "ciclos" en vez de "meses de movimiento": statementMonth es el mes de la
+  // cartola elegido al importar (ver handleCreditFile), no el mes calendario
+  // de cada fila individual.
+  const creditMonths = useMemo(() => {
+    const s = new Set(creditTransactions.map((t) => t.statementMonth));
+    return Array.from(s).filter(Boolean).sort().reverse();
+  }, [creditTransactions]);
+
+  const [creditMonthFilter, setCreditMonthFilter] = useState("");
+  const didSetDefaultCreditMonth = useRef(false);
+  useEffect(() => {
+    if (!didSetDefaultCreditMonth.current && creditMonths.length > 0) {
+      didSetDefaultCreditMonth.current = true;
+      setCreditMonthFilter(creditMonths[0]);
+    }
+  }, [creditMonths]);
+  const currentCreditMonth = creditMonthFilter || creditMonths[0] || "";
+
+  const filteredCreditTx = useMemo(() => {
+    return creditTransactions
+      .filter((t) => t.statementMonth === currentCreditMonth)
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+  }, [creditTransactions, currentCreditMonth]);
+
+  // suma con signo (misma convención que t.amount en débito: negativo =
+  // gasto) — normalmente negativo, salvo un ciclo con más devoluciones/pagos
+  // que compras nuevas. CreditCard.jsx muestra el valor absoluto como
+  // "Total facturado".
+  const creditStats = useMemo(() => {
+    const total = filteredCreditTx.reduce((s, t) => s + t.amount, 0);
+    const pendingCount = filteredCreditTx.filter((t) => t.installmentsPending > 0).length;
+    return { total, pendingCount };
+  }, [filteredCreditTx]);
+
+  // undefined si todavía no se importó el PDF del Estado de Cuenta de este
+  // ciclo — la UI de crédito debe seguir funcionando igual solo con el Excel.
+  const currentCreditStatement = useMemo(
+    () => creditStatements.find((s) => s.statementMonth === currentCreditMonth),
+    [creditStatements, currentCreditMonth]
+  );
+
+  // para la card informativa en Resumen: el ciclo más reciente que se haya
+  // importado, sin importar qué mes esté seleccionado en el filtro de
+  // débito ni en el toggle de crédito (son selectores independientes).
+  const latestCreditStatement = useMemo(() => {
+    if (creditStatements.length === 0) return null;
+    return [...creditStatements].sort((a, b) => (a.statementMonth < b.statementMonth ? 1 : -1))[0];
+  }, [creditStatements]);
 
   const monthTx = useMemo(
     () => transactions.filter((t) => monthFilter === "all" || monthKey(t.date) === monthFilter),
@@ -1059,6 +1341,8 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 onCategoryClick={goToCategoryMovements}
                 totalSavings={totalSavings}
                 onAdjustSavings={adjustSavingsBase}
+                creditStatement={latestCreditStatement}
+                onGoToCredit={goToCredito}
               />
             </Suspense>
           </ErrorBoundary>
@@ -1095,6 +1379,20 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 onToggleSubscription={toggleTxSubscription}
                 exportingCsv={exportingCsv} exportingBackup={exportingBackup}
                 onExportCsv={handleExportCsv} onExportBackup={handleExportBackup}
+                creditTx={filteredCreditTx}
+                creditMonths={creditMonths}
+                currentCreditMonth={currentCreditMonth}
+                onSetCreditMonth={setCreditMonthFilter}
+                creditStats={creditStats}
+                saveCreditTxEdit={editCreditTxEntry}
+                deleteCreditTransaction={deleteCreditTransaction}
+                handleCreditFile={handleCreditFile}
+                isImportingCredit={isImportingCredit}
+                creditStatement={currentCreditStatement}
+                handleCreditStatementFile={handleCreditStatementFile}
+                isImportingStatement={isImportingStatement}
+                viewMode={movementsView}
+                setViewMode={setMovementsView}
               />
             </Suspense>
           </ErrorBoundary>

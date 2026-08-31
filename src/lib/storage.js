@@ -62,6 +62,44 @@ const TABLES = {
     toRow: (s) => ({ id: s.id, name: s.name, amount: s.amount, category_id: s.category, day_of_month: s.dayOfMonth, active: !!s.active }),
     fromRow: (r) => ({ id: r.id, name: r.name, amount: Number(r.amount), category: r.category_id, dayOfMonth: r.day_of_month, active: !!r.active }),
   },
+  // tarjeta de crédito (CMR) — tabla propia, separada de transactions (ver
+  // src/lib/parseCreditCardXlsx.js y makeCreditKey en utils.js).
+  creditTransactions: {
+    table: "credit_transactions",
+    toRow: (t) => ({
+      id: t.id, key: t.key, statement_month: t.statementMonth, date: t.date,
+      description: t.description, alias: t.alias, amount: t.amount, total_amount: t.totalAmount,
+      installments_pending: t.installmentsPending, holder: t.holder, category: t.category,
+    }),
+    fromRow: (r) => ({
+      id: r.id, key: r.key, statementMonth: r.statement_month, date: r.date,
+      description: r.description, alias: r.alias, amount: Number(r.amount),
+      totalAmount: r.total_amount != null ? Number(r.total_amount) : null,
+      installmentsPending: r.installments_pending, holder: r.holder, category: r.category,
+      createdAt: r.created_at,
+    }),
+  },
+  // resumen del Estado de Cuenta CMR (cupo, fechas, totales) — una fila por
+  // ciclo, separada de creditTransactions (ver src/lib/parseCreditStatementPdf.js).
+  creditStatements: {
+    table: "credit_statements",
+    toRow: (s) => ({
+      id: s.id, statement_month: s.statementMonth, statement_date: s.statementDate,
+      period_from: s.periodFrom, period_to: s.periodTo, pay_by: s.payBy,
+      total_to_pay: s.totalToPay, min_to_pay: s.minToPay,
+      cupo_total: s.cupoTotal, cupo_used: s.cupoUsed, cupo_available: s.cupoAvailable,
+    }),
+    fromRow: (r) => ({
+      id: r.id, statementMonth: r.statement_month, statementDate: r.statement_date,
+      periodFrom: r.period_from, periodTo: r.period_to, payBy: r.pay_by,
+      totalToPay: r.total_to_pay != null ? Number(r.total_to_pay) : null,
+      minToPay: r.min_to_pay != null ? Number(r.min_to_pay) : null,
+      cupoTotal: r.cupo_total != null ? Number(r.cupo_total) : null,
+      cupoUsed: r.cupo_used != null ? Number(r.cupo_used) : null,
+      cupoAvailable: r.cupo_available != null ? Number(r.cupo_available) : null,
+      createdAt: r.created_at,
+    }),
+  },
 };
 
 // PostgREST (la API que usa Supabase) devuelve como máximo esta cantidad de

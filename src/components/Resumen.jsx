@@ -3,9 +3,9 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Legend,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, X, PiggyBank } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, X, PiggyBank, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
 import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
-import { formatCLP } from "../lib/utils.js";
+import { formatCLP, formatDateDisplay } from "../lib/utils.js";
 import { Panel, EmptyState, StatCard, FieldInput } from "./Shared.jsx";
 import { SpendHeatmap } from "./Heatmap.jsx";
 import { Insights } from "./Insights.jsx";
@@ -38,6 +38,7 @@ function spendPaceSub(heroStat) {
 export function Resumen({
   stats, byCategory, byIncomeCategory, categories, byMonth, currentMonth, dailySpend, hasTransactions, heroStat, insights, pushToast,
   dynamicBalance, lastSyncDate, onAdjustBalance, onCategoryClick, totalSavings, onAdjustSavings,
+  creditStatement, onGoToCredit,
 }) {
   const captureRef = useRef(null);
   const [exporting, setExporting] = useState(false);
@@ -154,6 +155,52 @@ export function Resumen({
           />
         )}
       </div>
+
+      {/* sección aparte (no en la grilla de arriba, que es todo cuenta
+          corriente) — etiqueta propia para que quede claro que es una
+          cuenta distinta. Solo aparece si ya se importó al menos un Estado
+          de Cuenta CMR, y es puramente informativa: no se suma ni resta a
+          ningún cálculo de esta pantalla (Gastos, Balance, saldo). Ver
+          App.jsx: latestCreditStatement es el ciclo más reciente, sin
+          relación con el mes seleccionado acá arriba. */}
+      {creditStatement && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: TOKENS.textFaint, textTransform: "uppercase", letterSpacing: "0.03em", fontWeight: 600, marginBottom: 8 }}>
+            Tarjeta de crédito
+          </div>
+          <button
+            onClick={onGoToCredit}
+            title="Ver tarjeta de crédito"
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap",
+              background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, padding: "14px 16px",
+              cursor: onGoToCredit ? "pointer" : "default", textAlign: "left",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: TOKENS.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <CreditCardIcon size={15} color={TOKENS.textMuted} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: TOKENS.textMuted, marginBottom: 2 }}>
+                  {creditStatement.payBy ? `Paga hasta ${formatDateDisplay(creditStatement.payBy)}` : "Total facturado"}
+                </div>
+                <div className="mono" style={{ fontSize: 18, fontWeight: 600, color: TOKENS.expense }}>{formatCLP(creditStatement.totalToPay)}</div>
+              </div>
+            </div>
+            {creditStatement.cupoAvailable != null && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, color: TOKENS.textMuted, marginBottom: 2 }}>Cupo disponible</div>
+                <div className="mono" style={{ fontSize: 14, color: TOKENS.text }}>
+                  {formatCLP(creditStatement.cupoAvailable)}
+                  {creditStatement.cupoTotal != null && <span style={{ color: TOKENS.textFaint }}> / {formatCLP(creditStatement.cupoTotal)}</span>}
+                </div>
+              </div>
+            )}
+            {onGoToCredit && <ArrowRight size={15} color={TOKENS.textFaint} style={{ flexShrink: 0 }} />}
+          </button>
+        </div>
+      )}
 
       <div className="resumen-charts-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16, marginBottom: 16 }}>
         <Panel title={`Gasto por categoría${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>

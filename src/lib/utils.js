@@ -59,6 +59,16 @@ export function makeKey(date, desc, cargo, abono) {
   return [date, desc.trim().toUpperCase().replace(/\s+/g, " "), cargo, abono].join("|");
 }
 
+// A diferencia de makeKey (débito, que tiene saldo corrido y cada movimiento
+// es único), una compra en cuotas de la tarjeta de crédito aparece en CADA
+// cartola mensual siguiente con la MISMA fecha/descripción/monto original —
+// solo cambia cuotasPendientes. Sin statementMonth en la clave, la cuota 2
+// de una compra se vería como "ya importada" (misma fecha+desc+monto que la
+// cuota 1 del mes pasado) y se perdería silenciosamente.
+export function makeCreditKey(statementMonth, date, desc, montoTotal, cuotasPendientes, valorCuota) {
+  return [statementMonth, date, desc.trim().toUpperCase().replace(/\s+/g, " "), montoTotal, cuotasPendientes, valorCuota].join("|");
+}
+
 export function formatCLP(n) {
   const sign = n < 0 ? "-" : "";
   return `${sign}$${Math.abs(Math.round(n)).toLocaleString("es-CL")}`;
