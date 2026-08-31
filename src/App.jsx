@@ -1282,18 +1282,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   }
 
   return (
-    <div style={{ background: TOKENS.bg, minHeight: "100vh", color: TOKENS.text, fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-bg min-h-screen text-ink font-sans">
       <Header tab={tab} setTab={setTab} onSignOut={onSignOut} theme={theme} onToggleTheme={onToggleTheme} saving={saving} />
 
-      <main className="app-main" style={{ maxWidth: 1080, margin: "0 auto", padding: "28px 24px 80px" }}>
+      <main className="app-main max-w-[1080px] mx-auto px-6 pt-7 pb-20">
         {syncError && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-            background: "var(--tint-expense)", border: `1px solid ${TOKENS.expense}`, color: TOKENS.expense,
-            borderRadius: 10, padding: "10px 14px", fontSize: 12.5, marginBottom: 18,
-          }}>
+          <div className="flex items-center justify-between gap-3 bg-tint-expense border border-expense text-expense rounded-[10px] px-3.5 py-2.5 text-[12.5px] mb-[18px]">
             <span>{syncError}</span>
-            <button onClick={() => setSyncError(null)} style={{ background: "transparent", border: "none", color: TOKENS.expense, cursor: "pointer", fontSize: 12.5 }}>
+            <button onClick={() => setSyncError(null)} className="bg-transparent border-0 text-expense cursor-pointer text-[12.5px]">
               Cerrar
             </button>
           </div>
