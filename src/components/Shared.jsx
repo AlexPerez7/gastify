@@ -150,14 +150,10 @@ export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaL
   );
 }
 
-export function pillStyle(active) {
-  return {
-    padding: "6px 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 500, cursor: "pointer",
-    border: `1px solid ${active ? TOKENS.accent : TOKENS.border}`,
-    background: active ? "var(--tint-accent)" : "transparent",
-    color: active ? TOKENS.accent : TOKENS.textMuted,
-    textTransform: "capitalize",
-  };
+export function pillClass(active) {
+  return `px-[13px] py-1.5 rounded-full text-[12.5px] font-medium cursor-pointer capitalize border ${
+    active ? "border-accent bg-tint-accent text-accent" : "border-border bg-transparent text-muted"
+  }`;
 }
 
 // panel compacto para crear una categoría (nombre + color + ícono) sin
@@ -314,51 +310,44 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
         onClick={() => (open ? setOpen(false) : openPopover())}
         aria-haspopup="listbox"
         aria-expanded={open}
-        style={{
-          width: "100%", display: "flex", alignItems: "center", gap: 7, padding: "6px 9px", borderRadius: 7,
-          border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, cursor: disabled ? "default" : "pointer",
-          opacity: disabled ? 0.6 : 1, textAlign: "left",
-        }}
+        className="w-full flex items-center gap-[7px] px-[9px] py-1.5 rounded-[7px] border border-border bg-surface text-left disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
       >
         {isAllSelected ? (
           <>
-            <span style={{
-              width: 20, height: 20, borderRadius: 6, background: TOKENS.surfaceAlt, display: "flex",
-              alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
+            <span className="w-5 h-5 rounded-md bg-surface-alt flex items-center justify-center shrink-0">
               <Tags size={12} color={TOKENS.textFaint} />
             </span>
-            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12.5, color: TOKENS.text }}>
+            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] text-ink">
               {allOption.label}
             </span>
           </>
         ) : selected ? (
           <>
-            <span style={{
-              width: 20, height: 20, borderRadius: 6, background: `${selected.color}22`, display: "flex",
-              alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
+            <span
+              className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: `${selected.color}22` }}
+            >
               <SelectedIcon size={12} color={selected.color} />
             </span>
-            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12.5, color: TOKENS.text }}>
+            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] text-ink">
               {labelWithTypeIfAmbiguous(selected, categories)}
             </span>
           </>
         ) : (
-          <span style={{ flex: 1, fontSize: 12.5, color: TOKENS.textFaint }}>{placeholder}</span>
+          <span className="flex-1 text-[12.5px] text-faint">{placeholder}</span>
         )}
-        <ChevronDown size={13} color={TOKENS.textFaint} style={{ flexShrink: 0 }} />
+        <ChevronDown size={13} color={TOKENS.textFaint} className="shrink-0" />
       </button>
 
       {open && coords && createPortal(
         <div
           ref={popRef}
           role="listbox"
+          className="fixed z-[1000] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto"
           style={{
-            position: "fixed", left: coords.left, width: Math.max(coords.width, 200), zIndex: 1000,
+            left: coords.left, width: Math.max(coords.width, 200),
             ...(coords.top != null ? { top: coords.top } : { bottom: coords.bottom }),
-            background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 10,
-            padding: 5, boxShadow: "0 10px 28px rgba(0,0,0,0.45)", maxHeight: POPOVER_MAX_HEIGHT, overflowY: "auto",
+            boxShadow: "0 10px 28px rgba(0,0,0,0.45)", maxHeight: POPOVER_MAX_HEIGHT,
           }}
         >
           {allOption && (
@@ -367,18 +356,14 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
               role="option"
               aria-selected={isAllSelected}
               onClick={() => { onChange(allOption.value); setOpen(false); }}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 7,
-                border: "none", background: isAllSelected ? TOKENS.surface : "transparent", cursor: "pointer", textAlign: "left",
-              }}
+              className={`w-full flex items-center gap-2 px-2 py-[7px] rounded-[7px] border-0 cursor-pointer text-left ${
+                isAllSelected ? "bg-surface" : "bg-transparent"
+              }`}
             >
-              <span style={{
-                width: 22, height: 22, borderRadius: 6, background: TOKENS.bg, display: "flex",
-                alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
+              <span className="w-[22px] h-[22px] rounded-md bg-bg flex items-center justify-center shrink-0">
                 <Tags size={12.5} color={TOKENS.textFaint} />
               </span>
-              <span style={{ fontSize: 12.5, color: isAllSelected ? TOKENS.text : TOKENS.textMuted, fontWeight: isAllSelected ? 600 : 400 }}>
+              <span className={`text-[12.5px] ${isAllSelected ? "text-ink font-semibold" : "text-muted"}`}>
                 {allOption.label}
               </span>
             </button>
@@ -393,18 +378,17 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
                 role="option"
                 aria-selected={isSelected}
                 onClick={() => { onChange(c.id); setOpen(false); }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 7,
-                  border: "none", background: isSelected ? TOKENS.surface : "transparent", cursor: "pointer", textAlign: "left",
-                }}
+                className={`w-full flex items-center gap-2 px-2 py-[7px] rounded-[7px] border-0 cursor-pointer text-left ${
+                  isSelected ? "bg-surface" : "bg-transparent"
+                }`}
               >
-                <span style={{
-                  width: 22, height: 22, borderRadius: 6, background: `${c.color}22`, display: "flex",
-                  alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
+                <span
+                  className="w-[22px] h-[22px] rounded-md flex items-center justify-center shrink-0"
+                  style={{ background: `${c.color}22` }}
+                >
                   <Icon size={12.5} color={c.color} />
                 </span>
-                <span style={{ fontSize: 12.5, color: isSelected ? TOKENS.text : TOKENS.textMuted, fontWeight: isSelected ? 600 : 400 }}>
+                <span className={`text-[12.5px] ${isSelected ? "text-ink font-semibold" : "text-muted"}`}>
                   {labelWithTypeIfAmbiguous(c, categories)}
                 </span>
               </button>

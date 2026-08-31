@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
-import { pillStyle } from "./Shared.jsx";
+import { pillClass } from "./Shared.jsx";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
 
@@ -272,11 +272,11 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rig
         </div>
       )}
       <div className="chip-scroll-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button onClick={() => setMonthFilter("all")} style={pillStyle(monthFilter === "all")}>Todo</button>
+        <button onClick={() => setMonthFilter("all")} className={pillClass(monthFilter === "all")}>Todo</button>
         {monthsInYear.map((m) => {
           const health = monthHealth?.[m];
           return (
-            <button key={m} onClick={() => setMonthFilter(m)} style={pillStyle(monthFilter === m)}>
+            <button key={m} onClick={() => setMonthFilter(m)} className={pillClass(monthFilter === m)}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                 {label(m)}
                 {health && (

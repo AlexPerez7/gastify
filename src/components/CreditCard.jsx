@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Upload, Pencil, X, Inbox, CalendarX2, Loader2, Layers, FileText } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, CategorySelect, pillStyle } from "./Shared.jsx";
+import { EmptyState, CategorySelect, pillClass } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -32,7 +32,7 @@ export function CreditCard({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
           <div className="chip-scroll-row" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {months.map((m) => (
-              <button key={m} onClick={() => onSetMonth(m)} style={pillStyle(currentMonth === m)}>
+              <button key={m} onClick={() => onSetMonth(m)} className={pillClass(currentMonth === m)}>
                 {monthLabel(m)}
               </button>
             ))}
