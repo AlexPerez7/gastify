@@ -3,18 +3,16 @@ import { motion, useAnimation } from "framer-motion";
 import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect } from "./Shared.jsx";
+import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../lib/useIsMobile.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 
-const actionBtnStyle = {
-  display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8,
-  border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-  fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap",
-};
+// botón de acción de la barra de herramientas de Movimientos
+const ACTION_BTN =
+  "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-[12.5px] cursor-pointer whitespace-nowrap";
 
 export function Movimientos({
   filteredTx, hasTransactions, categories, getCat, search, setSearch, catFilter, setCatFilter,
@@ -112,10 +110,7 @@ export function Movimientos({
 
   return (
     <div>
-      <div style={{
-        display: "flex", gap: 3, padding: 3, marginBottom: 16, borderRadius: 999, width: "fit-content", boxSizing: "border-box",
-        background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`,
-      }}>
+      <div className="flex gap-[3px] p-[3px] mb-4 rounded-full w-fit box-border bg-surface-alt border border-border">
         {[
           { v: "debito", label: "Débito", icon: Wallet },
           { v: "credito", label: "Crédito", icon: CreditCardIcon },
@@ -124,12 +119,9 @@ export function Movimientos({
             key={v}
             onClick={() => setViewMode(v)}
             aria-pressed={viewMode === v}
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, border: "none",
-              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-              background: viewMode === v ? TOKENS.accent : "transparent",
-              color: viewMode === v ? TOKENS.bg : TOKENS.textMuted,
-            }}
+            className={`flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border-0 text-[12.5px] font-semibold cursor-pointer ${
+              viewMode === v ? "bg-accent text-bg" : "bg-transparent text-muted"
+            }`}
           >
             <Icon size={13} /> {label}
           </button>
@@ -160,16 +152,12 @@ export function Movimientos({
           (arriba, junto a los chips de año) — acá solo queda en desktop,
           donde sí hay ancho de sobra para 2 botones sueltos. */}
       {!isMobile && (
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+        <div className="flex justify-end gap-2 mb-2.5 flex-wrap">
           <button
             onClick={onExportCsv}
             disabled={exportingCsv}
             title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-              fontSize: 12, cursor: exportingCsv ? "default" : "pointer", opacity: exportingCsv ? 0.7 : 1,
-            }}
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
             {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
@@ -178,11 +166,7 @@ export function Movimientos({
             onClick={onExportBackup}
             disabled={exportingBackup}
             title="Descarga un .json con todos tus movimientos y categorías"
-            style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
-              border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.textMuted,
-              fontSize: 12, cursor: exportingBackup ? "default" : "pointer", opacity: exportingBackup ? 0.7 : 1,
-            }}
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
             {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
@@ -195,26 +179,26 @@ export function Movimientos({
           gigantes solo ocupan espacio — se reemplazan por botones compactos
           junto a la búsqueda. */}
       {!hasTransactions && (
-        <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+        <div className="form-grid-2 grid grid-cols-2 gap-3.5 mb-5">
           <ImportDropzone onFile={handleFile} disabled={isImporting} />
-          <button onClick={() => setShowManualForm(true)} style={{
-            border: `1.5px solid ${TOKENS.border}`, borderRadius: 12, padding: "18px 16px", background: TOKENS.surface,
-            display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: TOKENS.text, textAlign: "left",
-          }}>
-            <div style={{ width: 34, height: 34, borderRadius: 8, background: TOKENS.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <button
+            onClick={() => setShowManualForm(true)}
+            className="border-[1.5px] border-border rounded-xl px-4 py-[18px] bg-surface flex items-center gap-3 cursor-pointer text-ink text-left"
+          >
+            <div className="w-[34px] h-[34px] rounded-lg bg-surface-alt flex items-center justify-center shrink-0">
               <Plus size={16} color={TOKENS.pending} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>Agregar gasto o ingreso manual</div>
-              <div style={{ fontSize: 11.5, color: TOKENS.textFaint }}>Para movimientos que aún no aparecen en el banco</div>
+              <div className="text-[13px] font-medium">Agregar gasto o ingreso manual</div>
+              <div className="text-[11.5px] text-faint">Para movimientos que aún no aparecen en el banco</div>
             </div>
           </button>
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="flex gap-2.5 mb-3.5 flex-wrap items-center">
         {hasTransactions && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+          <div className="flex items-center gap-[7px] shrink-0">
             <input
               ref={selectAllRef}
               type="checkbox"
@@ -223,21 +207,22 @@ export function Movimientos({
               disabled={visibleTx.length === 0}
               aria-label={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
               title={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-              style={{ accentColor: TOKENS.accent, cursor: filteredTx.length === 0 ? "default" : "pointer", width: 18, height: 18 }}
+              className="w-[18px] h-[18px]"
+              style={{ accentColor: "var(--c-accent)", cursor: filteredTx.length === 0 ? "default" : "pointer" }}
             />
             {selectedIds.length > 0 && (
-              <span style={{ fontSize: 12, color: TOKENS.textMuted, whiteSpace: "nowrap" }}>
+              <span className="text-xs text-muted whitespace-nowrap">
                 {selectedIds.length} seleccionado{selectedIds.length === 1 ? "" : "s"}
               </span>
             )}
           </div>
         )}
-        <div style={{ position: "relative", flex: "1 1 220px" }}>
+        <div className="relative flex-[1_1_220px]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar movimiento…"
-            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 13 }}
+            className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
           />
         </div>
         {isMobile ? (
@@ -246,15 +231,11 @@ export function Movimientos({
               onClick={() => setShowFilterSheet(true)}
               aria-label="Filtros"
               title="Filtrar por categoría, tipo u origen"
-              style={{ ...actionBtnStyle, position: "relative", padding: "8px 10px" }}
+              className={`${ACTION_BTN} relative !px-2.5`}
             >
               <SlidersHorizontal size={15} />
               {activeFilterCount > 0 && (
-                <span style={{
-                  position: "absolute", top: -5, right: -5, display: "flex", alignItems: "center", justifyContent: "center",
-                  minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: TOKENS.accent, color: TOKENS.bg,
-                  fontSize: 10, fontWeight: 700,
-                }}>
+                <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-accent text-bg text-[10px] font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -264,15 +245,11 @@ export function Movimientos({
                 onClick={onOpenConciliacion}
                 aria-label="Conciliación"
                 title="Revisar y conciliar movimientos manuales contra el reporte del banco"
-                style={{ ...actionBtnStyle, position: "relative", padding: "8px 10px" }}
+                className={`${ACTION_BTN} relative !px-2.5`}
               >
                 <ScanLine size={15} />
                 {reconcileStats?.manuals?.length > 0 && (
-                  <span style={{
-                    position: "absolute", top: -5, right: -5, display: "flex", alignItems: "center", justifyContent: "center",
-                    minWidth: 16, height: 16, padding: "0 4px", borderRadius: 999, background: TOKENS.pending, color: TOKENS.bg,
-                    fontSize: 10, fontWeight: 700,
-                  }}>
+                  <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-[10px] font-bold">
                     {reconcileStats.manuals.length}
                   </span>
                 )}
@@ -281,7 +258,7 @@ export function Movimientos({
           </>
         ) : (
           <>
-            <div style={{ flex: "0 1 200px", minWidth: 160 }}>
+            <div className="flex-[0_1_200px] min-w-[160px]">
               <CategorySelect
                 categories={categories}
                 value={catFilter}
@@ -290,14 +267,11 @@ export function Movimientos({
               />
             </div>
             {setSourceFilter && (
-              <div style={{ flex: "0 1 160px", minWidth: 140 }}>
+              <div className="flex-[0_1_160px] min-w-[140px]">
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  style={{
-                    width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${TOKENS.border}`,
-                    background: TOKENS.surface, color: TOKENS.text, fontSize: 13, cursor: "pointer",
-                  }}
+                  className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px] cursor-pointer"
                   aria-label="Filtrar por origen del movimiento"
                   title="Filtrar por origen: manual o banco"
                 >
@@ -311,12 +285,9 @@ export function Movimientos({
               <button
                 onClick={() => setTxTypeFilter?.("all")}
                 title="Quitar filtro de tipo de movimiento"
-                style={{
-                  display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", borderRadius: 8,
-                  border: `1px solid ${txTypeFilter === "income" ? TOKENS.income : TOKENS.expense}`,
-                  background: txTypeFilter === "income" ? "var(--tint-income)" : "var(--tint-expense)",
-                  color: txTypeFilter === "income" ? TOKENS.income : TOKENS.expense, fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap",
-                }}
+                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-[12.5px] cursor-pointer whitespace-nowrap ${
+                  txTypeFilter === "income" ? "border-income bg-tint-income text-income" : "border-expense bg-tint-expense text-expense"
+                }`}
               >
                 {txTypeFilter === "income" ? "Solo ingresos" : "Solo gastos"} <X size={12} />
               </button>
@@ -326,22 +297,19 @@ export function Movimientos({
                 <button
                   onClick={() => setShowImportModal(true)}
                   disabled={isImporting}
-                  style={{ ...actionBtnStyle, cursor: isImporting ? "default" : "pointer", opacity: isImporting ? 0.6 : 1 }}
+                  className={`${ACTION_BTN} disabled:opacity-60 disabled:cursor-default`}
                   title={isImporting ? "Ya hay una importación en curso…" : "Importar movimientos del banco desde un .xls o una cartola .pdf"}
                 >
                   {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar Excel
                 </button>
-                <button onClick={() => setShowManualForm((v) => !v)} className="new-record-btn" style={actionBtnStyle} title="Agregar un gasto o ingreso manual">
+                <button onClick={() => setShowManualForm((v) => !v)} className={`new-record-btn ${ACTION_BTN}`} title="Agregar un gasto o ingreso manual">
                   <Plus size={13} /> Nuevo registro
                 </button>
                 {onOpenConciliacion && (
-                  <button onClick={onOpenConciliacion} style={actionBtnStyle} title="Revisar y conciliar movimientos manuales contra el reporte del banco">
+                  <button onClick={onOpenConciliacion} className={ACTION_BTN} title="Revisar y conciliar movimientos manuales contra el reporte del banco">
                     <ScanLine size={13} /> Conciliación
                     {reconcileStats?.manuals?.length > 0 && (
-                      <span style={{
-                        display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 16, height: 16, padding: "0 4px",
-                        borderRadius: 999, background: TOKENS.pending, color: TOKENS.bg, fontSize: 10, fontWeight: 700,
-                      }}>
+                      <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-[10px] font-bold">
                         {reconcileStats.manuals.length}
                       </span>
                     )}
@@ -369,20 +337,16 @@ export function Movimientos({
       )}
 
       {recentImportIds.length > 0 && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 10,
-          background: "var(--tint-accent-soft)", border: `1px solid ${TOKENS.accent}`, marginBottom: 14, flexWrap: "wrap",
-        }}>
-          <Sparkles size={14} color={TOKENS.accent} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 12.5, color: TOKENS.text, flex: "1 1 160px" }}>
+        <div className="flex items-center gap-2.5 px-3 py-[9px] rounded-[10px] bg-tint-accent-soft border border-accent mb-3.5 flex-wrap">
+          <Sparkles size={14} color={TOKENS.accent} className="shrink-0" />
+          <span className="text-[12.5px] text-ink flex-[1_1_160px]">
             {recentImportIds.length} movimiento{recentImportIds.length === 1 ? "" : "s"} importado{recentImportIds.length === 1 ? "" : "s"} recién — marcado{recentImportIds.length === 1 ? "" : "s"} como "nuevo" abajo
           </span>
           <button
             onClick={() => setOnlyRecent((v) => !v)}
-            style={{
-              padding: "6px 10px", borderRadius: 7, border: `1px solid ${TOKENS.accent}`, fontSize: 12, cursor: "pointer",
-              background: onlyRecent ? TOKENS.accent : "transparent", color: onlyRecent ? TOKENS.bg : TOKENS.accent, fontWeight: 600,
-            }}
+            className={`px-2.5 py-1.5 rounded-[7px] border border-accent text-xs cursor-pointer font-semibold ${
+              onlyRecent ? "bg-accent text-bg" : "bg-transparent text-accent"
+            }`}
           >
             {onlyRecent ? "Ver todos" : "Ver solo estos"}
           </button>
@@ -390,7 +354,7 @@ export function Movimientos({
             onClick={onClearRecentImports}
             aria-label="Descartar aviso de importación reciente"
             title="Descartar"
-            style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer", padding: 4 }}
+            className="bg-none border-0 text-faint cursor-pointer p-1"
           >
             <X size={14} />
           </button>
@@ -403,7 +367,7 @@ export function Movimientos({
         <ImportModal onClose={() => setShowImportModal(false)} onFile={(f) => { handleFile(f); setShowImportModal(false); }} />
       )}
 
-      <div style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {visibleTx.length === 0 ? (
           !hasTransactions ? (
             <EmptyState
@@ -417,10 +381,7 @@ export function Movimientos({
               title="Sin resultados"
               text="Ninguno de los movimientos recién importados coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); clearFilters(); }} style={{
-                  padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
-                  color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-                }}>
+                <button onClick={() => { setSearch(""); clearFilters(); }} className={BTN_GHOST}>
                   Limpiar filtros
                 </button>
               }
@@ -431,10 +392,7 @@ export function Movimientos({
               title="Sin resultados"
               text="Ningún movimiento coincide con tu búsqueda o filtro de categoría."
               action={
-                <button onClick={() => { setSearch(""); clearFilters(); }} style={{
-                  padding: "7px 14px", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
-                  color: TOKENS.textMuted, fontSize: 12.5, cursor: "pointer",
-                }}>
+                <button onClick={() => { setSearch(""); clearFilters(); }} className={BTN_GHOST}>
                   Limpiar filtros
                 </button>
               }
@@ -449,13 +407,7 @@ export function Movimientos({
         ) : (
           groupByDate(visibleTx).map((group) => (
             <div key={group.date}>
-              <div
-                style={{
-                  padding: "9px 16px", fontSize: 11, fontWeight: 600, color: TOKENS.textFaint,
-                  textTransform: "uppercase", letterSpacing: "0.03em", background: TOKENS.surfaceAlt,
-                  borderBottom: `1px solid ${TOKENS.border}`,
-                }}
-              >
+              <div className="px-4 py-[9px] text-[11px] font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
                 {formatDayHeading(group.date)}
               </div>
               {group.items.map((t, i) => (
@@ -514,17 +466,17 @@ function FilterSheet({
   ];
 
   return (
-    <div onClick={onClose} className="modal-backdrop" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 2000 }}>
+    <div onClick={onClose} className="modal-backdrop fixed inset-0 z-[2000]" style={{ background: "rgba(0,0,0,0.55)" }}>
       <div onClick={(e) => e.stopPropagation()} className="filter-sheet-panel">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Filtros</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
+        <div className="flex justify-between items-center mb-4">
+          <div className="display text-[14.5px] font-semibold">Filtros</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
 
-        <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Categoría</div>
-        <div style={{ marginBottom: 16 }}>
+        <div className="text-[11px] text-faint mb-1.5">Categoría</div>
+        <div className="mb-4">
           <CategorySelect
             categories={categories}
             value={catFilter}
@@ -533,17 +485,13 @@ function FilterSheet({
           />
         </div>
 
-        <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Tipo</div>
-        <div className="filter-seg-row" style={{ marginBottom: 16 }}>
+        <div className="text-[11px] text-faint mb-1.5">Tipo</div>
+        <div className="filter-seg-row mb-4">
           {typeOptions.map((opt) => (
             <button
               key={opt.v}
-              className="filter-seg-btn"
+              className={`filter-seg-btn ${txTypeFilter === opt.v ? "bg-accent text-bg" : "bg-transparent text-muted"}`}
               onClick={() => setTxTypeFilter?.(opt.v)}
-              style={{
-                background: txTypeFilter === opt.v ? TOKENS.accent : "transparent",
-                color: txTypeFilter === opt.v ? TOKENS.bg : TOKENS.textMuted,
-              }}
             >
               {opt.label}
             </button>
@@ -552,17 +500,13 @@ function FilterSheet({
 
         {setSourceFilter && (
           <>
-            <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 6 }}>Origen</div>
-            <div className="filter-seg-row" style={{ marginBottom: 20 }}>
+            <div className="text-[11px] text-faint mb-1.5">Origen</div>
+            <div className="filter-seg-row mb-5">
               {sourceOptions.map((opt) => (
                 <button
                   key={opt.v}
-                  className="filter-seg-btn"
+                  className={`filter-seg-btn ${sourceFilter === opt.v ? "bg-accent text-bg" : "bg-transparent text-muted"}`}
                   onClick={() => setSourceFilter(opt.v)}
-                  style={{
-                    background: sourceFilter === opt.v ? TOKENS.accent : "transparent",
-                    color: sourceFilter === opt.v ? TOKENS.bg : TOKENS.textMuted,
-                  }}
                 >
                   {opt.label}
                 </button>
@@ -571,20 +515,17 @@ function FilterSheet({
           </>
         )}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="flex gap-2">
           <button
             onClick={onClear}
             disabled={activeFilterCount === 0}
-            style={{
-              flex: 1, padding: "10px 0", borderRadius: 8, border: `1px solid ${TOKENS.border}`, background: "transparent",
-              color: TOKENS.textMuted, fontSize: 13, cursor: activeFilterCount === 0 ? "default" : "pointer", opacity: activeFilterCount === 0 ? 0.5 : 1,
-            }}
+            className="flex-1 py-2.5 rounded-lg border border-border bg-transparent text-muted text-[13px] disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "none", background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+            className="flex-1 py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] cursor-pointer"
           >
             Listo
           </button>
@@ -626,19 +567,14 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
 
   return (
     <div
-      className="bulk-action-bar"
-      style={{
-        position: "fixed", left: "50%", bottom: 20, transform: "translateX(-50%)", zIndex: 1500,
-        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12,
-        background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`,
-        boxShadow: "0 10px 28px rgba(0,0,0,0.4)", maxWidth: "calc(100vw - 28px)", flexWrap: "wrap", justifyContent: "center",
-      }}
+      className="bulk-action-bar fixed left-1/2 bottom-5 -translate-x-1/2 z-[1500] flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-alt border border-border flex-wrap justify-center"
+      style={{ boxShadow: "0 10px 28px rgba(0,0,0,0.4)", maxWidth: "calc(100vw - 28px)" }}
     >
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: TOKENS.text, whiteSpace: "nowrap" }}>
+      <span className="text-[12.5px] font-semibold text-ink whitespace-nowrap">
         {count} seleccionado{count === 1 ? "" : "s"}
       </span>
 
-      <div style={{ width: 190 }}>
+      <div className="w-[190px]">
         <CategorySelect
           categories={categories}
           value={pickedCategory}
@@ -649,22 +585,19 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
       </div>
 
       {confirmingDelete ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 12, color: TOKENS.textMuted }}>¿Seguro?</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted">¿Seguro?</span>
           <button
             onClick={handleDeleteClick}
             disabled={busy}
-            style={{
-              display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 7, border: "none",
-              background: TOKENS.expense, color: "#fff", fontSize: 12, fontWeight: 600, cursor: busy ? "default" : "pointer",
-            }}
+            className="flex items-center gap-[5px] px-2.5 py-1.5 rounded-[7px] border-0 bg-expense text-white text-xs font-semibold disabled:cursor-default enabled:cursor-pointer"
           >
             {busy ? <Loader2 size={12} className="spin" /> : "Confirmar"}
           </button>
           <button
             onClick={() => setConfirmingDelete(false)}
             disabled={busy}
-            style={{ padding: "6px 10px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12, cursor: "pointer" }}
+            className="px-2.5 py-1.5 rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer"
           >
             Cancelar
           </button>
@@ -673,10 +606,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
         <button
           onClick={() => setConfirmingDelete(true)}
           disabled={busy}
-          style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, border: "none",
-            background: "var(--tint-expense)", color: TOKENS.expense, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-          }}
+          className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border-0 bg-tint-expense text-expense text-[12.5px] font-semibold cursor-pointer"
         >
           <Trash2 size={13} /> Borrar seleccionados
         </button>
@@ -687,7 +617,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
         disabled={busy}
         aria-label="Cerrar selección"
         title="Cerrar selección"
-        style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer", padding: 4 }}
+        className="bg-none border-0 text-faint cursor-pointer p-1"
       >
         <X size={15} />
       </button>
@@ -711,19 +641,17 @@ function ImportDropzone({ onFile, disabled }) {
         const f = e.dataTransfer.files[0];
         if (f) onFile(f);
       }}
-      style={{
-        border: `1.5px dashed ${dragOver ? TOKENS.accent : TOKENS.border}`, borderRadius: 12, padding: "18px 16px",
-        display: "flex", alignItems: "center", gap: 12, cursor: disabled ? "default" : "pointer",
-        background: dragOver ? "var(--tint-accent-soft)" : TOKENS.surface, opacity: disabled ? 0.6 : 1,
-      }}
+      className={`border-[1.5px] border-dashed rounded-xl px-4 py-[18px] flex items-center gap-3 ${
+        disabled ? "opacity-60 cursor-default" : "cursor-pointer"
+      } ${dragOver ? "border-accent bg-tint-accent-soft" : "border-border bg-surface"}`}
     >
-      <input type="file" accept=".xls,.xlsx,.pdf" disabled={disabled} style={{ display: "none" }} onChange={(e) => e.target.files[0] && onFile(e.target.files[0])} />
-      <div style={{ width: 34, height: 34, borderRadius: 8, background: TOKENS.surfaceAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <input type="file" accept=".xls,.xlsx,.pdf" disabled={disabled} className="hidden" onChange={(e) => e.target.files[0] && onFile(e.target.files[0])} />
+      <div className="w-[34px] h-[34px] rounded-lg bg-surface-alt flex items-center justify-center shrink-0">
         {disabled ? <Loader2 size={16} color={TOKENS.accent} className="spin" /> : <Upload size={16} color={TOKENS.accent} />}
       </div>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 500 }}>{disabled ? "Procesando archivo…" : "Subir movimientos del banco"}</div>
-        <div style={{ fontSize: 11.5, color: TOKENS.textFaint }}>
+        <div className="text-[13px] font-medium">{disabled ? "Procesando archivo…" : "Subir movimientos del banco"}</div>
+        <div className="text-[11.5px] text-faint">
           {disabled ? "Espera a que termine antes de subir otro." : "Arrastra el .xls de reportCollection o la cartola en .pdf, o haz clic para elegirlo"}
         </div>
       </div>
@@ -733,17 +661,14 @@ function ImportDropzone({ onFile, disabled }) {
 
 function ImportModal({ onClose, onFile }) {
   return (
-    <div className="modal-backdrop" style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-      alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-    }}>
-      <div className="modal-panel" style={{
-        background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
-        padding: 22, maxWidth: 420, width: "100%",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Importar movimientos</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}>
+    <div
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+    >
+      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[420px] w-full">
+        <div className="flex justify-between items-center mb-3.5">
+          <div className="display text-[14.5px] font-semibold">Importar movimientos</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -776,7 +701,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
   const RowGrid = isMobile ? motion.div : "div";
 
   return (
-    <div style={{ borderBottom: isLast ? "none" : `1px solid ${TOKENS.border}` }}>
+    <div className={isLast ? "" : "border-b border-border"}>
       <div
         className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}
       >
@@ -797,12 +722,8 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
           </div>
         )}
         <RowGrid
-          className="txrow-grid"
-          style={{
-            display: "grid", gridTemplateColumns: "20px 1fr 170px 130px auto", alignItems: "center", gap: 10,
-            padding: "11px 16px", background: TOKENS.surface, touchAction: "pan-y", position: "relative",
-            boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none",
-          }}
+          className="txrow-grid grid grid-cols-[20px_1fr_170px_130px_auto] items-center gap-2.5 px-4 py-[11px] bg-surface touch-pan-y relative"
+          style={{ boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none" }}
           // el swipe-to-action solo existe en mobile — en desktop esta fila
           // es un <div> normal, sin el overhead de framer-motion por fila
           // (con listas largas, montar motion.div en todas las filas se
@@ -821,59 +742,57 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
             checked={selected}
             onChange={() => onToggleSelect(t.id)}
             aria-label={`Seleccionar movimiento: ${t.alias || t.description}`}
-            style={{ accentColor: TOKENS.accent, cursor: "pointer", width: 18, height: 18 }}
+            className="w-[18px] h-[18px] cursor-pointer"
+            style={{ accentColor: "var(--c-accent)" }}
           />
         </div>
-        <div className="tx-desc" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, minWidth: 0 }}>
+        <div className="tx-desc flex items-center gap-1.5 text-[13px] min-w-0">
           {/* el texto trunca solo a sí mismo (flex 1 + min-width 0) — así el
               tag de origen y los avisos de "nuevo"/duplicado quedan siempre
               enteros al lado, en vez de cortarse junto con la descripción. */}
-          <span style={{ flex: "1 1 0%", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span className="flex-[1_1_0%] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
             {t.alias ? (
               <>
-                <span style={{ fontWeight: 500 }}>{t.alias}</span>
-                <span style={{ color: TOKENS.textFaint, fontSize: 11.5 }}> · {t.description}</span>
+                <span className="font-medium">{t.alias}</span>
+                <span className="text-faint text-[11.5px]"> · {t.description}</span>
               </>
             ) : t.description}
           </span>
           <span
             title={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
             aria-label={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
-            style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18,
-              borderRadius: 5, border: `1px solid ${TOKENS.border}`, color: TOKENS.textFaint, flexShrink: 0,
-            }}
+            className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-[5px] border border-border text-faint shrink-0"
           >
             {t.source === "bank" ? <Landmark size={10} /> : <PenLine size={10} />}
           </span>
           {isRecent && (
-            <span style={{ fontSize: 10, color: TOKENS.accent, border: `1px solid ${TOKENS.accent}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600, flexShrink: 0 }}>
+            <span className="text-[10px] text-accent border border-accent rounded-[4px] px-[5px] py-px font-semibold shrink-0">
               nuevo
             </span>
           )}
           {isDuplicate && (
             <span
               title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces (uno a mano y otro del banco, por ejemplo)."
-              style={{ fontSize: 10, color: TOKENS.pending, border: `1px solid ${TOKENS.pending}`, borderRadius: 4, padding: "1px 5px", fontWeight: 600, flexShrink: 0 }}
+              className="text-[10px] text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0"
             >
               posible duplicado
             </span>
           )}
         </div>
-        <div className="tx-cat" style={{ fontSize: 11.5, color: cat.color, display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
-          <span style={{
-            width: 20, height: 20, borderRadius: 6, background: `${cat.color}22`, display: "flex",
-            alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
+        <div className="tx-cat text-[11.5px] flex items-center gap-1.5 overflow-hidden" style={{ color: cat.color }}>
+          <span
+            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+            style={{ background: `${cat.color}22` }}
+          >
             <CatIcon size={12} color={cat.color} />
           </span>
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</span>
+          <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cat.label}</span>
         </div>
-        <div className="tx-amount mono" style={{ fontSize: 13, textAlign: "right", fontWeight: 500, color: t.amount >= 0 ? TOKENS.income : TOKENS.expense }}>
+        <div className={`tx-amount mono text-[13px] text-right font-medium ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
           {formatCLP(t.amount)}
         </div>
-        <div className="tx-actions" style={{ display: "flex" }}>
-          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" style={{ background: "none", border: "none", cursor: "pointer", color: editing ? TOKENS.accent : TOKENS.textFaint, padding: 8 }}>
+        <div className="tx-actions flex">
+          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-none border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
             <Pencil size={13} />
           </button>
           <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={13} />
@@ -912,10 +831,10 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
   const [matchText, setMatchText] = useState(suggestMatchKey(t.description));
 
   return (
-    <div style={{ background: TOKENS.surfaceAlt, padding: "14px 16px", borderTop: `1px solid ${TOKENS.border}` }}>
-      <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+    <div className="bg-surface-alt px-4 py-3.5 border-t border-border">
+      <div className="form-grid-2 grid grid-cols-2 gap-2.5 mb-2.5">
         <div>
-          <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 4 }}>Categoría</div>
+          <div className="text-[11px] text-faint mb-1">Categoría</div>
           <CategorySelect
             categories={relevantCategories}
             value={category}
@@ -924,19 +843,19 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
           />
         </div>
         <div>
-          <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 4 }}>Nombre para mostrar (opcional)</div>
-          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.text, fontSize: 12.5 }} />
+          <div className="text-[11px] text-faint mb-1">Nombre para mostrar (opcional)</div>
+          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" className="w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-[12.5px]" />
         </div>
       </div>
 
       {t.amount < 0 && onToggleSubscription && (
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: TOKENS.textMuted, cursor: "pointer" }}>
+        <div className="mb-2.5">
+          <label className="flex items-center gap-[7px] text-xs text-muted cursor-pointer">
             <input type="checkbox" checked={!!t.subscriptionId} onChange={(e) => onToggleSubscription(e.target.checked)} />
             ¿Es suscripción?
           </label>
           {t.subscriptionId && (
-            <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginTop: 3, marginLeft: 23 }}>
+            <div className="text-[10.5px] text-faint mt-[3px] ml-[23px]">
               Va a aparecer en la pestaña Suscripciones y a generarse solo los meses siguientes.
             </div>
           )}
@@ -944,32 +863,25 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
       )}
 
       {t.source === "bank" && (
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: TOKENS.textMuted, marginBottom: remember ? 7 : 0, cursor: "pointer" }}>
+        <div className="mb-2.5">
+          <label className={`flex items-center gap-[7px] text-xs text-muted cursor-pointer ${remember ? "mb-[7px]" : "mb-0"}`}>
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
             Recordar esto para futuros movimientos con una descripción parecida
           </label>
           {remember && (
             <div>
-              <div style={{ fontSize: 10.5, color: TOKENS.textFaint, marginBottom: 3 }}>Se aplicará a movimientos cuya descripción contenga:</div>
-              <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono" style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: TOKENS.surface, color: TOKENS.accent, fontSize: 11.5 }} />
+              <div className="text-[10.5px] text-faint mb-[3px]">Se aplicará a movimientos cuya descripción contenga:</div>
+              <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-accent text-[11.5px]" />
             </div>
           )}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          onClick={() => onSave({ category, alias, remember, matchText })}
-          disabled={!category}
-          style={{
-            padding: "7px 14px", borderRadius: 7, border: "none", background: TOKENS.accent, color: TOKENS.bg,
-            fontWeight: 600, fontSize: 12, cursor: category ? "pointer" : "default", opacity: category ? 1 : 0.6,
-          }}
-        >
+      <div className="flex gap-2">
+        <button onClick={() => onSave({ category, alias, remember, matchText })} disabled={!category} className={BTN_PRIMARY}>
           Guardar
         </button>
-        <button onClick={onCancel} style={{ padding: "7px 14px", borderRadius: 7, border: `1px solid ${TOKENS.border}`, background: "transparent", color: TOKENS.textMuted, fontSize: 12, cursor: "pointer" }}>
+        <button onClick={onCancel} className={BTN_GHOST}>
           Cancelar
         </button>
       </div>
@@ -1006,45 +918,36 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
   return (
     <div
       onClick={onClose}
-      className="modal-backdrop"
-      style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
-      }}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="modal-panel"
-        style={{
-          background: TOKENS.surface, border: `1px solid ${TOKENS.border}`, borderRadius: 16,
-          maxWidth: 440, width: "100%", maxHeight: "88vh", display: "flex", flexDirection: "column", overflow: "hidden",
-        }}
+        className="modal-panel bg-surface border border-border rounded-2xl max-w-[440px] w-full max-h-[88vh] flex flex-col overflow-hidden"
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 0", flexShrink: 0 }}>
-          <div className="display" style={{ fontSize: 14.5, fontWeight: 600 }}>Nuevo movimiento</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" style={{ background: "none", border: "none", color: TOKENS.textFaint, cursor: "pointer" }}><X size={16} /></button>
+        <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
+          <div className="display text-[14.5px] font-semibold">Nuevo movimiento</div>
+          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-none border-0 text-faint cursor-pointer"><X size={16} /></button>
         </div>
 
-        <div style={{
-          display: "flex", gap: 3, padding: 3, margin: "14px 20px 0", borderRadius: 999, boxSizing: "border-box",
-          background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, flexShrink: 0,
-        }}>
+        <div className="flex gap-[3px] p-[3px] mt-3.5 mx-5 rounded-full box-border bg-surface-alt border border-border shrink-0">
           {["expense", "income"].map((v) => (
-            <button key={v} onClick={() => setType(v)} style={{
-              flex: "1 1 0", minWidth: 0, padding: "8px 0", borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: "pointer", border: "none",
-              background: type === v ? (v === "expense" ? TOKENS.expense : TOKENS.income) : "transparent",
-              color: type === v ? TOKENS.bg : TOKENS.textMuted,
-              textAlign: "center",
-              transition: "background 150ms ease, color 150ms ease",
-            }}>
+            <button
+              key={v}
+              onClick={() => setType(v)}
+              className={`flex-[1_1_0] min-w-0 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 text-center transition-colors duration-150 ${
+                type === v ? "text-bg" : "bg-transparent text-muted"
+              }`}
+              style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
+            >
               {v === "expense" ? "Gasto" : "Ingreso"}
             </button>
           ))}
         </div>
 
-        <div style={{ padding: "16px 20px", overflowY: "auto", flex: "1 1 auto", minHeight: 260 }}>
-          <div style={{ fontSize: 11, color: TOKENS.textFaint, marginBottom: 10 }}>Categoría</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div className="px-5 py-4 overflow-y-auto flex-[1_1_auto] min-h-[260px]">
+          <div className="text-[11px] text-faint mb-2.5">Categoría</div>
+          <div className="grid grid-cols-4 gap-3">
             {relevantCategories.map((c) => {
               const CatIcon = resolveCategoryIcon(c);
               const selected = category === c.id;
@@ -1054,19 +957,21 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
                   onClick={() => { setCategory(c.id); setAddingCategory(false); }}
                   aria-pressed={selected}
                   title={c.label}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                  className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
                 >
-                  <div style={{
-                    width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                    background: selected ? c.color : `${c.color}22`,
-                    boxShadow: selected ? `0 0 0 2px ${c.color}` : "none",
-                  }}>
+                  <div
+                    className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
+                    style={{
+                      background: selected ? c.color : `${c.color}22`,
+                      boxShadow: selected ? `0 0 0 2px ${c.color}` : "none",
+                    }}
+                  >
                     <CatIcon size={19} color={selected ? TOKENS.bg : c.color} />
                   </div>
-                  <div style={{
-                    fontSize: 10.5, color: selected ? TOKENS.text : TOKENS.textMuted, textAlign: "center", lineHeight: 1.2,
-                    overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                  }}>
+                  <div
+                    className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${selected ? "text-ink" : "text-muted"}`}
+                    style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+                  >
                     {c.label}
                   </div>
                 </button>
@@ -1078,16 +983,16 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
                 aria-pressed={addingCategory}
                 aria-expanded={addingCategory}
                 title="Crear categoría nueva"
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                className="flex flex-col items-center gap-1.5 bg-none border-0 cursor-pointer p-0.5"
               >
-                <div style={{
-                  width: 46, height: 46, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                  background: addingCategory ? TOKENS.accent : "transparent",
-                  border: `1.5px dashed ${addingCategory ? TOKENS.accent : TOKENS.border}`,
-                }}>
+                <div
+                  className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${
+                    addingCategory ? "bg-accent border-accent" : "bg-transparent border-border"
+                  }`}
+                >
                   <Plus size={19} color={addingCategory ? TOKENS.bg : TOKENS.textFaint} />
                 </div>
-                <div style={{ fontSize: 10.5, color: TOKENS.textMuted, textAlign: "center", lineHeight: 1.2 }}>
+                <div className="text-[10.5px] text-muted text-center leading-[1.2]">
                   Nueva
                 </div>
               </button>
@@ -1104,13 +1009,13 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
           )}
         </div>
 
-        <div style={{ padding: "14px 20px", borderTop: `1px solid ${TOKENS.border}`, background: TOKENS.surfaceAlt, flexShrink: 0 }}>
-          <div className="form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div className="px-5 py-3.5 border-t border-border bg-surface-alt shrink-0">
+          <div className="form-grid-2 grid grid-cols-2 gap-2.5 mb-2.5">
             <FieldInput label="Fecha" type="date" value={date} onChange={setDate} />
             <FieldInput label="Monto (CLP)" type="number" value={amount} onChange={setAmount} placeholder="0" />
           </div>
           <FieldInput label="Descripción" value={description} onChange={setDescription} style={{ marginBottom: 12 }} />
-          <button onClick={submit} style={{ width: "100%", padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", background: TOKENS.accent, color: TOKENS.bg, fontWeight: 600, fontSize: 13.5 }}>
+          <button onClick={submit} className="w-full py-[11px] rounded-lg border-0 cursor-pointer bg-accent text-bg font-semibold text-[13.5px]">
             Guardar movimiento
           </button>
         </div>
