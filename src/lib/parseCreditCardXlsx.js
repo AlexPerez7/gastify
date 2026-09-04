@@ -45,5 +45,8 @@ export async function parseCreditCardRows(buf) {
     // resta de más y desajusta el total contra lo que realmente factura
     // Falabella. El pago real ya se ve, aparte, como un cargo en la cartola
     // de débito (fuera de esta tabla por diseño).
-    .filter((r) => !r.description.toUpperCase().includes("PAGO TARJETA"));
+    .filter((r) => !r.description.toUpperCase().includes("PAGO TARJETA"))
+    // fila con fecha ilegible: se descarta (parseBankDate devuelve null) para
+    // no contaminar statementMonth ni makeCreditKey con un valor inválido.
+    .filter((r) => r.date);
 }

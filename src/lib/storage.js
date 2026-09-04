@@ -120,9 +120,17 @@ export const storage = {
     try {
       let rows = [];
       let from = 0;
-      // eslint-disable-next-line no-constant-condition -- se corta abajo con el break
       while (true) {
-        const { data, error } = await supabase.from(spec.table).select("*").range(from, from + PAGE_SIZE - 1);
+        // `.order("id")` es obligatorio para paginar: sin un ORDER BY
+        // explícito PostgREST/Postgres no garantiza el mismo orden entre
+        // requests, así que una fila podía repetirse en dos páginas o
+        // saltarse por completo — el mismo tipo de carga incompleta
+        // silenciosa que la paginación vino a resolver.
+        const { data, error } = await supabase
+          .from(spec.table)
+          .select("*")
+          .order("id", { ascending: true })
+          .range(from, from + PAGE_SIZE - 1);
         if (error) throw error;
         rows = rows.concat(data);
         if (data.length < PAGE_SIZE) break;

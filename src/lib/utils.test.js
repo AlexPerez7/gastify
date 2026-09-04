@@ -36,8 +36,17 @@ describe("parseBankDate", () => {
   it("convierte dd/mm/yyyy a yyyy-mm-dd", () => {
     expect(parseBankDate("05/01/2024")).toBe("2024-01-05");
   });
-  it("deja pasar strings que no matchean el formato esperado", () => {
+  it("deja pasar una fecha que ya viene en ISO", () => {
     expect(parseBankDate("2024-01-05")).toBe("2024-01-05");
+  });
+  it("devuelve null para un string que no es fecha", () => {
+    expect(parseBankDate("Saldo inicial")).toBeNull();
+    expect(parseBankDate("")).toBeNull();
+  });
+  it("devuelve null para un serial de Excel inválido", () => {
+    expect(parseBankDate(0)).toBeNull();
+    expect(parseBankDate(-5)).toBeNull();
+    expect(parseBankDate(NaN)).toBeNull();
   });
 });
 
