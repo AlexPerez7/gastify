@@ -164,98 +164,51 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     if (pendingSaves.current === 0) setSaving(false);
   }, []);
 
-  // optimista: aplica el cambio ya, pero si Supabase rechaza el guardado
-  // revierte el estado local en vez de dejarlo "aplicado" solo de mentira.
-  const persistTx = useCallback(async (next) => {
-    const prev = transactions;
-    setTransactions(next);
+  // Núcleo optimista compartido por todos los persist*: aplica el cambio ya,
+  // y si Supabase lo rechaza revierte el estado local (con `prev`, la foto
+  // que la App tenía antes) en vez de dejarlo "aplicado" solo de mentira.
+  // `trackError` guarda el error en lastPersistError para los flujos que lo
+  // leen justo después de un await puntual (ver comentario en su declaración).
+  const runPersist = useCallback(async (storageKey, prev, next, setLocal, { trackError = false } = {}) => {
+    setLocal(next);
     beginSave();
-    const res = await storage.set("transactions", JSON.stringify(next), prev);
+    const res = await storage.set(storageKey, JSON.stringify(next), prev);
     endSave();
-    lastPersistError.current = res?.error || null;
+    if (trackError) lastPersistError.current = res?.error || null;
     if (!res || res.error) {
-      setTransactions(prev);
+      setLocal(prev);
       const detail = res?.error ? ` (${res.error})` : "";
       setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
       return false;
     }
     setSyncError(null);
     return true;
-  }, [transactions, beginSave, endSave]);
-  const persistCreditTx = useCallback(async (next) => {
-    const prev = creditTransactions;
-    setCreditTransactions(next);
-    beginSave();
-    const res = await storage.set("creditTransactions", JSON.stringify(next), prev);
-    endSave();
-    lastPersistError.current = res?.error || null;
-    if (!res || res.error) {
-      setCreditTransactions(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-      return false;
-    }
-    setSyncError(null);
-    return true;
-  }, [creditTransactions, beginSave, endSave]);
-  const persistCreditStatements = useCallback(async (next) => {
-    const prev = creditStatements;
-    setCreditStatements(next);
-    beginSave();
-    const res = await storage.set("creditStatements", JSON.stringify(next), prev);
-    endSave();
-    lastPersistError.current = res?.error || null;
-    if (!res || res.error) {
-      setCreditStatements(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-      return false;
-    }
-    setSyncError(null);
-    return true;
-  }, [creditStatements, beginSave, endSave]);
-  const persistCats = useCallback(async (next) => {
-    const prev = categories;
-    setCategories(next);
-    beginSave();
-    const res = await storage.set("categories", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setCategories(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [categories, beginSave, endSave]);
-  const persistRules = useCallback(async (next) => {
-    const prev = merchantRules;
-    setMerchantRules(next);
-    beginSave();
-    const res = await storage.set("merchantRules", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setMerchantRules(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [merchantRules, beginSave, endSave]);
-  const persistSubs = useCallback(async (next) => {
-    const prev = subscriptions;
-    setSubscriptions(next);
-    beginSave();
-    const res = await storage.set("subscriptions", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setSubscriptions(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [subscriptions, beginSave, endSave]);
+  }, [beginSave, endSave]);
+
+  const persistTx = useCallback(
+    (next) => runPersist("transactions", transactions, next, setTransactions, { trackError: true }),
+    [transactions, runPersist]
+  );
+  const persistCreditTx = useCallback(
+    (next) => runPersist("creditTransactions", creditTransactions, next, setCreditTransactions, { trackError: true }),
+    [creditTransactions, runPersist]
+  );
+  const persistCreditStatements = useCallback(
+    (next) => runPersist("creditStatements", creditStatements, next, setCreditStatements, { trackError: true }),
+    [creditStatements, runPersist]
+  );
+  const persistCats = useCallback(
+    (next) => runPersist("categories", categories, next, setCategories),
+    [categories, runPersist]
+  );
+  const persistRules = useCallback(
+    (next) => runPersist("merchantRules", merchantRules, next, setMerchantRules),
+    [merchantRules, runPersist]
+  );
+  const persistSubs = useCallback(
+    (next) => runPersist("subscriptions", subscriptions, next, setSubscriptions),
+    [subscriptions, runPersist]
+  );
 
   // ---- persistence (Supabase, vía src/lib/storage.js) ----------------------
   const loadAllData = useCallback(async () => {
