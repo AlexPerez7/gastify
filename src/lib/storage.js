@@ -4,6 +4,21 @@
 // las filas de esa tabla para el usuario autenticado.
 import { supabase } from "./supabaseClient.js";
 
+/**
+ * @typedef {import("./types.js").Transaction} Transaction
+ * @typedef {import("./types.js").Category} Category
+ * @typedef {import("./types.js").MerchantRule} MerchantRule
+ * @typedef {import("./types.js").Subscription} Subscription
+ * @typedef {import("./types.js").CreditTransaction} CreditTransaction
+ * @typedef {import("./types.js").CreditStatement} CreditStatement
+ */
+
+// El mapeo por tabla. Cada entrada correlaciona su propio toRow/fromRow,
+// pero al indexar TABLES[key] TS pierde esa correlación y ve la unión de las
+// 6 funciones (no invocable con una sola firma) — se ensancha a (any)=>any a
+// propósito: el chequeo útil acá es el de utils/reconcile, no el de este
+// diccionario de adaptadores.
+/** @type {Record<string, { table: string, toRow: (x: any) => any, fromRow: (r: any) => any }>} */
 const TABLES = {
   transactions: {
     table: "transactions",
@@ -114,6 +129,11 @@ const TABLES = {
 const PAGE_SIZE = 1000;
 
 export const storage = {
+  /**
+   * Lee una "tabla" completa y la devuelve serializada en forma de app.
+   * @param {keyof typeof TABLES} key
+   * @returns {Promise<{ key: string, value: string } | null>}
+   */
   async get(key) {
     const spec = TABLES[key];
     if (!spec) return null;
@@ -150,6 +170,12 @@ export const storage = {
   // verdad (patrón optimista en persistTx/persistCats/persistRules, que
   // revierte si el guardado falla), así que no hace falta reconfirmar
   // contra el servidor antes de escribir.
+  /**
+   * @param {keyof typeof TABLES} key
+   * @param {string} value       JSON.stringify del array en forma de app
+   * @param {Array<{id: string}>} prevItems
+   * @returns {Promise<{ key: string, value: string } | { key: string, error: string } | null>}
+   */
   async set(key, value, prevItems = []) {
     const spec = TABLES[key];
     if (!spec) return null;

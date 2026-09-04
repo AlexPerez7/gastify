@@ -5,6 +5,8 @@
 // entra un array de transacciones, sale el array resultante.
 import { monthKey, nextMonthKey } from "./utils.js";
 
+/** @typedef {import("./types.js").Transaction} Transaction */
+
 // Conciliar FUSIONA el movimiento manual con el del banco en vez de dejar los
 // dos como filas separadas: si no, el mismo gasto real quedaría contado dos
 // veces (una como manual, otra como bancario) apenas el usuario anota algo a
@@ -14,6 +16,11 @@ import { monthKey, nextMonthKey } from "./utils.js";
 // Devuelve { next, merged }: `next` es el array de transacciones ya
 // conciliado, `merged` cuántas parejas se fusionaron (0 si no hubo ninguna,
 // en cuyo caso `next` es === al array original).
+/**
+ * @param {Transaction[]} transactions
+ * @param {string} mKey  clave de mes "YYYY-MM"
+ * @returns {{ next: Transaction[], merged: number }}
+ */
 export function reconcileMonthTransactions(transactions, mKey) {
   const manuals = transactions.filter((t) => t.source === "manual" && monthKey(t.date) === mKey);
   // el banco anota los traspasos con "fecha contable": hechos después de las
@@ -35,7 +42,7 @@ export function reconcileMonthTransactions(transactions, mKey) {
       // se adelanta — ventana asimétrica hacia adelante (hasta 5 días, para
       // cubrir fines de semana largos con feriado) y un margen chico hacia
       // atrás por si la fecha anotada a mano quedó un día después de la real.
-      const dDate = (new Date(b.date) - new Date(m.date)) / 86400000;
+      const dDate = (new Date(b.date).getTime() - new Date(m.date).getTime()) / 86400000;
       return sameAmount && dDate >= -2 && dDate <= 5;
     });
     if (match) {
@@ -60,6 +67,12 @@ export function reconcileMonthTransactions(transactions, mKey) {
 // automático no lo encontró. Misma fusión que reconcileMonthTransactions: se
 // borra la fila manual y el banco hereda su categoría/alias/subscriptionId.
 // Devuelve el array resultante (=== al original si algún id no existe).
+/**
+ * @param {Transaction[]} transactions
+ * @param {string} manualId
+ * @param {string} bankId
+ * @returns {Transaction[]}
+ */
 export function matchManualToBank(transactions, manualId, bankId) {
   const manual = transactions.find((t) => t.id === manualId);
   const bank = transactions.find((t) => t.id === bankId);
@@ -87,6 +100,10 @@ export function matchManualToBank(transactions, manualId, bankId) {
 // reales de una reimportación ya se filtran por la clave única al importar.
 // Se agrupa por monto redondeado antes de comparar fechas para no comparar
 // todo contra todo en cuentas con muchos movimientos.
+/**
+ * @param {Transaction[]} transactions
+ * @returns {Set<string>}  ids marcados como posible duplicado
+ */
 export function findDuplicateIds(transactions) {
   const byAmount = new Map();
   for (const t of transactions) {
@@ -103,7 +120,7 @@ export function findDuplicateIds(transactions) {
         if (a.source === b.source) continue;
         if ((a.amount < 0) !== (b.amount < 0)) continue;
         if (a.matchedId === b.id || b.matchedId === a.id) continue;
-        const dDays = Math.abs(new Date(a.date) - new Date(b.date)) / 86400000;
+        const dDays = Math.abs(new Date(a.date).getTime() - new Date(b.date).getTime()) / 86400000;
         if (dDays <= 3) { flagged.add(a.id); flagged.add(b.id); }
       }
     }

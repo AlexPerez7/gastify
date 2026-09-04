@@ -114,6 +114,7 @@ export const PALETTE = [
   "#D98E52", "#6FCF97", "#7C8B9C", "#4FC3D9", "#C9755B",
 ];
 
+/** @type {Array<[string[], string]>} */
 export const MERCHANT_RULES_DEFAULT = [
   [["UBER EATS", "RAPPI", "MCDONALD", "SANTA ISABEL", "STA ISABEL", "SUBWAY", "RYOMA",
     "ASUSHI", "TITO MONJE", "MERCADOPAGO MYM", "DUNKIN", "MONARCH", "MP  NATURA", "MP NATURA",
