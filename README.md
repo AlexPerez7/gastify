@@ -70,9 +70,11 @@ cualquier dispositivo.
 ## Stack
 
 React 18 + Vite 5 · Supabase (Postgres, Auth, RLS) · Recharts · Framer
-Motion · lucide-react · xlsx · html-to-image · vite-plugin-pwa · Vitest.
-Sin TypeScript, sin backend propio: toda la lógica vive en el cliente y
-habla directo con Supabase.
+Motion · lucide-react · xlsx (SheetJS, build oficial desde cdn.sheetjs.com —
+la versión publicada en npm quedó sin mantención y con advisories) ·
+html-to-image · vite-plugin-pwa · Vitest · ESLint 9. Sin TypeScript, sin
+backend propio: toda la lógica vive en el cliente y habla directo con
+Supabase.
 
 ## Requisitos
 
@@ -143,6 +145,7 @@ defecto automáticamente.
 | `npm run dev`       | Servidor de desarrollo con hot reload                    |
 | `npm run build`     | Build de producción en `dist/`                           |
 | `npm run preview`   | Sirve el build de producción localmente para probarlo     |
+| `npm run lint`      | ESLint sobre todo el proyecto                             |
 | `npm test`          | Corre la suite de Vitest                                  |
 
 ## Tests
@@ -151,9 +154,10 @@ defecto automáticamente.
 npm test
 ```
 
-Cubre las funciones puras de `src/lib/utils.js`: parseo de fechas y montos
+Cubre las funciones puras de `src/lib/utils.js` (parseo de fechas y montos
 del banco, categorización automática, reglas de comercio, agrupado de
-movimientos por día, y el generador de insights.
+movimientos por día, generador de insights) y `src/lib/reconcile.js` (calce
+manual↔banco, vínculo manual, detección de posibles duplicados).
 
 ## Estructura
 

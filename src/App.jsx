@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } fro
 
 import { TOKENS, DEFAULT_CATEGORIES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon } from "./lib/constants.js";
 import { storage } from "./lib/storage.js";
+import { reconcileMonthTransactions, matchManualToBank, findDuplicateIds } from "./lib/reconcile.js";
 import { getAccountSettings, saveAccountSettings, saveSavingsBase } from "./lib/accountSettings.js";
 import { useToasts } from "./lib/useToasts.js";
 import { readFileWithProgress } from "./lib/readFile.js";
@@ -10,7 +11,8 @@ import { exportBackup } from "./lib/exportBackup.js";
 import { exportCsv } from "./lib/exportCsv.js";
 import {
   autoCategory, applyMerchantRules, parseClpNumber, parseBankDate,
-  makeKey, makeCreditKey, monthKey, nextMonthKey, uid, computeInsights, formatCLP,
+  makeKey, makeCreditKey, monthKey, nextMonthKey, prevMonthKey, monthKeyOf,
+  uid, computeInsights, formatCLP,
 } from "./lib/utils.js";
 
 import { Header, MonthBar, BottomNav, ExportMenu } from "./components/Header.jsx";
@@ -162,98 +164,51 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     if (pendingSaves.current === 0) setSaving(false);
   }, []);
 
-  // optimista: aplica el cambio ya, pero si Supabase rechaza el guardado
-  // revierte el estado local en vez de dejarlo "aplicado" solo de mentira.
-  const persistTx = useCallback(async (next) => {
-    const prev = transactions;
-    setTransactions(next);
+  // Núcleo optimista compartido por todos los persist*: aplica el cambio ya,
+  // y si Supabase lo rechaza revierte el estado local (con `prev`, la foto
+  // que la App tenía antes) en vez de dejarlo "aplicado" solo de mentira.
+  // `trackError` guarda el error en lastPersistError para los flujos que lo
+  // leen justo después de un await puntual (ver comentario en su declaración).
+  const runPersist = useCallback(async (storageKey, prev, next, setLocal, { trackError = false } = {}) => {
+    setLocal(next);
     beginSave();
-    const res = await storage.set("transactions", JSON.stringify(next), prev);
+    const res = await storage.set(storageKey, JSON.stringify(next), prev);
     endSave();
-    lastPersistError.current = res?.error || null;
+    if (trackError) lastPersistError.current = res?.error || null;
     if (!res || res.error) {
-      setTransactions(prev);
+      setLocal(prev);
       const detail = res?.error ? ` (${res.error})` : "";
       setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
       return false;
     }
     setSyncError(null);
     return true;
-  }, [transactions, beginSave, endSave]);
-  const persistCreditTx = useCallback(async (next) => {
-    const prev = creditTransactions;
-    setCreditTransactions(next);
-    beginSave();
-    const res = await storage.set("creditTransactions", JSON.stringify(next), prev);
-    endSave();
-    lastPersistError.current = res?.error || null;
-    if (!res || res.error) {
-      setCreditTransactions(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-      return false;
-    }
-    setSyncError(null);
-    return true;
-  }, [creditTransactions, beginSave, endSave]);
-  const persistCreditStatements = useCallback(async (next) => {
-    const prev = creditStatements;
-    setCreditStatements(next);
-    beginSave();
-    const res = await storage.set("creditStatements", JSON.stringify(next), prev);
-    endSave();
-    lastPersistError.current = res?.error || null;
-    if (!res || res.error) {
-      setCreditStatements(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-      return false;
-    }
-    setSyncError(null);
-    return true;
-  }, [creditStatements, beginSave, endSave]);
-  const persistCats = useCallback(async (next) => {
-    const prev = categories;
-    setCategories(next);
-    beginSave();
-    const res = await storage.set("categories", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setCategories(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [categories, beginSave, endSave]);
-  const persistRules = useCallback(async (next) => {
-    const prev = merchantRules;
-    setMerchantRules(next);
-    beginSave();
-    const res = await storage.set("merchantRules", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setMerchantRules(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [merchantRules, beginSave, endSave]);
-  const persistSubs = useCallback(async (next) => {
-    const prev = subscriptions;
-    setSubscriptions(next);
-    beginSave();
-    const res = await storage.set("subscriptions", JSON.stringify(next), prev);
-    endSave();
-    if (!res || res.error) {
-      setSubscriptions(prev);
-      const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
-    } else {
-      setSyncError(null);
-    }
-  }, [subscriptions, beginSave, endSave]);
+  }, [beginSave, endSave]);
+
+  const persistTx = useCallback(
+    (next) => runPersist("transactions", transactions, next, setTransactions, { trackError: true }),
+    [transactions, runPersist]
+  );
+  const persistCreditTx = useCallback(
+    (next) => runPersist("creditTransactions", creditTransactions, next, setCreditTransactions, { trackError: true }),
+    [creditTransactions, runPersist]
+  );
+  const persistCreditStatements = useCallback(
+    (next) => runPersist("creditStatements", creditStatements, next, setCreditStatements, { trackError: true }),
+    [creditStatements, runPersist]
+  );
+  const persistCats = useCallback(
+    (next) => runPersist("categories", categories, next, setCategories),
+    [categories, runPersist]
+  );
+  const persistRules = useCallback(
+    (next) => runPersist("merchantRules", merchantRules, next, setMerchantRules),
+    [merchantRules, runPersist]
+  );
+  const persistSubs = useCallback(
+    (next) => runPersist("subscriptions", subscriptions, next, setSubscriptions),
+    [subscriptions, runPersist]
+  );
 
   // ---- persistence (Supabase, vía src/lib/storage.js) ----------------------
   const loadAllData = useCallback(async () => {
@@ -334,7 +289,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     subscriptionChargesRanRef.current = true;
 
     const today = new Date();
-    const curMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    const curMonthKey = monthKeyOf(today);
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
     const toGenerate = [];
@@ -410,6 +365,9 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
           const [fecha, desc, cargo, abono, saldo] = r;
           if (!desc) continue;
           const date = parseBankDate(fecha);
+          // fila con fecha ilegible: se descarta en vez de dejar entrar una
+          // `date` inválida que después rompe monthKey/orden/conciliación.
+          if (!date) continue;
           const cargoN = parseClpNumber(cargo);
           const abonoN = parseClpNumber(abono);
           // "Saldo" viene en formato chileno (ej. "$ 1.569.661") — mismo
@@ -856,43 +814,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // de "agregar movimiento manual". La fila manual se borra y la del banco
   // (la fuente oficial) hereda su categoría y alias, para no perder la
   // categorización que el usuario ya le había puesto a mano.
+  // El algoritmo puro vive en src/lib/reconcile.js (testeable sin React);
+  // acá solo se persiste el resultado y se devuelve el conteo para el toast.
   const reconcileMonth = useCallback(
     (mKey) => {
-      const manuals = transactions.filter((t) => t.source === "manual" && monthKey(t.date) === mKey);
-      // el banco anota los traspasos con "fecha contable": si se hicieron
-      // después de las 14:00 en día hábil o en día inhábil, quedan
-      // registrados el día hábil siguiente — eso puede empujar la fecha del
-      // banco al mes calendario siguiente (ej. un traspaso del 31 en la
-      // tarde queda con fecha 1 o 2 del mes que sigue), así que también se
-      // buscan candidatos ahí, no solo dentro del mismo mes que el manual.
-      const nextKey = nextMonthKey(mKey);
-      const banks = transactions.filter((t) => t.source === "bank" && (monthKey(t.date) === mKey || monthKey(t.date) === nextKey));
-
-      const bankUpdates = new Map();
-      const mergedManualIds = new Set();
-      for (const m of manuals) {
-        const match = banks.find((b) => {
-          if (bankUpdates.has(b.id) || b.matchedId) return false;
-          const sameAmount = Math.abs(b.amount - m.amount) < 1;
-          // la fecha contable del banco solo se atrasa respecto a la real,
-          // nunca se adelanta — la ventana es asimétrica hacia adelante
-          // (hasta 5 días, para cubrir fines de semana largos con feriado de
-          // por medio) y con un margen chico hacia atrás por si la fecha
-          // que anotaste a mano quedó un día después de la real.
-          const dDate = (new Date(b.date) - new Date(m.date)) / 86400000;
-          return sameAmount && dDate >= -2 && dDate <= 5;
-        });
-        if (match) {
-          bankUpdates.set(match.id, { ...match, matchedId: m.id, category: m.category, alias: m.alias || match.alias, subscriptionId: m.subscriptionId ?? match.subscriptionId });
-          mergedManualIds.add(m.id);
-        }
-      }
-      if (mergedManualIds.size === 0) return 0;
-      const next = transactions
-        .filter((t) => !mergedManualIds.has(t.id))
-        .map((t) => bankUpdates.get(t.id) || t);
+      const { next, merged } = reconcileMonthTransactions(transactions, mKey);
+      if (merged === 0) return 0;
       persistTx(next);
-      return mergedManualIds.size;
+      return merged;
     },
     [transactions, persistTx]
   );
@@ -929,12 +858,8 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // categoría y alias.
   const manualMatch = useCallback(
     (manualId, bankId) => {
-      const manual = transactions.find((t) => t.id === manualId);
-      if (!manual) return;
-      const next = transactions
-        .filter((t) => t.id !== manualId)
-        .map((t) => (t.id === bankId ? { ...t, matchedId: manualId, category: manual.category, alias: manual.alias || t.alias, subscriptionId: manual.subscriptionId ?? t.subscriptionId } : t));
-      persistTx(next);
+      const next = matchManualToBank(transactions, manualId, bankId);
+      if (next !== transactions) persistTx(next);
     },
     [transactions, persistTx]
   );
@@ -1030,41 +955,9 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
       });
   }, [monthTx, catFilter, txTypeFilter, sourceFilter, search]);
 
-  // posibles duplicados: un manual y un bancario (nunca dos del mismo
-  // origen) con mismo monto (mismo signo) y fecha a menos de 3 días de
-  // distancia, sin estar ya vinculados entre sí por la conciliación — el
-  // caso típico es anotar algo a mano y que el reporte del banco llegue con
-  // una fecha contable distinta, sin calzar dentro de la ventana que usa el
-  // matching automático de reconcileMonth. Comparar bancario contra
-  // bancario NO sirve acá: servicios con tarifa fija (metro, estacionamiento)
-  // generan varios movimientos legítimos con el mismo monto en pocos días, y
-  // los duplicados reales de una reimportación ya se filtran aparte por la
-  // clave única al importar (ver handleFile). Se agrupa por monto redondeado
-  // antes de comparar fechas para no comparar todo contra todo en cuentas
-  // con muchos movimientos.
-  const duplicateIds = useMemo(() => {
-    const byAmount = new Map();
-    for (const t of transactions) {
-      const key = Math.round(Math.abs(t.amount));
-      if (!byAmount.has(key)) byAmount.set(key, []);
-      byAmount.get(key).push(t);
-    }
-    const flagged = new Set();
-    for (const group of byAmount.values()) {
-      if (group.length < 2) continue;
-      for (let i = 0; i < group.length; i++) {
-        for (let j = i + 1; j < group.length; j++) {
-          const a = group[i], b = group[j];
-          if (a.source === b.source) continue;
-          if ((a.amount < 0) !== (b.amount < 0)) continue;
-          if (a.matchedId === b.id || b.matchedId === a.id) continue;
-          const dDays = Math.abs(new Date(a.date) - new Date(b.date)) / 86400000;
-          if (dDays <= 3) { flagged.add(a.id); flagged.add(b.id); }
-        }
-      }
-    }
-    return flagged;
-  }, [transactions]);
+  // posibles duplicados manual↔banco sin vincular — algoritmo y racional
+  // completo en src/lib/reconcile.js (findDuplicateIds).
+  const duplicateIds = useMemo(() => findDuplicateIds(transactions), [transactions]);
 
   // categorías marcadas "no cuenta como gasto" (ej. transferencias a tus
   // propias cuentas) — se excluyen de todo cálculo de gasto, pero siguen
@@ -1187,7 +1080,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // un cargo fechado "mañana" igual cuenta como gasto de ese mes.
   const heroStat = useMemo(() => {
     const now = new Date();
-    const realThisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const realThisMonthKey = monthKeyOf(now);
     const thisMonthKey = currentMonth || realThisMonthKey;
     const isRealCurrentMonth = thisMonthKey === realThisMonthKey;
     const [y, m] = thisMonthKey.split("-").map(Number);
@@ -1206,15 +1099,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     // distorsiona el % apenas hay un gasto grande fuera de ese tramo (ej. un
     // pago grande el día 25 "contaba" como si ya hubiera pasado el día 5).
     // Comparar el mismo rango real de fechas evita esa distorsión.
-    const prevMonthDate = new Date(y, m - 2, 1);
-    const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
-    const hasPrevMonthData = transactions.some((t) => monthKey(t.date) === prevMonthKey);
+    const prevMonth = prevMonthKey(thisMonthKey);
+    const hasPrevMonthData = transactions.some((t) => monthKey(t.date) === prevMonth);
 
     let typicalPace = null;
     if (hasPrevMonthData) {
       typicalPace = 0;
       for (const [date, amt] of Object.entries(dailySpend)) {
-        if (date.slice(0, 7) !== prevMonthKey) continue;
+        if (date.slice(0, 7) !== prevMonth) continue;
         const day = Number(date.slice(8, 10));
         if (day <= dayOfMonth) typicalPace += amt;
       }
@@ -1224,7 +1116,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   }, [dailySpend, transactions, currentMonth]);
 
   const insights = useMemo(() => {
-    const [y, m] = (currentMonth || `${new Date().getFullYear()}-${new Date().getMonth() + 1}`).split("-").map(Number);
+    const [y, m] = (currentMonth || monthKeyOf(new Date())).split("-").map(Number);
     return computeInsights(transactions, excludedCategoryIds, (id) => getCat(id).label, new Date(y, m - 1, 1));
   }, [transactions, excludedCategoryIds, getCat, currentMonth]);
 

@@ -16,7 +16,7 @@ function monthLabel(mk) {
 // más simple que Movimientos (sin swipe, sin selección múltiple) — la lista
 // de un ciclo mensual es chica.
 export function CreditCard({
-  tx, months, currentMonth, onSetMonth, stats, categories, getCat, onAddCategory,
+  tx, months, currentMonth, onSetMonth, stats, categories, getCat,
   saveTxEdit, onDelete, onImportFile, isImporting,
   statement, onImportStatementFile, isImportingStatement,
 }) {

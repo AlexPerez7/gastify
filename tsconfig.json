@@ -1,0 +1,31 @@
+{
+  // No migramos a TypeScript: esto sólo activa el chequeo de tipos vía JSDoc
+  // (ver src/lib/types.js) sobre la capa `src/lib`, que es lógica pura y
+  // aislada — el mapeo camelCase↔snake_case de storage.js, la conciliación,
+  // los parsers. `npm run typecheck` lo corre; CI lo exige.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  // Sólo la lógica pura/aislada. Los parsers (tipos de pdfjs), supabaseClient
+  // (import.meta.env) y los hooks de React quedan fuera a propósito — ahí el
+  // ruido de tipos supera el valor.
+  "include": [
+    "src/env.d.ts",
+    "src/lib/types.js",
+    "src/lib/utils.js",
+    "src/lib/reconcile.js",
+    "src/lib/constants.js",
+    "src/lib/storage.js"
+  ],
+  "exclude": ["node_modules", "dist", "**/*.test.js"]
+}

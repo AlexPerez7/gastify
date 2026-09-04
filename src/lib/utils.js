@@ -43,16 +43,23 @@ export function parseClpNumber(raw) {
   return isNaN(n) ? 0 : n;
 }
 
+// Devuelve una fecha ISO "YYYY-MM-DD", o null si `raw` no es una fecha
+// reconocible — antes devolvía el string crudo tal cual, que se colaba como
+// `date` inválida y rompía todo cálculo posterior de mes/orden. Quien llama
+// debe descartar la fila si esto es null.
 export function parseBankDate(raw) {
   if (typeof raw === "number") {
+    if (!Number.isFinite(raw) || raw <= 0) return null;
     const epoch = new Date(Date.UTC(1899, 11, 30));
     const d = new Date(epoch.getTime() + raw * 86400000);
-    return d.toISOString().slice(0, 10);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
   }
   const s = String(raw).trim();
-  const m = s.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
-  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-  return s;
+  const dmy = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  // por si algún origen ya entrega ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return null;
 }
 
 export function makeKey(date, desc, cargo, abono) {
@@ -84,13 +91,34 @@ export function monthKey(iso) {
   return iso ? iso.slice(0, 7) : "";
 }
 
+// Desplaza una clave de mes "YYYY-MM" en `n` meses (n puede ser negativo) y
+// devuelve otra clave "YYYY-MM", cruzando bien el límite de año. Es la única
+// forma que debería usarse para hacer aritmética de meses en la app — antes
+// estaba repetida a mano (new Date(y, m - 2, 1), etc.) en heroStat, insights
+// y conciliación, con el riesgo de off-by-one en cada copia.
+export function addMonths(mKey, n) {
+  const [y, m] = mKey.split("-").map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 // "2026-01" -> "2026-02". Se usa en conciliación: el banco puede anotar un
 // movimiento con "fecha contable" unos días después de la fecha real (ver
 // nextMonthKey callers), y eso a veces cruza al mes calendario siguiente.
 export function nextMonthKey(mKey) {
-  const [y, m] = mKey.split("-").map(Number);
-  const d = new Date(y, m, 1); // month es 1-indexado en mKey; pasarlo tal cual a Date (0-indexado) ya cae en el mes siguiente
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return addMonths(mKey, 1);
+}
+
+// "2026-02" -> "2026-01". Complemento de nextMonthKey para las comparaciones
+// "este mes vs. el anterior" del dashboard.
+export function prevMonthKey(mKey) {
+  return addMonths(mKey, -1);
+}
+
+// Clave de mes "YYYY-MM" para una fecha (Date). Centraliza el
+// `${y}-${String(m+1).padStart(2,"0")}` que estaba disperso.
+export function monthKeyOf(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 const WEEKDAY_NAMES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -129,23 +157,34 @@ export function groupByDate(transactions) {
   return Array.from(map.entries()).map(([date, items]) => ({ date, items }));
 }
 
+// id único para filas nuevas. Se usa como primary key (junto a user_id) en
+// Supabase y se genera en cada dispositivo sin coordinación, así que la
+// unicidad tiene que ser real: `crypto.randomUUID()` (disponible en todo
+// navegador objetivo bajo https/localhost) da 122 bits de aleatoriedad. El
+// fallback con Math.random() solo aplica en contextos sin Web Crypto y
+// mantiene un formato parecido al histórico.
 export function uid() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return (
+    Math.random().toString(36).slice(2, 10) +
+    Math.random().toString(36).slice(2, 10) +
+    Date.now().toString(36)
+  );
 }
 
 // Compara el mes actual con el anterior y arma 0-3 frases sueltas: variación
 // total, la categoría que más subió (con piso en $ y % para evitar ruido de
 // categorías chicas), y si el mes va en verde. getCatLabel resuelve id->nombre.
 export function computeInsights(transactions, excludedCategoryIds, getCatLabel, referenceDate = new Date()) {
-  const thisMonthKey = `${referenceDate.getFullYear()}-${String(referenceDate.getMonth() + 1).padStart(2, "0")}`;
-  const prevDate = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 1, 1);
-  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const thisMonthKey = monthKeyOf(referenceDate);
+  const prevMonth = prevMonthKey(thisMonthKey);
 
   // el mes seleccionado puede ser uno ya cerrado, no necesariamente el
   // calendario real — el texto de cada insight cambia de tiempo verbal
   // según corresponda (presente para el mes en curso, pasado para uno viejo).
-  const now = new Date();
-  const isRealCurrentMonth = referenceDate.getFullYear() === now.getFullYear() && referenceDate.getMonth() === now.getMonth();
+  const isRealCurrentMonth = thisMonthKey === monthKeyOf(new Date());
 
   const isExpense = (t) => t.amount < 0 && !excludedCategoryIds.has(t.category);
 
@@ -162,7 +201,7 @@ export function computeInsights(transactions, excludedCategoryIds, getCatLabel, 
   };
 
   const cur = sumByCat(thisMonthKey);
-  const prev = sumByCat(prevMonthKey);
+  const prev = sumByCat(prevMonth);
   const list = [];
   if (cur.total === 0 && prev.total === 0) return list;
 

@@ -137,7 +137,6 @@ export function Movimientos({
           stats={creditStats}
           categories={categories}
           getCat={getCat}
-          onAddCategory={onAddCategory}
           saveTxEdit={saveCreditTxEdit}
           onDelete={deleteCreditTransaction}
           onImportFile={handleCreditFile}
