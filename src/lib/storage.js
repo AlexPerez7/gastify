@@ -34,6 +34,12 @@ const TABLES = {
       reconciled: t.reconciled,
       matched_id: t.matchedId,
       subscription_id: t.subscriptionId,
+      // se manda explícito (no solo el default now() de la base): al
+      // "Deshacer" un borrado la fila se reinserta y tiene que conservar su
+      // fecha de carga original — el saldo dinámico cuenta los manuales
+      // cargados DESPUÉS del último ajuste comparando por esta columna.
+      // Todas las filas de la app traen createdAt (lo pone quien las crea).
+      created_at: t.createdAt ?? new Date().toISOString(),
     }),
     fromRow: (r) => ({
       id: r.id,
@@ -85,6 +91,7 @@ const TABLES = {
       id: t.id, key: t.key, statement_month: t.statementMonth, date: t.date,
       description: t.description, alias: t.alias, amount: t.amount, total_amount: t.totalAmount,
       installments_pending: t.installmentsPending, holder: t.holder, category: t.category,
+      created_at: t.createdAt ?? new Date().toISOString(), // ver comentario en transactions
     }),
     fromRow: (r) => ({
       id: r.id, key: r.key, statementMonth: r.statement_month, date: r.date,

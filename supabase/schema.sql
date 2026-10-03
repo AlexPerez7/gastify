@@ -26,6 +26,7 @@ create table transactions (
   reconciled boolean not null default false,
   matched_id text,
   subscription_id text, -- si el movimiento vino de una suscripción declarada (ver tabla subscriptions), o se fusionó con una
+  created_at timestamptz not null default now(), -- cuándo se cargó en la app (orden del día, saldo dinámico); la app la manda explícita
   user_id uuid not null default auth.uid() references auth.users (id),
   primary key (id, user_id),
   unique (user_id, key)
@@ -97,6 +98,7 @@ create table credit_transactions (
   installments_pending integer not null default 0, -- CUOTAS PENDIENTES
   holder text, -- TITULAR/ADICIONAL
   category text not null,
+  created_at timestamptz not null default now(),
   user_id uuid not null default auth.uid() references auth.users (id),
   primary key (id, user_id),
   unique (user_id, key)
@@ -119,6 +121,7 @@ create table credit_statements (
   cupo_total numeric,     -- Cupo Compras: Cupo Total
   cupo_used numeric,      -- Cupo Compras: Cupo Utilizado
   cupo_available numeric, -- Cupo Compras: Cupo Disponible
+  created_at timestamptz not null default now(),
   user_id uuid not null default auth.uid() references auth.users (id),
   primary key (id, user_id),
   unique (user_id, statement_month)

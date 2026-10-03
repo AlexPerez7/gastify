@@ -21,7 +21,7 @@ const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 | Hook | Responsabilidad |
 | --- | --- |
 | `useAppData` | **Único dueño del estado de datos** (transactions, creditTransactions, creditStatements, categories, merchantRules, subscriptions, accountSettings). Carga inicial, recarga al volver a la pestaña (si no hay guardados en vuelo), aviso `beforeunload`, `runPersist` optimista con rollback, `persistX` por entidad, `lastPersistError`, cargos de suscripción una vez por sesión, ajuste de saldo/ahorro base |
-| `useTransactionActions` | alta/borrado/edición de movimientos débito y crédito, acciones masivas, regla de comercio retroactiva, vincular a suscripción, conciliación (`reconcileMonth`, `editManualEntry`, `manualMatch`) |
+| `useTransactionActions` | alta/borrado/edición de movimientos débito y crédito (borrar es inmediato + aviso "Deshacer" que reinserta las mismas filas), acciones masivas, regla de comercio retroactiva, vincular a suscripción, conciliación (`reconcileMonth`, `editManualEntry`, `manualMatch`) |
 | `useCatalogActions` | CRUD de categorías (borrar una mueve sus movimientos y suscripciones a `"otros"`) y suscripciones |
 | `useImporters` | lectura de archivos con progreso, toasts, candado contra doble importación por flujo (`useImportLock`), conciliación automática de saldo, `recentImportIds` |
 | `useDerivedData` | `getCat`, mes seleccionado de débito y crédito (por defecto el más reciente, una sola vez), y todos los derivados memoizados de `src/lib/stats.js` |
@@ -29,7 +29,9 @@ const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 ## Hooks de UI
 
 `useTheme` (`data-theme` en `<html>`), `useIsMobile` (breakpoint 640px),
-`useToasts` (`push`/`update`/`dismiss`; tipos `ok` | `warn` | `error` | `loading`).
+`useToasts` (`push(type, text, progress?, { action?, duration? })`, `update`,
+`dismiss`, `pause`/`resume`; tipos `ok` | `warn` | `error` | `loading`; los
+`error` no se cierran solos).
 `useLongPress(cb)` → `{ handlers, consumeClick }`: toque largo de 450ms (se
 cancela si el dedo se mueve); el `onClick` del elemento debe empezar con
 `if (consumeClick()) return;`. Lo usan las filas de Movimientos en mobile

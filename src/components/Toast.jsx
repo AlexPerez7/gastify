@@ -8,7 +8,7 @@ const KIND = {
   error: { icon: XCircle, color: TOKENS.expense },
 };
 
-export function ToastStack({ toasts, onDismiss }) {
+export function ToastStack({ toasts, onDismiss, onPause, onResume }) {
   if (toasts.length === 0) return null;
   return (
     <div className="toast-stack">
@@ -19,12 +19,22 @@ export function ToastStack({ toasts, onDismiss }) {
           <div
             key={t.id}
             role="status"
+            onPointerEnter={() => onPause?.(t.id)}
+            onPointerLeave={() => onResume?.(t.id)}
             className={`toast flex flex-col gap-1.5 px-3 py-[11px] rounded-[10px] bg-surface border border-border${t.leaving ? " toast-leaving" : ""}`}
             style={{ boxShadow: "0 10px 28px rgba(0,0,0,0.4)" }}
           >
             <div className="flex items-start gap-2.5">
               <Icon size={16} color={color} className={`shrink-0 mt-px${spin ? " spin" : ""}`} />
               <div className="text-[12.5px] text-ink flex-1 leading-[1.4]">{t.text}</div>
+              {t.action && (
+                <button
+                  onClick={() => { onDismiss(t.id); t.action.onClick(); }}
+                  className="tap-expand shrink-0 -my-1 px-2 py-1 rounded-md border-0 bg-transparent text-accent text-[12.5px] font-semibold cursor-pointer"
+                >
+                  {t.action.label}
+                </button>
+              )}
               {t.type !== "loading" && (
                 <button
                   onClick={() => onDismiss(t.id)}

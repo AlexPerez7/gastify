@@ -4,7 +4,6 @@ import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpre
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST, Modal, pillClass } from "./Shared.jsx";
-import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useLongPress } from "../hooks/useLongPress.js";
@@ -86,10 +85,8 @@ export function Movimientos({
   // Supabase (vía persistTx en App.jsx) y devuelven si funcionó o no —
   // aquí solo se limpia la selección cuando la acción realmente terminó bien.
   const handleBulkDelete = async () => {
-    const count = selectedIds.length;
     const ok = await onBulkDelete(selectedIds);
     if (ok) {
-      pushToast?.("ok", `${count} movimiento${count === 1 ? "" : "s"} eliminado${count === 1 ? "" : "s"}.`);
       setSelectedIds([]);
     } else {
       pushToast?.("error", "No se pudo borrar. Revisa tu conexión e inténtalo de nuevo.");
@@ -540,7 +537,6 @@ function FilterSheet({
 // resultado.
 function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose }) {
   const [busy, setBusy] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pickedCategory, setPickedCategory] = useState("");
 
   const handleDeleteClick = async () => {
@@ -549,7 +545,6 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
       await onDelete();
     } finally {
       setBusy(false);
-      setConfirmingDelete(false);
     }
   };
 
@@ -583,33 +578,13 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
         />
       </div>
 
-      {confirmingDelete ? (
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted">¿Seguro?</span>
-          <button
-            onClick={handleDeleteClick}
-            disabled={busy}
-            className="flex items-center gap-[5px] px-2.5 py-1.5 rounded-[7px] border-0 bg-expense text-white text-xs font-semibold disabled:cursor-default enabled:cursor-pointer"
-          >
-            {busy ? <Loader2 size={12} className="spin" /> : "Confirmar"}
-          </button>
-          <button
-            onClick={() => setConfirmingDelete(false)}
-            disabled={busy}
-            className="px-2.5 py-1.5 rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer"
-          >
-            Cancelar
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setConfirmingDelete(true)}
-          disabled={busy}
-          className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border-0 bg-tint-expense text-expense text-[12.5px] font-semibold cursor-pointer"
-        >
-          <Trash2 size={13} /> Borrar seleccionados
-        </button>
-      )}
+      <button
+        onClick={handleDeleteClick}
+        disabled={busy}
+        className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border-0 bg-tint-expense text-expense text-[12.5px] font-semibold disabled:cursor-default enabled:cursor-pointer"
+      >
+        {busy ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Borrar seleccionados
+      </button>
 
       <button
         onClick={onClose}
@@ -733,9 +708,9 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
                 >
                   <Pencil size={17} />
                 </button>
-                <div className="tx-swipe-btn tx-swipe-delete">
-                  <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={17} color="#fff" />
-                </div>
+                <button className="tx-swipe-btn tx-swipe-delete" onClick={handleDelete} aria-label="Eliminar movimiento" title="Eliminar">
+                  <Trash2 size={17} />
+                </button>
               </div>
             )}
             <motion.div
@@ -872,7 +847,9 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
             <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
               <Pencil size={13} />
             </button>
-            <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={13} />
+            <button onClick={handleDelete} aria-label="Eliminar movimiento" title="Eliminar" className="bg-transparent border-0 cursor-pointer p-2 text-faint">
+              <Trash2 size={13} />
+            </button>
           </div>
         </div>
       </div>

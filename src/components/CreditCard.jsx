@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText } from "lucide-react";
+import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText, Trash2 } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
 import { EmptyState, CategorySelect, pillClass, BTN_PRIMARY, BTN_GHOST, Modal } from "./Shared.jsx";
-import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function monthLabel(mk) {
@@ -225,7 +224,9 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
           <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
             <Pencil size={13} />
           </button>
-          <ConfirmDeleteButton onConfirm={() => onDelete(t.id)} text="¿Eliminar este movimiento de la tarjeta?" title="Eliminar movimiento" size={13} />
+          <button onClick={() => onDelete(t.id)} aria-label="Eliminar movimiento" title="Eliminar" className="bg-transparent border-0 cursor-pointer p-2 text-faint">
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
       {editing && (

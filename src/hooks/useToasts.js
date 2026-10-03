@@ -2,33 +2,47 @@ import { useCallback, useRef, useState } from "react";
 
 let seq = 0;
 const EXIT_MS = 200;
-const LIFESPAN = { ok: 4000, warn: 5500, error: 6500 };
+// los errores no se cierran solos: suelen traer el detalle real de Supabase
+// y en 6 segundos no alcanza a leerse (ni a copiarse) en un teléfono
+const LIFESPAN = { ok: 4000, warn: 5500, error: Infinity };
 
+// Avisos flotantes.
+// push(type, text, progress?, { action?, duration? }) → id
+// - action: { label, onClick } — botón dentro del aviso (ej. "Deshacer");
+//   al tocarlo el aviso se cierra y corre onClick.
+// - duration: ms antes de cerrarse solo (por defecto según el tipo).
+// pause/resume: el temporizador se congela mientras el dedo o el mouse está
+// sobre el aviso, para no perder el "Deshacer" justo al ir a tocarlo.
 export function useToasts() {
   const [toasts, setToasts] = useState([]);
   const timers = useRef({});
 
   const clearTimer = (id) => {
-    clearTimeout(timers.current[id]);
-    delete timers.current[id];
+    clearTimeout(timers.current[id]?.handle);
   };
 
   const dismiss = useCallback((id) => {
     clearTimer(id);
+    delete timers.current[id];
     setToasts((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
     setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), EXIT_MS);
   }, []);
 
-  const scheduleAutoDismiss = useCallback((id, type) => {
+  const startTimer = useCallback((id, ms) => {
     clearTimer(id);
-    if (type === "loading") return;
-    timers.current[id] = setTimeout(() => dismiss(id), LIFESPAN[type] ?? LIFESPAN.ok);
+    if (!Number.isFinite(ms)) { delete timers.current[id]; return; }
+    timers.current[id] = { handle: setTimeout(() => dismiss(id), ms), start: Date.now(), remaining: ms };
   }, [dismiss]);
 
-  const push = useCallback((type, text, progress = null) => {
+  const scheduleAutoDismiss = useCallback((id, type, duration) => {
+    if (type === "loading") { clearTimer(id); delete timers.current[id]; return; }
+    startTimer(id, duration ?? LIFESPAN[type] ?? LIFESPAN.ok);
+  }, [startTimer]);
+
+  const push = useCallback((type, text, progress = null, { action = null, duration } = {}) => {
     const id = ++seq;
-    setToasts((list) => [...list, { id, type, text, progress }]);
-    scheduleAutoDismiss(id, type);
+    setToasts((list) => [...list, { id, type, text, progress, action }]);
+    scheduleAutoDismiss(id, type, duration);
     return id;
   }, [scheduleAutoDismiss]);
 
@@ -37,5 +51,19 @@ export function useToasts() {
     scheduleAutoDismiss(id, type);
   }, [scheduleAutoDismiss]);
 
-  return { toasts, push, update, dismiss };
+  const pause = useCallback((id) => {
+    const t = timers.current[id];
+    if (!t) return;
+    clearTimeout(t.handle);
+    t.remaining -= Date.now() - t.start;
+  }, []);
+
+  const resume = useCallback((id) => {
+    const t = timers.current[id];
+    if (!t) return;
+    // un mínimo de 1.5s para que no desaparezca apenas se suelta
+    startTimer(id, Math.max(t.remaining, 1500));
+  }, [startTimer]);
+
+  return { toasts, push, update, dismiss, pause, resume };
 }

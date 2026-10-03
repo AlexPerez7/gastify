@@ -31,6 +31,9 @@ export default [
       ...react.configs.flat["jsx-runtime"].rules,
       // marca como "usados" los componentes e íconos que solo aparecen en JSX
       "react/jsx-uses-vars": "error",
+      // un componente/ícono usado en JSX sin importar no lo detecta no-undef
+      // y recién revienta al renderizar esa vista
+      "react/jsx-no-undef": "error",
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^[A-Z_]" }],

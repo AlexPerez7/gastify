@@ -32,7 +32,7 @@ const ONBOARDING_KEY = "gastify:onboarding-done";
 // filtros, modales) y el render.
 export default function App({ onSignOut, theme, onToggleTheme }) {
   const isMobile = useIsMobile();
-  const { toasts, push: pushToast, update: updateToast, dismiss: dismissToast } = useToasts();
+  const { toasts, push: pushToast, update: updateToast, dismiss: dismissToast, pause: pauseToast, resume: resumeToast } = useToasts();
 
   // ---- estado de UI ---------------------------------------------------------
   const [tab, setTab] = useState("resumen");
@@ -58,7 +58,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     adjustBaseBalance, adjustSavingsBase,
   } = data;
   const closeManualForm = useCallback(() => setShowManualForm(false), []);
-  const txActions = useTransactionActions(data, { onManualAdded: closeManualForm });
+  const txActions = useTransactionActions(data, { onManualAdded: closeManualForm, pushToast });
   const catalog = useCatalogActions(data);
   const importers = useImporters(data, { pushToast, updateToast });
   const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFilter });
@@ -256,7 +256,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
       </main>
 
       <BottomNav tab={tab} setTab={setTab} onManual={openManualEntry} onImport={openImportFlow} />
-      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+      <ToastStack toasts={toasts} onDismiss={dismissToast} onPause={pauseToast} onResume={resumeToast} />
       {showOnboarding && <Onboarding onDone={dismissOnboarding} />}
     </div>
   );

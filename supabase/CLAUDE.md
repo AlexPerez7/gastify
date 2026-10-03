@@ -11,13 +11,14 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
 - `schema.sql` — esquema completo para un proyecto **nuevo**.
 - `migrations/000N_*.sql` — cambios incrementales para proyectos existentes
   (0001 suscripciones, 0002 credit_transactions, 0003 credit_statements,
-  0004 savings_base en account_settings).
+  0004 savings_base en account_settings, 0005 created_at en movimientos y
+  estados de cuenta).
 
 ## Tablas
 
 | Tabla | Clave | Notas |
 | --- | --- | --- |
-| `transactions` | PK `(id, user_id)`, `unique(user_id, key)` | débito; `source` `bank`/`manual`; `matched_id`, `subscription_id` |
+| `transactions` | PK `(id, user_id)`, `unique(user_id, key)` | débito; `source` `bank`/`manual`; `matched_id`, `subscription_id`; `created_at` (la app la manda explícita: "Deshacer" la conserva) |
 | `categories` | PK `(id, user_id)` | ids fijos para las por defecto; `type`, `budget`, `exclude_from_expense`, `is_savings` |
 | `merchant_rules` | PK `(id, user_id)` | `match_text`, `category_id`, `alias` |
 | `subscriptions` | PK `(id, user_id)` | `day_of_month`, `active` |
