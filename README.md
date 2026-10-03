@@ -103,7 +103,7 @@ Si tu proyecto ya existía antes de que existiera la sección de
 Suscripciones, no corras `schema.sql` de nuevo (recrearía tablas que ya
 tienes) — corre solo el archivo de migración correspondiente en
 [`supabase/migrations/`](supabase/migrations) contra tu base existente
-(por ahora hay uno: [`0001_add_subscriptions.sql`](supabase/migrations/0001_add_subscriptions.sql)).
+(en orden, solo las que te falten: `0001` suscripciones, `0002` tarjeta de crédito, `0003` estado de cuenta CMR, `0004` ahorro base).
 
 Después, en **Authentication → URL Configuration**, agrega la URL donde vas
 a correr o desplegar la app (ej. `http://localhost:5173` para desarrollo y

@@ -58,7 +58,9 @@ create table merchant_rules (
 create table account_settings (
   user_id uuid primary key default auth.uid() references auth.users (id),
   base_balance numeric not null,
-  last_sync_date timestamptz not null default now()
+  last_sync_date timestamptz not null default now(),
+  savings_base numeric,          -- ancla manual de "Total ahorrado" (lo ahorrado antes de usar la app); null = nunca declarado
+  savings_base_date timestamptz  -- desde cuándo rige ese ancla
 );
 
 -- suscripciones declaradas a mano (ej. "Paramount, $6.990, cada 19") — la
