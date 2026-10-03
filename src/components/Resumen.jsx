@@ -3,10 +3,10 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Legend,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, X, PiggyBank, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
 import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
-import { formatCLP, formatDateDisplay } from "../lib/utils.js";
-import { Panel, EmptyState, StatCard, FieldInput } from "./Shared.jsx";
+import { formatCLP, formatDateDisplay, localIsoDate } from "../lib/utils.js";
+import { Panel, EmptyState, StatCard, FieldInput, Modal } from "./Shared.jsx";
 import { SpendHeatmap } from "./Heatmap.jsx";
 import { Insights } from "./Insights.jsx";
 import { ErrorBoundary } from "./ErrorBoundary.jsx";
@@ -68,7 +68,7 @@ export function Resumen({
       const bg = getComputedStyle(document.documentElement).getPropertyValue("--c-bg").trim();
       const dataUrl = await toPng(captureRef.current, { backgroundColor: bg || undefined, pixelRatio: 2, skipFonts: true });
       const link = document.createElement("a");
-      link.download = `resumen-${new Date().toISOString().slice(0, 10)}.png`;
+      link.download = `resumen-${localIsoDate()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (e) {
@@ -111,22 +111,23 @@ export function Resumen({
           onClick={() => setShowAdjustModal(true)}
           aria-label="Ajustar saldo"
           title="Ajustar saldo"
-          className="bg-transparent border-0 cursor-pointer text-faint p-1 shrink-0"
+          className="tap-expand bg-transparent border-0 cursor-pointer text-faint p-1.5 -m-1 shrink-0"
         >
           <Pencil size={15} />
         </button>
       </div>
 
       <div className="stagger-fade grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 mb-6">
+        <StatCard label="Ingresos" value={formatCLP(stats.income)} icon={ArrowUpRight} accent={TOKENS.income} />
+        {/* antes había además una tarjeta "Gastado en <mes>" con el mismo
+            número que esta — ahora es una sola, con el ritmo habitual abajo */}
         <StatCard
-          label={heroStat ? `Gastado en ${fmtMonth(heroStat.monthKey)}${heroStat.isRealCurrentMonth ? ` · día ${heroStat.dayOfMonth}` : ""}` : "Gastado este mes"}
-          value={formatCLP(heroStat?.spentSoFar || 0)}
+          label={heroStat?.isRealCurrentMonth ? `Gastos · día ${heroStat.dayOfMonth}` : "Gastos"}
+          value={formatCLP(stats.expense)}
           sub={spendPaceSub(heroStat)}
           icon={ArrowDownRight}
           accent={TOKENS.expense}
         />
-        <StatCard label="Ingresos" value={formatCLP(stats.income)} icon={ArrowUpRight} accent={TOKENS.income} />
-        <StatCard label="Gastos" value={formatCLP(stats.expense)} icon={ArrowDownRight} accent={TOKENS.expense} />
         <StatCard label="Balance del período" value={formatCLP(stats.balance)} accent={stats.balance >= 0 ? TOKENS.income : TOKENS.expense} />
         {totalSavings != null && (
           <StatCard
@@ -140,7 +141,7 @@ export function Resumen({
                 onClick={() => setShowAdjustSavingsModal(true)}
                 aria-label="Ajustar total ahorrado"
                 title="Ajustar total ahorrado"
-                className="bg-transparent border-0 cursor-pointer text-faint p-0"
+                className="tap-expand bg-transparent border-0 cursor-pointer text-faint p-0"
               >
                 <Pencil size={13} />
               </button>
@@ -287,20 +288,32 @@ export function Resumen({
       </div>
 
       {showAdjustModal && (
-        <AdjustBalanceModal
-          currentBalance={dynamicBalance}
+        <AdjustAmountModal
+          title="Ajustar saldo"
+          help="Ingresa el saldo real de tu cuenta ahora mismo (el que muestra tu banco). Desde este momento, la app suma o resta tus movimientos manuales para mantenerlo actualizado."
+          label="Saldo actual (CLP)"
+          submitLabel="Guardar saldo"
+          initial={dynamicBalance}
           onAdjust={onAdjustBalance}
           onClose={() => setShowAdjustModal(false)}
           pushToast={pushToast}
+          okMsg="Saldo ajustado correctamente."
+          errorMsg="No se pudo ajustar el saldo. Revisa tu conexión e inténtalo de nuevo."
         />
       )}
 
       {showAdjustSavingsModal && (
-        <AdjustSavingsModal
-          currentSavings={totalSavings}
+        <AdjustAmountModal
+          title="Ajustar total ahorrado"
+          help="Ingresa lo que ya tienes ahorrado ahora mismo (por ejemplo, si empezaste a ahorrar antes de usar la app). Desde este momento, la app suma o resta arriba de este número lo que pase en tus categorías de ahorro."
+          label="Total ahorrado (CLP)"
+          submitLabel="Guardar total ahorrado"
+          initial={totalSavings}
           onAdjust={onAdjustSavings}
           onClose={() => setShowAdjustSavingsModal(false)}
           pushToast={pushToast}
+          okMsg="Total ahorrado ajustado correctamente."
+          errorMsg="No se pudo ajustar el total ahorrado. Revisa tu conexión e inténtalo de nuevo."
         />
       )}
     </div>
@@ -367,8 +380,11 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
   );
 }
 
-function AdjustBalanceModal({ currentBalance, onAdjust, onClose, pushToast }) {
-  const [value, setValue] = useState(currentBalance != null ? String(Math.round(currentBalance)) : "");
+// Ajuste manual de un monto ancla (saldo actual o total ahorrado): un solo
+// campo, prellenado con el valor vigente.
+function AdjustAmountModal({ title, help, label, submitLabel, initial, onAdjust, onClose, pushToast, okMsg, errorMsg }) {
+  const initialValue = initial != null ? String(Math.round(initial)) : "";
+  const [value, setValue] = useState(initialValue);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -378,88 +394,27 @@ function AdjustBalanceModal({ currentBalance, onAdjust, onClose, pushToast }) {
     const ok = await onAdjust(n);
     setSaving(false);
     if (ok) {
-      pushToast?.("ok", "Saldo ajustado correctamente.");
+      pushToast?.("ok", okMsg);
       onClose();
     } else {
-      pushToast?.("error", "No se pudo ajustar el saldo. Revisa tu conexión e inténtalo de nuevo.");
+      pushToast?.("error", errorMsg);
     }
   };
 
   return (
-    <div
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
-      style={{ background: "rgba(0,0,0,0.55)" }}
-    >
-      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
-        <div className="flex justify-between items-center mb-1.5">
-          <div className="display text-[14.5px] font-semibold">Ajustar saldo</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="text-xs text-muted mb-3.5 leading-[1.4]">
-          Ingresa el saldo real de tu cuenta ahora mismo (el que muestra tu banco). Desde este momento, la app suma o resta tus movimientos manuales para mantenerlo actualizado.
-        </div>
-        <FieldInput label="Saldo actual (CLP)" type="number" value={value} onChange={setValue} placeholder="0" style={{ marginBottom: 14 }} />
-        <button
-          onClick={submit}
-          disabled={saving || value === ""}
-          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
-        >
-          {saving ? "Guardando…" : "Guardar saldo"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// mismo patrón que AdjustBalanceModal pero para "Total ahorrado": deja
-// declarar cuánto ya tenías ahorrado (lo que nunca quedó registrado como
-// movimientos, porque pasó antes de usar la app). Desde ese momento, la
-// app sigue sumando/restando arriba de ese número con lo que pase en las
-// categorías marcadas como ahorro.
-function AdjustSavingsModal({ currentSavings, onAdjust, onClose, pushToast }) {
-  const [value, setValue] = useState(currentSavings != null ? String(Math.round(currentSavings)) : "");
-  const [saving, setSaving] = useState(false);
-
-  const submit = async () => {
-    const n = parseFloat(value);
-    if (isNaN(n) || saving) return;
-    setSaving(true);
-    const ok = await onAdjust(n);
-    setSaving(false);
-    if (ok) {
-      pushToast?.("ok", "Total ahorrado ajustado correctamente.");
-      onClose();
-    } else {
-      pushToast?.("error", "No se pudo ajustar el total ahorrado. Revisa tu conexión e inténtalo de nuevo.");
-    }
-  };
-
-  return (
-    <div
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
-      style={{ background: "rgba(0,0,0,0.55)" }}
-    >
-      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[360px] w-full">
-        <div className="flex justify-between items-center mb-1.5">
-          <div className="display text-[14.5px] font-semibold">Ajustar total ahorrado</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="text-xs text-muted mb-3.5 leading-[1.4]">
-          Ingresa lo que ya tienes ahorrado ahora mismo (por ejemplo, si empezaste a ahorrar antes de usar la app). Desde este momento, la app suma o resta arriba de este número lo que pase en tus categorías de ahorro.
-        </div>
-        <FieldInput label="Total ahorrado (CLP)" type="number" value={value} onChange={setValue} placeholder="0" style={{ marginBottom: 14 }} />
-        <button
-          onClick={submit}
-          disabled={saving || value === ""}
-          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
-        >
-          {saving ? "Guardando…" : "Guardar total ahorrado"}
-        </button>
-      </div>
-    </div>
+    <Modal title={title} onClose={onClose} dismissOnBackdrop={value === initialValue}>
+      <div className="text-xs text-muted mb-3.5 leading-[1.4]">{help}</div>
+      <FieldInput
+        label={label} type="number" inputMode="numeric" value={value} onChange={setValue} placeholder="0" autoFocus
+        onKeyDown={(e) => { if (e.key === "Enter") submit(); }} enterKeyHint="done" style={{ marginBottom: 14 }}
+      />
+      <button
+        onClick={submit}
+        disabled={saving || value === ""}
+        className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+      >
+        {saving ? "Guardando…" : submitLabel}
+      </button>
+    </Modal>
   );
 }

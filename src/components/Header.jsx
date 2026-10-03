@@ -49,13 +49,17 @@ function SaveIndicator({ saving }) {
 }
 
 // botón de ícono suelto de la barra superior (ayuda, tema, cerrar sesión)
+// 36×36 visibles + tap-expand: ~52px de zona táctil sin agrandar el header
 const HEADER_ICON_BTN =
-  "flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-transparent text-muted text-[12.5px] cursor-pointer";
+  "tap-expand flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-transparent text-muted cursor-pointer";
 
 export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
-    <div className="border-b border-border bg-surface sticky top-0 z-10">
+    // pt con safe-area: instalada en iPhone la barra de estado es translúcida
+    // (index.html: black-translucent + viewport-fit=cover) y sin esto el
+    // reloj y el notch quedan encima del logo. En navegador vale 0.
+    <div className="border-b border-border bg-surface sticky top-0 z-10 pt-[env(safe-area-inset-top,0px)]">
       <div className="max-w-[1080px] mx-auto px-6 py-4 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <img src={logo} alt="" width={30} height={30} className="block" />
@@ -89,7 +93,7 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
             aria-label="Cómo usar la app"
             className={HEADER_ICON_BTN}
           >
-            <HelpCircle size={13} />
+            <HelpCircle size={15} />
           </button>
           {onToggleTheme && (
             <button
@@ -98,12 +102,12 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
               aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
               className={HEADER_ICON_BTN}
             >
-              {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
             </button>
           )}
           {onSignOut && (
             <button onClick={onSignOut} title="Cerrar sesión" aria-label="Cerrar sesión" className={HEADER_ICON_BTN}>
-              <LogOut size={13} />
+              <LogOut size={15} />
             </button>
           )}
         </div>
@@ -232,7 +236,7 @@ export function ExportMenu({ exportingCsv, exportingBackup, onExportCsv, onExpor
   );
 }
 
-export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rightSlot }) {
+export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rightSlot, allowAll = true }) {
   const [yearOverride, setYearOverride] = useState(null);
   const names = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
   const label = (m) => { const [, mo] = m.split("-"); return names[parseInt(mo, 10) - 1]; };
@@ -270,7 +274,7 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rig
         </div>
       )}
       <div className="chip-scroll-row flex gap-2 flex-wrap">
-        <button onClick={() => setMonthFilter("all")} className={pillClass(monthFilter === "all")}>Todo</button>
+        {allowAll && <button onClick={() => setMonthFilter("all")} className={pillClass(monthFilter === "all")}>Todo</button>}
         {monthsInYear.map((m) => {
           const health = monthHealth?.[m];
           return (

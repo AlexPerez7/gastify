@@ -23,7 +23,7 @@ export function ConfirmDeleteButton({ onConfirm, text = "¿Eliminar?", size = 13
       if (popRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
       setOpen(false);
     };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); setOpen(false); } };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {

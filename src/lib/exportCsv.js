@@ -1,4 +1,5 @@
 import { storage } from "./storage.js";
+import { localIsoDate } from "./utils.js";
 
 function csvEscape(value) {
   const s = String(value ?? "");
@@ -44,7 +45,7 @@ export async function exportCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `gastify-movimientos-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `gastify-movimientos-${localIsoDate()}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }

@@ -77,6 +77,8 @@
   --heat-2: #78302f;
   --heat-3: #ac3d3c;
   --heat-4: #e5484d;
+
+  --shimmer: rgba(255, 255, 255, 0.06);
 }
 
 :root[data-theme="light"] {
@@ -102,6 +104,8 @@
   --heat-2: #eba8a6;
   --heat-3: #de7a78;
   --heat-4: #d43d42;
+
+  --shimmer: rgba(20, 35, 27, 0.07);
 }
 
 * {
@@ -137,14 +141,47 @@ button {
   font-family: inherit;
 }
 
-/* al tocar un botón en mobile, el navegador dibuja su propio resaltado
-   ("tap highlight") siguiendo el rectángulo del elemento, no su forma
-   visual — por eso se ve un destello cuadrado detrás de botones redondos
-   (ej. los íconos de categoría). Se desactiva y se deja que los propios
-   estilos :active/hover de cada botón sean el único feedback visual. */
-button,
-a {
+/* al tocar algo en mobile, el navegador dibuja su propio resaltado ("tap
+   highlight") siguiendo el rectángulo del elemento, no su forma visual — un
+   destello cuadrado detrás de botones redondos. Se desactiva global y el
+   :active de cada control es el único feedback. text-size-adjust: sin
+   inflado de fuente al girar el teléfono. */
+html {
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* sin espera de doble-tap-zoom: el click sale apenas se levanta el dedo */
+button,
+a,
+label,
+summary,
+[role="button"],
+input[type="checkbox"] {
+  touch-action: manipulation;
+}
+
+/* un toque largo sobre un control no debe seleccionar su texto ni abrir el
+   menú de copiar/compartir de iOS. Solo en controles: el contenido (montos,
+   descripciones) sigue siendo seleccionable. */
+button,
+[role="button"],
+[role="switch"],
+[role="tab"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* agranda la zona táctil de un botón chico (ícono suelto) sin cambiar su
+   tamaño visual ni el layout: el ::after invisible recibe los toques. */
+.tap-expand {
+  position: relative;
+}
+.tap-expand::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
 }
 
 /* feedback táctil genérico: cualquier botón se "hunde" un toque al
@@ -165,8 +202,28 @@ select:focus-visible {
   outline-offset: 1px;
 }
 
-.category-legend-row:hover {
-  background: var(--c-surface-alt) !important;
+/* en touch, :hover queda "pegado" después del tap — solo con mouse */
+@media (hover: hover) and (pointer: fine) {
+  .category-legend-row:hover {
+    background: var(--c-surface-alt) !important;
+  }
+}
+
+/* Safari en iOS hace zoom automático al enfocar un input/select con
+   font-size menor a 16px — los campos de la app usan 11.5-13px (bien con
+   mouse), así que en pantallas táctiles o angostas se fuerza 16px. Por
+   capacidad (pointer: coarse) además de ancho: un iPad mide más de 640px y
+   también hace zoom. */
+@media (max-width: 640px), (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  /* el monto grande del formulario manual (>16px, así que tampoco hace zoom) */
+  input.amount-input {
+    font-size: 28px !important;
+  }
 }
 
 /* ---- responsive layout — breakpoint at 640px ---------------------------- */
@@ -176,15 +233,6 @@ select:focus-visible {
 }
 
 @media (max-width: 640px) {
-  /* Safari en iOS hace zoom automático al enfocar un input/select con
-     font-size menor a 16px — todos los campos de la app usan 11.5-13px
-     (bien para desktop), así que en mobile se fuerza 16px para evitarlo. */
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-
   .app-main {
     padding: 20px 14px calc(72px + env(safe-area-inset-bottom)) !important;
   }
@@ -411,23 +459,7 @@ select:focus-visible {
   animation: modal-panel-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ---- filtros de Movimientos como bottom sheet (mobile) ------------------- */
-
-.filter-sheet-panel {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2001;
-  background: var(--c-surface);
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
-  border-top: 1px solid var(--c-border);
-  padding: 18px 20px calc(20px + env(safe-area-inset-bottom));
-  max-height: 82vh;
-  overflow-y: auto;
-  animation: filter-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ---- hoja inferior (ver .modal-panel.sheet-mobile más abajo) -------------- */
 
 @keyframes filter-sheet-in {
   from { transform: translateY(100%); }
@@ -622,6 +654,25 @@ select:focus-visible {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* ---- modal como hoja inferior en mobile (Modal sheetOnMobile) ----------- */
+
+@media (max-width: 640px) {
+  .modal-panel.sheet-mobile {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none !important;
+    max-height: 92dvh !important;
+    border-radius: 18px 18px 0 0;
+    border-bottom: 0;
+    animation: filter-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sheet-mobile .sheet-footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ---- transición al cambiar de pestaña ------------------------------------ */
 
 .tab-panel {
@@ -655,7 +706,7 @@ select:focus-visible {
   .tab-panel,
   .stagger-fade > *,
   .add-sheet,
-  .filter-sheet-panel,
+  .modal-panel.sheet-mobile,
   .overflow-menu {
     animation: none !important;
   }
@@ -684,7 +735,7 @@ select:focus-visible {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
   animation: skeleton-sweep 1.6s infinite;
 }
 

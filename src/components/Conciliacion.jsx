@@ -92,7 +92,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
         )}
       </Panel>
 
-      <div className="grid grid-cols-2 gap-4 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
         {/* min-width:0 en cada celda: por default una celda de grid no se
             achica más allá del contenido de su fila (ej. una descripción
             larga sin salto de línea), así que sin esto la columna con un

@@ -139,7 +139,11 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
         )}
         {tab !== "categorias" && tab !== "suscripciones" && (
           <MonthBar
-            months={months} monthFilter={monthFilter} setMonthFilter={setMonthFilter}
+            months={months} setMonthFilter={setMonthFilter}
+            // en Resumen no existe "Todo" (ver resumenTx en useDerivedData):
+            // se marca el mes que efectivamente se está mostrando.
+            monthFilter={tab === "resumen" ? currentMonth : monthFilter}
+            allowAll={tab !== "resumen"}
             monthHealth={tab === "conciliacion" ? derived.monthHealth : undefined}
             rightSlot={tab === "movimientos" && isMobile && transactions.length > 0 ? (
               <ExportMenu

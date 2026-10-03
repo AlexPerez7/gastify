@@ -56,13 +56,18 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
   );
   const duplicateIds = useMemo(() => findDuplicateIds(transactions), [transactions]);
 
+  // Resumen siempre muestra UN mes (el seleccionado, o el más reciente si en
+  // Movimientos quedó "Todo"): mezclar todo el historial en el dashboard
+  // hacía que los títulos "· oct 2026" mintieran y que los presupuestos
+  // mensuales se compararan contra el gasto de todos los meses.
+  const resumenTx = useMemo(() => (currentMonth ? filterByMonth(transactions, currentMonth) : []), [transactions, currentMonth]);
   const excludedCategoryIds = useMemo(() => excludedCategoryIdsOf(categories), [categories]);
-  const stats = useMemo(() => computeMonthStats(monthTx, excludedCategoryIds), [monthTx, excludedCategoryIds]);
+  const stats = useMemo(() => computeMonthStats(resumenTx, excludedCategoryIds), [resumenTx, excludedCategoryIds]);
   const byCategory = useMemo(
-    () => sumByCategory(monthTx.filter((t) => isRealExpense(t, excludedCategoryIds)), getCat),
-    [monthTx, excludedCategoryIds, getCat]
+    () => sumByCategory(resumenTx.filter((t) => isRealExpense(t, excludedCategoryIds)), getCat),
+    [resumenTx, excludedCategoryIds, getCat]
   );
-  const byIncomeCategory = useMemo(() => sumByCategory(monthTx.filter((t) => t.amount > 0), getCat), [monthTx, getCat]);
+  const byIncomeCategory = useMemo(() => sumByCategory(resumenTx.filter((t) => t.amount > 0), getCat), [resumenTx, getCat]);
   const byMonth = useMemo(() => computeByMonth(transactions, excludedCategoryIds), [transactions, excludedCategoryIds]);
   const dailySpend = useMemo(() => computeDailySpend(transactions, excludedCategoryIds), [transactions, excludedCategoryIds]);
   const heroStat = useMemo(() => computeHeroStat(dailySpend, transactions, currentMonth), [dailySpend, transactions, currentMonth]);

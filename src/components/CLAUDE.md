@@ -29,7 +29,10 @@ Exports con nombre (`export function X`), salvo `App` (default). Íconos de
 
 ## Shared.jsx — reutilizar antes de crear
 
-`Panel`, `StatCard`, `EmptyState`, `EmptyNote`, `FieldInput`, `ToggleSwitch`,
+`Modal` (**todo diálogo nuevo usa este**: Esc, `dismissOnBackdrop` en false
+mientras un formulario tenga datos, `sheetOnMobile` para que suba desde abajo
+en mobile, rol de diálogo), `Panel`, `StatCard`, `EmptyState`, `EmptyNote`,
+`FieldInput` (es un `<label>`), `ToggleSwitch`,
 `CategorySelect` (con `allOption`), `CategoryQuickAdd`, skeletons
 (`AppShellSkeleton`, `ResumenSkeleton`, `MovimientosSkeleton`, `Skeleton`), y
 clases: `BTN_PRIMARY`, `BTN_GHOST`, `pillClass(active)`. Constantes locales
@@ -60,6 +63,15 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
   media queries) — revisarlas antes de duplicar.
 
 ## Mobile y UX
+
+- Botones de ícono chicos llevan la clase `tap-expand` (agranda la zona táctil
+  con un `::after` invisible, sin cambiar el layout). Objetivo: ~40px o más.
+- `:hover` en CSS propio va dentro de `@media (hover: hover) and (pointer: fine)`
+  (las utilidades `hover:` de Tailwind v4 ya lo hacen solas).
+- Alturas de pantalla con `dvh`, no `vh`. Scroll interno de hojas/popovers
+  con `overscroll-contain`.
+- Popovers que manejan Esc llaman `e.preventDefault()` para que el `Modal`
+  de abajo no se cierre también.
 
 - `useIsMobile()` (640px, en `src/hooks/`) para ramas de layout; en mobile hay `BottomNav`,
   swipe para editar/borrar y gestos táctiles.

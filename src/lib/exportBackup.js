@@ -1,4 +1,5 @@
 import { storage } from "./storage.js";
+import { localIsoDate } from "./utils.js";
 
 // Trae transactions y categories directamente desde Supabase (no del estado
 // local de React) para respaldar siempre lo que realmente quedó guardado,
@@ -19,7 +20,7 @@ export async function exportBackup() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `gastify-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `gastify-respaldo-${localIsoDate()}.json`;
   link.click();
   URL.revokeObjectURL(url);
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Tags } from "lucide-react";
+import { ChevronDown, Tags, X } from "lucide-react";
 import { TOKENS, ICONS, ICON_NAMES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon, labelWithTypeIfAmbiguous } from "../lib/constants.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
@@ -67,6 +67,57 @@ export function MovimientosSkeleton() {
   );
 }
 
+// Diálogo común a toda la app: fondo + panel, Esc para cerrar y rol de
+// diálogo accesible.
+// - dismissOnBackdrop: tocar fuera cierra. Los formularios lo pasan en false
+//   mientras haya algo escrito, para que un toque accidental no borre lo
+//   ingresado (Esc y la X siguen cerrando: son intencionales).
+// - sheetOnMobile: en pantallas angostas sube desde abajo como hoja (más
+//   alcanzable con el pulgar) en vez de quedar centrado.
+// - title: si viene, arma el encabezado con la X; si no, el contenido trae
+//   el suyo (y debería usar `onClose` igual).
+// El Esc escucha en `window`: los popovers internos (CategorySelect,
+// ConfirmDeleteButton) escuchan en `document`, que en burbujeo corre antes,
+// y marcan el evento con preventDefault — así Esc cierra primero el popover
+// y no el modal entero.
+export function Modal({
+  onClose, title, ariaLabel, dismissOnBackdrop = true, sheetOnMobile = false,
+  panelClassName = "p-[22px] max-w-[360px]", panelStyle, children,
+}) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape" && !e.defaultPrevented) onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={dismissOnBackdrop ? onClose : undefined}
+      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel ?? (typeof title === "string" ? title : undefined)}
+        onClick={(e) => e.stopPropagation()}
+        className={`modal-panel bg-surface border border-border rounded-2xl w-full ${sheetOnMobile ? "sheet-mobile" : ""} ${panelClassName}`}
+        style={panelStyle}
+      >
+        {title && (
+          <div className="flex justify-between items-center mb-3.5">
+            <div className="display text-[14.5px] font-semibold">{title}</div>
+            <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function Panel({ title, right, children }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-[18px]">
@@ -111,16 +162,18 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
   );
 }
 
+// <label> envolvente (no un <div>): asocia el texto al input sin ids, así
+// los lectores de pantalla lo anuncian y tocar la etiqueta enfoca el campo.
 export function FieldInput({ label, style, ...props }) {
   return (
-    <div style={style}>
-      <div className="text-[11px] text-faint mb-1">{label}</div>
+    <label className="block" style={style}>
+      <span className="block text-[11px] text-faint mb-1">{label}</span>
       <input
         {...props}
         onChange={(e) => props.onChange(e.target.value)}
         className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
       />
-    </div>
+    </label>
   );
 }
 
@@ -136,7 +189,7 @@ export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaL
       title={title}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative shrink-0 w-[34px] h-[18px] rounded-full border-0 p-0 transition-colors duration-150 ${
+      className={`tap-expand shrink-0 w-[34px] h-[18px] rounded-full border-0 p-0 transition-colors duration-150 ${
         disabled ? "opacity-45 cursor-not-allowed" : "cursor-pointer"
       } ${checked && !disabled ? "bg-accent" : "bg-border"}`}
     >
@@ -203,7 +256,7 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
             title={col}
             aria-label={`Usar color ${col}`}
             aria-pressed={col === color}
-            className="w-5 h-5 rounded-full cursor-pointer p-0 border-2"
+            className="w-7 h-7 rounded-full cursor-pointer p-0 border-2"
             style={{ background: col, borderColor: col === color ? "var(--c-text)" : "transparent" }}
           />
         ))}
@@ -276,7 +329,7 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
       if (popRef.current?.contains(e.target) || btnRef.current?.contains(e.target)) return;
       setOpen(false);
     };
-    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); setOpen(false); } };
     // las coordenadas se calculan una sola vez al abrir (position: fixed,
     // no sigue al botón) — si la página scrollea, el popover queda
     // "flotando" en el lugar viejo, ya desconectado del botón que lo abrió.
@@ -342,7 +395,7 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
         <div
           ref={popRef}
           role="listbox"
-          className="fixed z-[1000] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto"
+          className="fixed z-[1000] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto overscroll-contain"
           style={{
             left: coords.left, width: Math.max(coords.width, 200),
             ...(coords.top != null ? { top: coords.top } : { bottom: coords.bottom }),

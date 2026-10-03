@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
-import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST } from "./Shared.jsx";
+import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
+import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST, Modal, pillClass } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
@@ -353,7 +353,7 @@ export function Movimientos({
             onClick={onClearRecentImports}
             aria-label="Descartar aviso de importación reciente"
             title="Descartar"
-            className="bg-transparent border-0 text-faint cursor-pointer p-1"
+            className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1"
           >
             <X size={14} />
           </button>
@@ -465,14 +465,12 @@ function FilterSheet({
   ];
 
   return (
-    <div onClick={onClose} className="modal-backdrop fixed inset-0 z-[2000]" style={{ background: "rgba(0,0,0,0.55)" }}>
-      <div onClick={(e) => e.stopPropagation()} className="filter-sheet-panel">
-        <div className="flex justify-between items-center mb-4">
-          <div className="display text-[14.5px] font-semibold">Filtros</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
+    <Modal
+      title="Filtros"
+      onClose={onClose}
+      sheetOnMobile
+      panelClassName="px-5 pt-[18px] pb-[calc(20px+env(safe-area-inset-bottom,0px))] overflow-y-auto overscroll-contain"
+    >
 
         <div className="text-[11px] text-faint mb-1.5">Categoría</div>
         <div className="mb-4">
@@ -529,8 +527,7 @@ function FilterSheet({
             Listo
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -616,7 +613,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
         disabled={busy}
         aria-label="Cerrar selección"
         title="Cerrar selección"
-        className="bg-transparent border-0 text-faint cursor-pointer p-1"
+        className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1"
       >
         <X size={15} />
       </button>
@@ -660,20 +657,9 @@ function ImportDropzone({ onFile, disabled }) {
 
 function ImportModal({ onClose, onFile }) {
   return (
-    <div
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
-      style={{ background: "rgba(0,0,0,0.55)" }}
-    >
-      <div className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[420px] w-full">
-        <div className="flex justify-between items-center mb-3.5">
-          <div className="display text-[14.5px] font-semibold">Importar movimientos</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-        <ImportDropzone onFile={onFile} />
-      </div>
-    </div>
+    <Modal title="Importar movimientos" onClose={onClose} panelClassName="p-[22px] max-w-[420px]">
+      <ImportDropzone onFile={onFile} />
+    </Modal>
   );
 }
 
@@ -888,11 +874,18 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
   );
 }
 
+// "1234567" -> "1.234.567" (CLP no usa decimales)
+const formatThousands = (digits) => (digits ? Number(digits).toLocaleString("es-CL") : "");
+
+// Orden pensado para cargar un gasto en segundos desde el teléfono: el monto
+// primero (es lo que uno tiene en la cabeza), grande y con teclado numérico;
+// después descripción, categoría y fecha (casi siempre "Hoy"). En mobile sube
+// desde abajo como hoja.
 function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
   const [type, setType] = useState("expense");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => localIsoDate());
   const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amountDigits, setAmountDigits] = useState("");
   const [category, setCategory] = useState("otros");
   const [addingCategory, setAddingCategory] = useState(false);
 
@@ -908,117 +901,172 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
+  const today = localIsoDate();
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = localIsoDate(yesterdayDate);
+
+  const amount = Number(amountDigits);
+  const valid = amount > 0 && description.trim() !== "" && !!date;
+  // con algo escrito, tocar fuera no cierra (no se pierde lo ingresado)
+  const dirty = amountDigits !== "" || description.trim() !== "";
+
   const submit = () => {
-    const amt = parseFloat(amount);
-    if (!description || !amt || amt <= 0) return;
-    onSubmit({ type, date, description, amount: amt, category });
+    if (!valid) return;
+    onSubmit({ type, date, description: description.trim(), amount, category });
   };
 
+  const accent = type === "expense" ? TOKENS.expense : TOKENS.income;
+
   return (
-    <div
-      onClick={onClose}
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
-      style={{ background: "rgba(0,0,0,0.55)" }}
+    <Modal
+      onClose={onClose}
+      ariaLabel="Nuevo movimiento"
+      dismissOnBackdrop={!dirty}
+      sheetOnMobile
+      panelClassName="max-w-[440px] max-h-[88dvh] flex flex-col overflow-hidden"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="modal-panel bg-surface border border-border rounded-2xl max-w-[440px] w-full max-h-[88vh] flex flex-col overflow-hidden"
-      >
-        <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
-          <div className="display text-[14.5px] font-semibold">Nuevo movimiento</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer"><X size={16} /></button>
-        </div>
+      <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
+        <div className="display text-[14.5px] font-semibold">Nuevo movimiento</div>
+        <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1"><X size={16} /></button>
+      </div>
 
-        <div className="flex gap-[3px] p-[3px] mt-3.5 mx-5 rounded-full box-border bg-surface-alt border border-border shrink-0">
-          {["expense", "income"].map((v) => (
-            <button
-              key={v}
-              onClick={() => setType(v)}
-              className={`flex-[1_1_0] min-w-0 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 text-center transition-colors duration-150 ${
-                type === v ? "text-bg" : "bg-transparent text-muted"
-              }`}
-              style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
-            >
-              {v === "expense" ? "Gasto" : "Ingreso"}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-[3px] p-[3px] mt-3.5 mx-5 rounded-full box-border bg-surface-alt border border-border shrink-0">
+        {["expense", "income"].map((v) => (
+          <button
+            key={v}
+            onClick={() => setType(v)}
+            aria-pressed={type === v}
+            className={`flex-[1_1_0] min-w-0 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 text-center transition-colors duration-150 ${
+              type === v ? "text-bg" : "bg-transparent text-muted"
+            }`}
+            style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
+          >
+            {v === "expense" ? "Gasto" : "Ingreso"}
+          </button>
+        ))}
+      </div>
 
-        <div className="px-5 py-4 overflow-y-auto flex-[1_1_auto] min-h-[260px]">
-          <div className="text-[11px] text-faint mb-2.5">Categoría</div>
-          <div className="grid grid-cols-4 gap-3">
-            {relevantCategories.map((c) => {
-              const CatIcon = resolveCategoryIcon(c);
-              const selected = category === c.id;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => { setCategory(c.id); setAddingCategory(false); }}
-                  aria-pressed={selected}
-                  title={c.label}
-                  className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
-                >
-                  <div
-                    className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
-                    style={{
-                      background: selected ? c.color : `${c.color}22`,
-                      boxShadow: selected ? `0 0 0 2px ${c.color}` : "none",
-                    }}
-                  >
-                    <CatIcon size={19} color={selected ? TOKENS.bg : c.color} />
-                  </div>
-                  <div
-                    className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${selected ? "text-ink" : "text-muted"}`}
-                    style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
-                  >
-                    {c.label}
-                  </div>
-                </button>
-              );
-            })}
-            {onAddCategory && (
+      <div className="px-5 pt-4 pb-2 overflow-y-auto overscroll-contain flex-[1_1_auto]">
+        <label className="block mb-3.5">
+          <span className="block text-[11px] text-faint mb-1">Monto (CLP)</span>
+          <span className="flex items-baseline gap-1 border-b-2 pb-1" style={{ borderColor: accent }}>
+            <span className="mono text-[22px] font-semibold text-faint">$</span>
+            <input
+              value={formatThousands(amountDigits)}
+              onChange={(e) => setAmountDigits(e.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 12))}
+              inputMode="numeric"
+              enterKeyHint="next"
+              placeholder="0"
+              autoFocus
+              className="amount-input mono flex-1 min-w-0 bg-transparent border-0 p-0 text-[28px] font-semibold text-ink outline-none"
+            />
+          </span>
+        </label>
+
+        <FieldInput
+          label="Descripción"
+          value={description}
+          onChange={setDescription}
+          placeholder={type === "expense" ? "Ej: almuerzo, Uber, farmacia" : "Ej: sueldo, reembolso"}
+          enterKeyHint="done"
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          style={{ marginBottom: 16 }}
+        />
+
+        <div className="text-[11px] text-faint mb-2.5">Categoría</div>
+        <div className="grid grid-cols-4 gap-3">
+          {relevantCategories.map((c) => {
+            const CatIcon = resolveCategoryIcon(c);
+            const selected = category === c.id;
+            return (
               <button
-                onClick={() => setAddingCategory((v) => !v)}
-                aria-pressed={addingCategory}
-                aria-expanded={addingCategory}
-                title="Crear categoría nueva"
+                key={c.id}
+                onClick={() => { setCategory(c.id); setAddingCategory(false); }}
+                aria-pressed={selected}
+                title={c.label}
                 className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
               >
                 <div
-                  className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${
-                    addingCategory ? "bg-accent border-accent" : "bg-transparent border-border"
-                  }`}
+                  className="w-[46px] h-[46px] rounded-full flex items-center justify-center"
+                  style={{
+                    background: selected ? c.color : `${c.color}22`,
+                    boxShadow: selected ? `0 0 0 2px ${c.color}` : "none",
+                  }}
                 >
-                  <Plus size={19} color={addingCategory ? TOKENS.bg : TOKENS.textFaint} />
+                  <CatIcon size={19} color={selected ? TOKENS.bg : c.color} />
                 </div>
-                <div className="text-[10.5px] text-muted text-center leading-[1.2]">
-                  Nueva
+                <div
+                  className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${selected ? "text-ink" : "text-muted"}`}
+                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+                >
+                  {c.label}
                 </div>
               </button>
-            )}
-          </div>
-
-          {addingCategory && onAddCategory && (
-            <CategoryQuickAdd
-              type={type}
-              onAdd={(id) => { setCategory(id); setAddingCategory(false); }}
-              onAddCategory={onAddCategory}
-              onCancel={() => setAddingCategory(false)}
-            />
+            );
+          })}
+          {onAddCategory && (
+            <button
+              onClick={() => setAddingCategory((v) => !v)}
+              aria-pressed={addingCategory}
+              aria-expanded={addingCategory}
+              title="Crear categoría nueva"
+              className="flex flex-col items-center gap-1.5 bg-transparent border-0 cursor-pointer p-0.5"
+            >
+              <div
+                className={`w-[46px] h-[46px] rounded-full flex items-center justify-center border-[1.5px] border-dashed ${
+                  addingCategory ? "bg-accent border-accent" : "bg-transparent border-border"
+                }`}
+              >
+                <Plus size={19} color={addingCategory ? TOKENS.bg : TOKENS.textFaint} />
+              </div>
+              <div className="text-[10.5px] text-muted text-center leading-[1.2]">
+                Nueva
+              </div>
+            </button>
           )}
         </div>
 
-        <div className="px-5 py-3.5 border-t border-border bg-surface-alt shrink-0">
-          <div className="form-grid-2 grid grid-cols-2 gap-2.5 mb-2.5">
-            <FieldInput label="Fecha" type="date" value={date} onChange={setDate} />
-            <FieldInput label="Monto (CLP)" type="number" value={amount} onChange={setAmount} placeholder="0" />
-          </div>
-          <FieldInput label="Descripción" value={description} onChange={setDescription} style={{ marginBottom: 12 }} />
-          <button onClick={submit} className="w-full py-[11px] rounded-lg border-0 cursor-pointer bg-accent text-bg font-semibold text-[13.5px]">
-            Guardar movimiento
-          </button>
+        {addingCategory && onAddCategory && (
+          <CategoryQuickAdd
+            type={type}
+            onAdd={(id) => { setCategory(id); setAddingCategory(false); }}
+            onAddCategory={onAddCategory}
+            onCancel={() => setAddingCategory(false)}
+          />
+        )}
+
+        <div className="text-[11px] text-faint mt-4 mb-1.5">Fecha</div>
+        <div className="flex gap-2 items-center flex-wrap">
+          {[[today, "Hoy"], [yesterday, "Ayer"]].map(([iso, text]) => (
+            <button key={text} onClick={() => setDate(iso)} aria-pressed={date === iso} className={pillClass(date === iso)}>
+              {text}
+            </button>
+          ))}
+          <input
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => setDate(e.target.value)}
+            aria-label="Otra fecha"
+            className={`px-2.5 py-1.5 rounded-full border bg-surface text-[12.5px] ${
+              date !== today && date !== yesterday ? "border-accent text-accent" : "border-border text-muted"
+            }`}
+          />
         </div>
       </div>
-    </div>
+
+      <div className="sheet-footer px-5 py-3.5 border-t border-border bg-surface-alt shrink-0">
+        <button
+          onClick={submit}
+          disabled={!valid}
+          className="w-full py-[11px] rounded-lg border-0 bg-accent text-bg font-semibold text-[13.5px] disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
+        >
+          {valid
+            ? `Guardar ${type === "expense" ? "gasto" : "ingreso"} de $${formatThousands(amountDigits)}`
+            : amount > 0 ? "Falta la descripción" : "Ingresa el monto"}
+        </button>
+      </div>
+    </Modal>
   );
 }

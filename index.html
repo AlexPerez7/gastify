@@ -2,7 +2,9 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <!-- se ajusta al tema activo (script de abajo y src/hooks/useTheme.js) -->
+    <meta name="theme-color" content="#131b17" />
     <link rel="icon" href="favicon.ico" />
     <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,6 +18,7 @@
             t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
           }
           document.documentElement.setAttribute("data-theme", t);
+          document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "light" ? "#ffffff" : "#131b17");
         } catch (e) {}
       })();
     </script>

@@ -62,7 +62,9 @@ bundle inicial; `xlsx` y `pdfjs-dist` se importan dinámicamente solo al importa
 1. **Montos con signo**: negativo = gasto, positivo = ingreso. CLP enteros;
    formatear siempre con `formatCLP`.
 2. **Fechas** como string ISO `YYYY-MM-DD`; meses como `YYYY-MM`. Aritmética de
-   meses solo con `addMonths`/`nextMonthKey`/`prevMonthKey`/`monthKeyOf`.
+   meses solo con `addMonths`/`nextMonthKey`/`prevMonthKey`/`monthKeyOf`. "Hoy"
+   siempre con `localIsoDate()`, **nunca** `toISOString().slice(0, 10)` (es UTC:
+   en Chile da la fecha de mañana desde las 20:00–21:00).
 3. **Estado local = fuente de verdad**. Todo cambio pasa por un `persist*`
    (patrón optimista con rollback, en `useAppData`). Nunca escribir a Supabase
    directo desde un componente (excepción: `accountSettings.js`, tabla de una fila).

@@ -127,7 +127,11 @@ const MONTH_NAMES_LONG = [
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
 
-function toIsoDate(d) {
+// Fecha ISO "YYYY-MM-DD" en hora LOCAL. Para "hoy" nunca usar
+// `toISOString().slice(0, 10)`: eso es la fecha en UTC, que en Chile ya es
+// "mañana" a partir de las 20:00–21:00.
+/** @param {Date} [d] */
+export function localIsoDate(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -137,10 +141,10 @@ export function formatDayHeading(iso, today = new Date()) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  if (iso === toIsoDate(today)) return "Hoy";
+  if (iso === localIsoDate(today)) return "Hoy";
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  if (iso === toIsoDate(yesterday)) return "Ayer";
+  if (iso === localIsoDate(yesterday)) return "Ayer";
   const weekday = WEEKDAY_NAMES[date.getDay()];
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${d} de ${MONTH_NAMES_LONG[m - 1]}`;
 }

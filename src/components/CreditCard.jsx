@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Upload, Pencil, X, Inbox, CalendarX2, Loader2, Layers, FileText } from "lucide-react";
+import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, CategorySelect, pillClass, BTN_PRIMARY, BTN_GHOST } from "./Shared.jsx";
+import { EmptyState, CategorySelect, pillClass, BTN_PRIMARY, BTN_GHOST, Modal } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -295,18 +295,7 @@ function CreditImportModal({ title, accept, helpTitle, helpText, onClose, onImpo
   const pick = (file) => { if (file) onImport(file); };
 
   return (
-    <div
-      onClick={onClose}
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
-      style={{ background: "rgba(0,0,0,0.55)" }}
-    >
-      <div onClick={(e) => e.stopPropagation()} className="modal-panel bg-surface border border-border rounded-2xl p-[22px] max-w-[420px] w-full">
-        <div className="flex justify-between items-center mb-3.5">
-          <div className="display text-[14.5px] font-semibold">{title}</div>
-          <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="bg-transparent border-0 text-faint cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
+    <Modal title={title} onClose={onClose} panelClassName="p-[22px] max-w-[420px]">
 
         <label
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -325,7 +314,6 @@ function CreditImportModal({ title, accept, helpTitle, helpText, onClose, onImpo
             <div className="text-[11.5px] text-faint">{helpText}</div>
           </div>
         </label>
-      </div>
-    </div>
+    </Modal>
   );
 }
