@@ -7,6 +7,9 @@ backend propio**: toda la lógica corre en el cliente y habla directo con
 Supabase (Postgres + Auth + RLS). Proyecto personal de un solo desarrollador;
 código, comentarios, UI y commits en **español (Chile)**.
 
+**Trabajo pendiente: [`PLAN.md`](PLAN.md)** — leerlo al empezar una sesión;
+marcar `[x]` y mover a "Hecho" (con su commit) lo que se termine.
+
 ## Documentos de contexto por área
 
 Este archivo es el índice. El detalle vive en CLAUDE.md por carpeta (Claude Code
@@ -29,9 +32,20 @@ npm run typecheck  # tsc sobre JSDoc, solo un subconjunto de src/lib
 npm test           # Vitest (lógica pura de src/lib)
 ```
 
-CI (`.github/workflows/deploy.yml`) corre **lint + typecheck + test** en cada
-push/PR; en push a `main` además construye y publica en GitHub Pages. Antes de
-dar algo por terminado corre los tres checks + `npm run build`.
+CI (`.github/workflows/deploy.yml`) corre `npm ci` + **lint + typecheck + test**
+en cada push/PR; en push a `main` además construye y publica en GitHub Pages
+(https://alexperez7.github.io/gastify/). Antes de dar algo por terminado corre
+los tres checks + `npm run build`.
+
+**Deploy — verificar siempre.** Un push no es "publicado" hasta que el
+workflow termina bien: `gh run list --limit 1` y `gh run watch <id>
+--exit-status`; si falla, `gh run view <id> --log-failed`. Estuvo un mes
+fallando sin que nadie lo notara (lock desincronizado).
+
+**Dependencias.** El runner usa Node 20 / **npm 10**; localmente hay npm 11,
+que arma un lock distinto (omite el `esbuild` que pide el `vite` 8 anidado de
+vitest 4) y rompe `npm ci` en CI. Si tocas `package.json`, regenera el lock con
+`npx npm@10 install` y verifica con `rm -rf node_modules && npx npm@10 ci`.
 
 Quirk conocido: `vitest run` justo después de `npm run build` a veces reporta
 un falso "no tests"/FAIL la primera vez — reintentar una vez.
@@ -88,6 +102,11 @@ bundle inicial; `xlsx` y `pdfjs-dist` se importan dinámicamente solo al importa
   `VITE_SUPABASE_ANON_KEY`; ver `.env.example`. Sin ellas `supabaseClient.js`
   lanza al arrancar.
 - `vite.config.js` fija `base: "/gastify/"` (GitHub Pages).
-- El `README.md` describe features y setup, pero su sección "Estructura" está
-  desactualizada (no menciona hooks/, CreditCard, Subscriptions, HelpModal, parsers);
-  confía en estos CLAUDE.md para la estructura.
+- Cambios de esquema: SQL en `supabase/migrations/000N_*.sql` que el usuario
+  corre a mano **antes** del deploy si el código nuevo depende de él (ver
+  `supabase/CLAUDE.md`).
+- Probar UI sin login: una página temporal en `prototypes/` (Vite la sirve en
+  dev, no entra al build) que monte los componentes reales con datos de
+  ejemplo, y Playwright para capturas. Borrarla al terminar; no se versiona.
+- El `README.md` es la documentación para personas (features, setup); estos
+  CLAUDE.md, la de trabajo. Si cambia una feature visible, actualizar ambos.
