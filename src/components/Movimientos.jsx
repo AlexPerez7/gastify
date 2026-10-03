@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, ChevronLeft, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
+import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST, Modal, pillClass } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { useLongPress } from "../hooks/useLongPress.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 
@@ -196,7 +197,7 @@ export function Movimientos({
       )}
 
       <div className="flex gap-2.5 mb-3.5 flex-wrap items-center">
-        {hasTransactions && (
+        {hasTransactions && (!isMobile || selectedIds.length > 0) && (
           <div className="flex items-center gap-[7px] shrink-0">
             <input
               ref={selectAllRef}
@@ -419,7 +420,9 @@ export function Movimientos({
                   saveTxEdit={saveTxEdit}
                   onDelete={deleteTransaction}
                   selected={selectedIds.includes(t.id)}
+                  selectionMode={selectedIds.length > 0}
                   onToggleSelect={toggleSelectOne}
+                  onStartSelect={(id) => setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
                   isRecent={recentSet.has(t.id)}
                   isDuplicate={duplicateIds?.has(t.id)}
                   isMobile={isMobile}
@@ -663,13 +666,28 @@ function ImportModal({ onClose, onFile }) {
   );
 }
 
-function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, onToggleSelect, isRecent, isDuplicate, isMobile, onToggleSubscription }) {
+// Monto con signo explícito: gasto en tinta neutra con "−", ingreso en verde
+// con "+". Así la lista no es un muro rojo y el signo, no solo el color,
+// dice qué es cada cosa.
+function TxAmount({ amount, className = "" }) {
+  return (
+    <span className={`mono font-semibold ${amount >= 0 ? "text-income" : "text-ink"} ${className}`}>
+      {amount >= 0 ? "+" : ""}{formatCLP(amount)}
+    </span>
+  );
+}
+
+function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, selectionMode, onToggleSelect, onStartSelect, isRecent, isDuplicate, isMobile, onToggleSubscription }) {
   const [editing, setEditing] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const cat = getCat(t.category);
   const CatIcon = cat.icon;
   const swipeControls = useAnimation();
-  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18 } });
+  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
+  const longPress = useLongPress(() => { closeSwipe(); setEditing(false); onStartSelect(t.id); });
+  // al soltar un arrastre el navegador dispara igual un click: sin esto,
+  // deslizar para ver editar/borrar abría además el editor
+  const justDragged = useRef(false);
 
   // espera a que termine la animación de colapso antes de sacarla del estado
   const handleDelete = () => {
@@ -679,122 +697,186 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
   };
 
   const handleDragEnd = (_e, info) => {
-    if (info.offset.x < -SWIPE_ACTION_WIDTH / 2) swipeControls.start({ x: -SWIPE_ACTION_WIDTH, transition: { duration: 0.18 } });
+    if (info.offset.x < -SWIPE_ACTION_WIDTH / 2) swipeControls.start({ x: -SWIPE_ACTION_WIDTH, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
     else closeSwipe();
   };
 
-  const RowGrid = isMobile ? motion.div : "div";
+  const editPanel = editing && !selectionMode && (
+    <TxEditPanel
+      t={t}
+      categories={categories}
+      onSave={(payload) => { saveTxEdit(t.id, payload); setEditing(false); }}
+      onCancel={() => setEditing(false)}
+      onToggleSubscription={onToggleSubscription ? (checked) => onToggleSubscription(t.id, checked) : undefined}
+    />
+  );
+
+  if (isMobile) {
+    // Mobile ("Clásica", elegida por prototipo): ícono de categoría a la
+    // izquierda, dos líneas, monto arriba a la derecha. Tocar abre el editor,
+    // deslizar muestra editar/borrar, mantener presionado entra al modo
+    // selección (ahí tocar suma/quita filas y el swipe se desactiva).
+    const name = t.alias || t.description;
+    const detail = t.alias ? t.description : t.source === "bank" ? "Banco" : "Manual";
+    return (
+      <div className={isLast ? "" : "border-b border-border"}>
+        <div className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}>
+          <div className="tx-swipe-clip">
+            {/* en modo selección no hay swipe: la bandeja ni se monta */}
+            {!selectionMode && (
+              <div className="tx-swipe-actions" style={{ width: SWIPE_ACTION_WIDTH }}>
+                <button
+                  className="tx-swipe-btn tx-swipe-edit"
+                  onClick={() => { closeSwipe(); setEditing((v) => !v); }}
+                  aria-label={editing ? "Cerrar edición" : "Editar movimiento"}
+                  title="Editar"
+                >
+                  <Pencil size={17} />
+                </button>
+                <div className="tx-swipe-btn tx-swipe-delete">
+                  <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={17} color="#fff" />
+                </div>
+              </div>
+            )}
+            <motion.div
+              {...(selectionMode ? {} : {
+                drag: "x",
+                dragConstraints: { left: -SWIPE_ACTION_WIDTH, right: 0 },
+                dragElastic: 0.06,
+                onDragStart: () => { justDragged.current = true; },
+                onDragEnd: handleDragEnd,
+              })}
+              animate={swipeControls}
+              {...longPress.handlers}
+              onClick={() => {
+                if (longPress.consumeClick()) return;
+                if (justDragged.current) { justDragged.current = false; return; }
+                if (selectionMode) onToggleSelect(t.id);
+                else setEditing((v) => !v);
+              }}
+              role="button"
+              aria-pressed={selectionMode ? selected : undefined}
+              aria-label={`${name}, ${formatCLP(t.amount)}`}
+              className="relative flex items-center gap-3 px-4 py-3 touch-pan-y select-none cursor-pointer bg-surface"
+              style={{
+                WebkitTouchCallout: "none",
+                boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none",
+                // fondo siempre opaco (la bandeja del swipe vive detrás); el
+                // tinte de selección va encima como imagen
+                backgroundImage: selected ? "linear-gradient(var(--tint-accent), var(--tint-accent))" : "none",
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                style={{
+                  background: selectionMode ? (selected ? TOKENS.accent : "transparent") : `${cat.color}22`,
+                  border: selectionMode && !selected ? `2px solid ${TOKENS.border}` : "none",
+                }}
+              >
+                {selectionMode
+                  ? selected && <Check size={18} color={TOKENS.bg} strokeWidth={3} />
+                  : <CatIcon size={18} color={cat.color} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="flex-1 min-w-0 truncate text-[15px] font-medium text-ink">{name}</span>
+                  <TxAmount amount={t.amount} className="text-[15px] shrink-0" />
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5 text-[12.5px] text-muted min-w-0">
+                  {isRecent && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" title="Recién importado" aria-label="Recién importado" />}
+                  {isDuplicate && (
+                    <span
+                      title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces."
+                      className="text-[11.5px] font-semibold text-pending shrink-0"
+                    >
+                      ¿Duplicado?
+                    </span>
+                  )}
+                  <span className="shrink-0">{cat.label}</span>
+                  <span className="text-faint shrink-0">·</span>
+                  <span className="truncate text-faint">{detail}</span>
+                  <span className="ml-auto shrink-0 text-faint" aria-label={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}>
+                    {t.source === "bank" ? <Landmark size={11} /> : <PenLine size={11} />}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+        {editPanel}
+      </div>
+    );
+  }
 
   return (
     <div className={isLast ? "" : "border-b border-border"}>
-      <div
-        className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}
-      >
-      <div className="tx-swipe-clip">
-        {isMobile && (
-          <div className="tx-swipe-actions" style={{ width: SWIPE_ACTION_WIDTH }}>
-            <button
-              className="tx-swipe-btn tx-swipe-edit"
-              onClick={() => { closeSwipe(); setEditing((v) => !v); }}
-              aria-label={editing ? "Cerrar edición" : "Editar movimiento"}
-              title="Editar"
-            >
-              <Pencil size={16} />
-            </button>
-            <div className="tx-swipe-btn tx-swipe-delete">
-              <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={16} color="#fff" />
-            </div>
-          </div>
-        )}
-        <RowGrid
-          className="txrow-grid grid grid-cols-[20px_1fr_170px_130px_auto] items-center gap-2.5 px-4 py-[11px] bg-surface touch-pan-y relative"
+      <div className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}>
+        <div
+          className="grid grid-cols-[20px_1fr_170px_130px_auto] items-center gap-2.5 px-4 py-[11px] bg-surface relative"
           style={{ boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none" }}
-          // el swipe-to-action solo existe en mobile — en desktop esta fila
-          // es un <div> normal, sin el overhead de framer-motion por fila
-          // (con listas largas, montar motion.div en todas las filas se
-          // notaba al hacer scroll aunque el drag estuviera desactivado).
-          {...(isMobile ? {
-            drag: "x",
-            dragConstraints: { left: -SWIPE_ACTION_WIDTH, right: 0 },
-            dragElastic: 0.06,
-            animate: swipeControls,
-            onDragEnd: handleDragEnd,
-          } : {})}
         >
-        <div className="tx-check">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => onToggleSelect(t.id)}
-            aria-label={`Seleccionar movimiento: ${t.alias || t.description}`}
-            className="w-[18px] h-[18px] cursor-pointer"
-            style={{ accentColor: "var(--c-accent)" }}
-          />
-        </div>
-        <div className="tx-desc flex items-center gap-1.5 text-[13px] min-w-0">
-          {/* el texto trunca solo a sí mismo (flex 1 + min-width 0) — así el
-              tag de origen y los avisos de "nuevo"/duplicado quedan siempre
-              enteros al lado, en vez de cortarse junto con la descripción. */}
-          <span className="flex-[1_1_0%] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-            {t.alias ? (
-              <>
-                <span className="font-medium">{t.alias}</span>
-                <span className="text-faint text-[11.5px]"> · {t.description}</span>
-              </>
-            ) : t.description}
-          </span>
-          <span
-            title={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
-            aria-label={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
-            className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-[5px] border border-border text-faint shrink-0"
-          >
-            {t.source === "bank" ? <Landmark size={10} /> : <PenLine size={10} />}
-          </span>
-          {isRecent && (
-            <span className="text-[10px] text-accent border border-accent rounded-[4px] px-[5px] py-px font-semibold shrink-0">
-              nuevo
+          <div>
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => onToggleSelect(t.id)}
+              aria-label={`Seleccionar movimiento: ${t.alias || t.description}`}
+              className="w-[18px] h-[18px] cursor-pointer"
+              style={{ accentColor: "var(--c-accent)" }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 text-[13px] min-w-0">
+            {/* el texto trunca solo a sí mismo (flex 1 + min-width 0) — así el
+                tag de origen y los avisos de "nuevo"/duplicado quedan siempre
+                enteros al lado, en vez de cortarse junto con la descripción. */}
+            <span className="flex-[1_1_0%] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+              {t.alias ? (
+                <>
+                  <span className="font-medium">{t.alias}</span>
+                  <span className="text-faint text-[11.5px]"> · {t.description}</span>
+                </>
+              ) : t.description}
             </span>
-          )}
-          {isDuplicate && (
             <span
-              title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces (uno a mano y otro del banco, por ejemplo)."
-              className="text-[10px] text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0"
+              title={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
+              aria-label={t.source === "bank" ? "Movimiento del banco" : "Movimiento manual"}
+              className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-[5px] border border-border text-faint shrink-0"
             >
-              posible duplicado
+              {t.source === "bank" ? <Landmark size={10} /> : <PenLine size={10} />}
             </span>
-          )}
+            {isRecent && (
+              <span className="text-[10px] text-accent border border-accent rounded-[4px] px-[5px] py-px font-semibold shrink-0">
+                nuevo
+              </span>
+            )}
+            {isDuplicate && (
+              <span
+                title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces (uno a mano y otro del banco, por ejemplo)."
+                className="text-[10px] text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0"
+              >
+                posible duplicado
+              </span>
+            )}
+          </div>
+          <div className="text-[11.5px] flex items-center gap-1.5 overflow-hidden text-muted">
+            <span
+              className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: `${cat.color}22` }}
+            >
+              <CatIcon size={12} color={cat.color} />
+            </span>
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cat.label}</span>
+          </div>
+          <TxAmount amount={t.amount} className="text-[13px] text-right" />
+          <div className="flex">
+            <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
+              <Pencil size={13} />
+            </button>
+            <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={13} />
+          </div>
         </div>
-        <div className="tx-cat text-[11.5px] flex items-center gap-1.5 overflow-hidden" style={{ color: cat.color }}>
-          <span
-            className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: `${cat.color}22` }}
-          >
-            <CatIcon size={12} color={cat.color} />
-          </span>
-          <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cat.label}</span>
-        </div>
-        <div className={`tx-amount mono text-[13px] text-right font-medium ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
-          {formatCLP(t.amount)}
-        </div>
-        <div className="tx-actions flex">
-          <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
-            <Pencil size={13} />
-          </button>
-          <ConfirmDeleteButton onConfirm={handleDelete} text="¿Eliminar este movimiento?" title="Eliminar movimiento" size={13} />
-        </div>
-        <ChevronLeft size={13} className="tx-swipe-hint" />
-        </RowGrid>
       </div>
-      </div>
-      {editing && (
-        <TxEditPanel
-          t={t}
-          categories={categories}
-          onSave={(payload) => { saveTxEdit(t.id, payload); setEditing(false); }}
-          onCancel={() => setEditing(false)}
-          onToggleSubscription={onToggleSubscription ? (checked) => onToggleSubscription(t.id, checked) : undefined}
-        />
-      )}
+      {editPanel}
     </div>
   );
 }

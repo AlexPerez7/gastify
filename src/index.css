@@ -257,32 +257,8 @@ select:focus-visible {
     grid-template-columns: 1fr !important;
   }
 
-  .txrow-grid {
-    grid-template-columns: auto 1fr auto !important;
-    grid-template-areas:
-      "check desc actions"
-      "check cat cat"
-      "check amount amount";
-    row-gap: 4px;
-    padding: 12px 14px !important;
-  }
-
-  .tx-check {
-    grid-area: check;
-    align-self: center;
-  }
-  .tx-desc {
-    grid-area: desc;
-    min-width: 0;
-  }
-  .tx-cat {
-    grid-area: cat;
-  }
-  .tx-amount {
-    grid-area: amount;
-    text-align: right;
-    font-size: 15px !important;
-  }
+  /* acciones inline de las filas de Conciliación: en mobile se esconden
+     (se llega a ellas deslizando) */
   .tx-actions {
     display: none !important;
   }

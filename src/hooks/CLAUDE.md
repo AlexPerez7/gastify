@@ -30,6 +30,10 @@ const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 
 `useTheme` (`data-theme` en `<html>`), `useIsMobile` (breakpoint 640px),
 `useToasts` (`push`/`update`/`dismiss`; tipos `ok` | `warn` | `error` | `loading`).
+`useLongPress(cb)` → `{ handlers, consumeClick }`: toque largo de 450ms (se
+cancela si el dedo se mueve); el `onClick` del elemento debe empezar con
+`if (consumeClick()) return;`. Lo usan las filas de Movimientos en mobile
+para entrar al modo selección.
 
 ## Convenciones
 
