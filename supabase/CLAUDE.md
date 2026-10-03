@@ -12,7 +12,8 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
 - `migrations/000N_*.sql` — cambios incrementales para proyectos existentes
   (0001 suscripciones, 0002 credit_transactions, 0003 credit_statements,
   0004 savings_base en account_settings, 0005 created_at en movimientos y
-  estados de cuenta).
+  estados de cuenta, 0006 **opcional**: recolorea las categorías por defecto
+  no personalizadas a la paleta validada).
 
 ## Tablas
 

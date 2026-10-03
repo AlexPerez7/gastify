@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   listMonths, filterTransactions, computeMonthStats, sumByCategory, computeHeroStat, computeDailySpend,
   computeTotalSavings, computeDynamicBalance, computeReconcileStats, computeMonthHealth,
+  heatmapThresholds, heatLevel,
 } from "./stats.js";
 
 const tx = (o) => ({ source: "bank", matchedId: null, alias: "", category: "otros", description: "", ...o });
@@ -109,5 +110,22 @@ describe("conciliación", () => {
   it("computeMonthHealth: warn con manuales pendientes, ok si todo calzó, nada sin manuales", () => {
     expect(computeMonthHealth(list, ["2026-08", "2026-09"])).toEqual({ "2026-08": "warn" });
     expect(computeMonthHealth(list.filter((t) => t.id !== "m1"), ["2026-08"])).toEqual({ "2026-08": "ok" });
+  });
+});
+
+describe("mapa de actividad", () => {
+  it("umbrales por cuartiles: un pago grande no aplana el resto", () => {
+    const values = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 500000];
+    const th = heatmapThresholds(values);
+    expect(th).toEqual([3000, 5000, 7000]);
+    expect(heatLevel(1500, th)).toBe(1);
+    expect(heatLevel(4000, th)).toBe(2);
+    expect(heatLevel(6000, th)).toBe(3);
+    expect(heatLevel(500000, th)).toBe(4);
+  });
+  it("sin gasto es nivel 0; sin datos no hay umbrales", () => {
+    expect(heatLevel(0, [1, 2, 3])).toBe(0);
+    expect(heatmapThresholds([])).toEqual([]);
+    expect(heatLevel(100, [])).toBe(1);
   });
 });

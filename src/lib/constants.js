@@ -33,16 +33,18 @@ export const TOKENS = {
 // en el mismo selector. Cada categoría es de un solo tipo — si necesitas
 // algo como "Transferencias" en los dos sentidos, se crean dos categorías
 // separadas (una de gasto, una de ingreso).
+// Colores de categoría: tonos de PALETTE (validada, ver abajo) asignados por
+// significado. Ingresos conserva su verde; Transferencias y Otros, gris.
 export const DEFAULT_CATEGORIES = [
   { id: "ingreso", label: "Ingresos", color: "#3FBF8F", icon: "TrendingUp", type: "income", excludeFromExpense: false, isSavings: false },
-  { id: "comida", label: "Comida y delivery", color: "#E8654F", icon: "Utensils", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "transporte", label: "Transporte", color: "#F0B94A", icon: "Car", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "suscripciones", label: "Suscripciones y juegos", color: "#9B87C4", icon: "Gamepad2", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "compras", label: "Compras", color: "#5B9BD5", icon: "ShoppingBag", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "servicios", label: "Servicios y cuentas", color: "#D98E52", icon: "Receipt", type: "expense", excludeFromExpense: false, isSavings: false },
-  { id: "salud", label: "Salud y cuidado personal", color: "#6FCF97", icon: "HeartPulse", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "comida", label: "Comida y delivery", color: "#D95926", icon: "Utensils", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "transporte", label: "Transporte", color: "#C98500", icon: "Car", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "suscripciones", label: "Suscripciones y juegos", color: "#9085E9", icon: "Gamepad2", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "compras", label: "Compras", color: "#3987E5", icon: "ShoppingBag", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "servicios", label: "Servicios y cuentas", color: "#D55181", icon: "Receipt", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "salud", label: "Salud y cuidado personal", color: "#199E70", icon: "HeartPulse", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "transferencias", label: "Transferencias personales", color: "#7C8B9C", icon: "ArrowLeftRight", type: "expense", excludeFromExpense: true, isSavings: false },
-  { id: "efectivo", label: "Retiro de efectivo", color: "#A0A8B4", icon: "Banknote", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "efectivo", label: "Retiro de efectivo", color: "#008300", icon: "Banknote", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "otros", label: "Otros", color: "#57646F", icon: "Shapes", type: "expense", excludeFromExpense: false, isSavings: false },
 ];
 
@@ -109,9 +111,17 @@ export function resolveCategoryIcon(cat) {
   return (cat.icon && ICONS[cat.icon]) || CATEGORY_ICONS[cat.id] || DEFAULT_CATEGORY_ICON;
 }
 
+// Paleta categórica validada con el validador de la skill de gráficos sobre
+// las DOS superficies de la app (#131b17 oscuro y #ffffff claro): banda de
+// luminosidad, croma, separación para daltonismo (ΔE ≥ 8 entre vecinos),
+// visión normal (ΔE ≥ 15) y contraste ≥ 3:1. Pasa en ambos temas con un
+// solo valor, que es lo que necesita una categoría (guarda un único color).
+// El ORDEN es parte de la validación (vecinos en gráficos) — no reordenar
+// ni agregar tonos sin volver a validar. La anterior fallaba: violeta y azul
+// casi iguales para daltónicos, y un gris que leía sin color.
 export const PALETTE = [
-  "#E8654F", "#F0B94A", "#3FBF8F", "#5B9BD5", "#9B87C4",
-  "#D98E52", "#6FCF97", "#7C8B9C", "#4FC3D9", "#C9755B",
+  "#3987E5", "#D95926", "#199E70", "#C98500",
+  "#D55181", "#008300", "#9085E9", "#E66767",
 ];
 
 /** @type {Array<[string[], string]>} */

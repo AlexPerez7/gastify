@@ -3,9 +3,9 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Legend,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, Shapes, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
 import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
-import { formatCLP, formatDateDisplay, localIsoDate } from "../lib/utils.js";
+import { formatCLP, formatCLPCompact, formatDateDisplay, localIsoDate } from "../lib/utils.js";
 import { Panel, EmptyState, StatCard, FieldInput, Modal } from "./Shared.jsx";
 import { SpendHeatmap } from "./Heatmap.jsx";
 import { Insights } from "./Insights.jsx";
@@ -219,7 +219,7 @@ export function Resumen({
               <BarChart data={byMonth}>
                 <CartesianGrid strokeDasharray="3 3" stroke={TOKENS.border} vertical={false} />
                 <XAxis dataKey="month" tickFormatter={fmtMonth} stroke={TOKENS.textFaint} fontSize={11} />
-                <YAxis stroke={TOKENS.textFaint} fontSize={11} tickFormatter={(v) => `${Math.round(v / 1000)}k`} />
+                <YAxis stroke={TOKENS.textFaint} fontSize={11} width={52} tickFormatter={formatCLPCompact} />
                 <Tooltip
                   contentStyle={{ background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 8, fontSize: 12 }}
                   itemStyle={{ color: TOKENS.text }}
@@ -227,9 +227,11 @@ export function Resumen({
                   labelFormatter={fmtMonth}
                   formatter={(v) => formatCLP(v)}
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="ingresos" fill={TOKENS.income} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="gastos" fill={TOKENS.expense} radius={[3, 3, 0, 0]} />
+                {/* el texto va en tinta (no en el color de la serie): el cuadrito
+                    de color al lado ya dice cuál es cuál */}
+                <Legend wrapperStyle={{ fontSize: 12 }} formatter={(v) => <span style={{ color: TOKENS.textMuted }}>{v}</span>} />
+                <Bar dataKey="ingresos" name="Ingresos" fill={TOKENS.income} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="gastos" name="Gastos" fill={TOKENS.expense} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -327,10 +329,32 @@ export function Resumen({
 // vista. Siempre en columna (donut arriba, leyenda abajo a todo el ancho):
 // con 3 tarjetas por fila en desktop, ponerlas lado a lado dejaba muy poco
 // espacio para el nombre de la categoría y el monto se salía del recuadro.
-function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText }) {
-  if (data.length === 0) {
+// Con más de 6 categorías, las chicas se agrupan en una porción "Resto"
+// (gris claro): más de 6 colores en una dona ya no se distinguen entre sí, y
+// antes esas porciones ni aparecían en la leyenda. Se llama "Resto" y no
+// "Otras" para no confundirse con la categoría "Otros" (gris oscuro). Tocarla
+// abre Movimientos con todas las categorías.
+const DONUT_MAX = 6;
+const REST_ID = "all";
+
+function foldDonutData(data) {
+  if (data.length <= DONUT_MAX) return data;
+  const head = data.slice(0, DONUT_MAX - 1);
+  const rest = data.slice(DONUT_MAX - 1);
+  return [...head, {
+    id: REST_ID,
+    name: `Resto (${rest.length})`,
+    value: rest.reduce((s, c) => s + c.value, 0),
+    color: TOKENS.textMuted,
+    icon: Shapes,
+  }];
+}
+
+function CategoryDonut({ data: rawData, onCategoryClick, emptyIcon, emptyTitle, emptyText }) {
+  if (rawData.length === 0) {
     return <EmptyState icon={emptyIcon} title={emptyTitle} text={emptyText} />;
   }
+  const data = foldDonutData(rawData);
   return (
     <div className="flex flex-col gap-3">
       <div className="w-full max-w-[220px] mx-auto">
@@ -353,7 +377,7 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
         </ResponsiveContainer>
       </div>
       <div className="flex flex-col gap-[7px]">
-        {data.slice(0, 6).map((c) => {
+        {data.map((c) => {
           const CatIcon = c.icon;
           return (
             <button

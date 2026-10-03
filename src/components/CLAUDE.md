@@ -51,6 +51,11 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
   `text-ink`, `text-muted`, `text-faint`, `text-accent`, `text-income`,
   `text-expense`, `text-pending`, `bg-tint-accent`, `bg-tint-income`,
   `bg-tint-expense`.
+- Colores de categoría: `PALETTE` en `src/lib/constants.js` está validada
+  (daltonismo, contraste, ambos temas) y su orden es parte de la validación.
+  No agregar ni reordenar tonos sin volver a correr el validador de la skill
+  `dataviz`. En gráficos, el texto (leyendas, valores) va en tinta
+  (`text-muted`/`text-ink`), nunca en el color de la serie.
 - Las vars crudas se llaman `--c-*`; en JS se referencian vía `TOKENS` de
   `src/lib/constants.js` (para props de recharts/SVG, que no aceptan clases).
 - `dark:` sigue al toggle manual `data-theme`, no a `prefers-color-scheme`.

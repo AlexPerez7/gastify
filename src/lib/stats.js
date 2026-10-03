@@ -249,6 +249,27 @@ export function computeMonthHealth(transactions, months) {
   return map;
 }
 
+// Umbrales del mapa de actividad por CUARTILES de los días con gasto, no
+// proporcionales al máximo: con un solo pago grande (arriendo), el método
+// anterior (valor / máximo) dejaba casi todo el año en el nivel más claro.
+// Devuelve [q1, q2, q3]; un día con gasto cae en el nivel 1–4 según cuántos
+// umbrales supera.
+/** @param {number[]} values  montos > 0 de los días con gasto @returns {number[]} */
+export function heatmapThresholds(values) {
+  const v = values.filter((x) => x > 0).sort((a, b) => a - b);
+  if (v.length === 0) return [];
+  const at = (p) => v[Math.min(v.length - 1, Math.floor(p * v.length))];
+  return [at(0.25), at(0.5), at(0.75)];
+}
+
+/** @param {number} value @param {number[]} thresholds @returns {0|1|2|3|4} */
+export function heatLevel(value, thresholds) {
+  if (!value || value <= 0) return 0;
+  let level = 1;
+  for (const t of thresholds) if (value > t) level += 1;
+  return /** @type {0|1|2|3|4} */ (Math.min(level, 4));
+}
+
 /** @param {CreditTransaction[]} creditTransactions @param {string} statementMonth */
 export function filterCreditByMonth(creditTransactions, statementMonth) {
   return creditTransactions.filter((t) => t.statementMonth === statementMonth).sort(byDateDesc);

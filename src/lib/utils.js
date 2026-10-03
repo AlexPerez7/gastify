@@ -81,6 +81,17 @@ export function formatCLP(n) {
   return `${sign}$${Math.abs(Math.round(n)).toLocaleString("es-CL")}`;
 }
 
+// Para ejes de gráficos, donde no cabe el monto completo: "$0", "$850",
+// "$45k", "$1,5M". Con signo si es negativo.
+/** @param {number} n */
+export function formatCLPCompact(n) {
+  const sign = n < 0 ? "-" : "";
+  const a = Math.abs(n);
+  if (a >= 1e6) return `${sign}$${(a / 1e6).toLocaleString("es-CL", { maximumFractionDigits: 1 })}M`;
+  if (a >= 1e3) return `${sign}$${Math.round(a / 1e3)}k`;
+  return `${sign}$${Math.round(a)}`;
+}
+
 export function formatDateDisplay(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");

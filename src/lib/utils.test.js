@@ -3,6 +3,7 @@ import {
   autoCategory, suggestMatchKey, applyMerchantRules, parseClpNumber,
   parseBankDate, makeKey, formatCLP, formatDateDisplay, monthKey, nextMonthKey, uid,
   formatDayHeading, groupByDate,
+  formatCLPCompact,
 } from "./utils.js";
 
 describe("parseClpNumber", () => {
@@ -206,5 +207,16 @@ describe("uid", () => {
   });
   it("genera valores distintos en llamadas sucesivas", () => {
     expect(uid()).not.toBe(uid());
+  });
+});
+
+describe("formatCLPCompact", () => {
+  it("abrevia miles y millones para ejes", () => {
+    expect(formatCLPCompact(0)).toBe("$0");
+    expect(formatCLPCompact(850)).toBe("$850");
+    expect(formatCLPCompact(45210)).toBe("$45k");
+    expect(formatCLPCompact(1500000)).toBe("$1,5M");
+    expect(formatCLPCompact(2000000)).toBe("$2M");
+    expect(formatCLPCompact(-12000)).toBe("-$12k");
   });
 });
