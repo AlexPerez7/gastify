@@ -6,7 +6,7 @@ import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading } from "../li
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, BTN_PRIMARY, BTN_GHOST } from "./Shared.jsx";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { CreditCard } from "./CreditCard.jsx";
-import { useIsMobile } from "../lib/useIsMobile.js";
+import { useIsMobile } from "../hooks/useIsMobile.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 

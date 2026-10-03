@@ -4,7 +4,7 @@ import { Check, AlertTriangle, ScanLine, Info, ChevronDown, ChevronUp, ChevronLe
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay } from "../lib/utils.js";
 import { Panel, EmptyNote, EmptyState, FieldInput } from "./Shared.jsx";
-import { useIsMobile } from "../lib/useIsMobile.js";
+import { useIsMobile } from "../hooks/useIsMobile.js";
 
 // ancho de los 2 botones (corregir + vincular) revelados al deslizar una
 // fila de "posible descuadre" — mismo criterio que las filas de Movimientos.

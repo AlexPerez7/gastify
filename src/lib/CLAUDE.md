@@ -3,8 +3,9 @@
 > Parte del contexto de Gastify. Índice y reglas generales en el
 > [CLAUDE.md principal](../../CLAUDE.md).
 
-Aquí no hay componentes. Hay tres tipos de archivo: **lógica pura** (testeable,
-sin React ni Supabase), **adaptadores de Supabase** y **hooks de UI**.
+Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
+[`src/hooks/CLAUDE.md`](../hooks/CLAUDE.md)). Hay dos tipos de archivo:
+**lógica pura** (testeable, sin React ni Supabase) y **adaptadores de Supabase**.
 
 ## Mapa de archivos
 
@@ -13,6 +14,9 @@ sin React ni Supabase), **adaptadores de Supabase** y **hooks de UI**.
 | `types.js` | tipos | `@typedef` de Transaction, Category, MerchantRule, Subscription, CreditTransaction, CreditStatement, AccountSettings. No exporta nada en runtime |
 | `utils.js` | puro | parseo CLP/fechas, `makeKey`/`makeCreditKey`, categorización, aritmética de meses, `groupByDate`, `formatDayHeading`, `uid`, `computeInsights` |
 | `reconcile.js` | puro | `reconcileMonthTransactions`, `matchManualToBank`, `findDuplicateIds` |
+| `stats.js` | puro | derivados: listas de meses, filtros, stats del mes, por categoría/mes, `computeHeroStat`, saldo dinámico, total ahorrado, conciliación, crédito |
+| `importers.js` | puro | filas parseadas → movimientos nuevos: `buildBankImport`, `evaluateBalanceSync`, `buildCreditImport`, `replaceCreditStatement` |
+| `transactionOps.js` | puro | transformaciones de arrays: alta manual, cargos de suscripción, reglas de comercio, edición con regla retroactiva, vínculo a suscripción |
 | `constants.js` | puro | `TOKENS` (vars CSS), `DEFAULT_CATEGORIES`, íconos lucide, `MERCHANT_RULES_DEFAULT`, `NOISE_TOKENS`, helpers de tipo de categoría |
 | `storage.js` | Supabase | shim `get(key)`/`set(key, json, prevItems)` sobre tablas-lista, con mapeo camel↔snake |
 | `accountSettings.js` | Supabase | tabla de UNA fila por usuario (saldo base, ahorro base) — fuera del patrón de storage |
@@ -22,7 +26,6 @@ sin React ni Supabase), **adaptadores de Supabase** y **hooks de UI**.
 | `parseCreditStatementPdf.js` | parser | PDF Estado de Cuenta CMR → solo resumen (cupo, fechas, totales), no movimientos |
 | `exportBackup.js` / `exportCsv.js` | export | leen de Supabase (no del estado React) y descargan archivo |
 | `readFile.js` | util | `readFileWithProgress` con progreso real |
-| `useTheme.js` / `useIsMobile.js` / `useToasts.js` | hooks | tema (`data-theme` en `<html>`), breakpoint 640px, toasts |
 
 ## storage.js — cómo funciona la persistencia
 
@@ -35,8 +38,9 @@ sin React ni Supabase), **adaptadores de Supabase** y **hooks de UI**.
   que desaparecieron. No vuelve a leer la tabla.
 - En error devuelve `{ key, error }` con `message — details` de Postgres (ahí
   viene la fila exacta en un choque UNIQUE).
-- En App, `runPersist` aplica el cambio local, llama a `set`, y si falla
-  **revierte** a `prev` y muestra `syncError`. Todos los `persistX` usan eso.
+- En `src/hooks/useAppData.js`, `runPersist` aplica el cambio local, llama a
+  `set`, y si falla **revierte** a `prev` y muestra `syncError`. Todos los
+  `persistX` usan eso.
 
 **Agregar un campo** a una entidad: `types.js` → `toRow` + `fromRow` en
 `TABLES` → columna en `supabase/schema.sql` + migración nueva. Ojo:
@@ -44,12 +48,12 @@ sin React ni Supabase), **adaptadores de Supabase** y **hooks de UI**.
 "cambiados".
 
 **Agregar una entidad** nueva tipo lista: entrada en `TABLES`, typedef,
-`useState` + `persistX` con `runPersist` en App, carga en `loadAllData`, y la
+`useState` + `persistX` con `runPersist` en `useAppData`, carga en `loadAllData`, y la
 tabla con RLS + grant en Supabase.
 
 ## Claves de deduplicación (críticas)
 
-- **Débito**: en `handleFile` la clave es `makeKey(date, String(saldo), cargo, abono)`
+- **Débito**: en `buildBankImport` la clave es `makeKey(date, String(saldo), cargo, abono)`
   — usa el **saldo corrido**, no la descripción, porque el xls y el PDF
   escriben distinto la descripción pero el saldo es idéntico. La DB tiene
   `unique(user_id, key)` como red de seguridad.
@@ -93,10 +97,13 @@ Orden de prioridad al importar: regla de comercio del usuario
 
 ## Tests y typecheck
 
-- `utils.test.js` y `reconcile.test.js` (Vitest, entorno node). Helpers
-  `bank()`/`manual()` para armar transacciones. Toda función pura nueva o
-  cambio de lógica de dinero → test.
-- `npm run typecheck` solo incluye `types.js`, `utils.js`, `reconcile.js`,
-  `constants.js`, `storage.js` (ver `tsconfig.json`, `strict: false`). Parsers,
+- Un `*.test.js` por módulo puro (`utils`, `reconcile`, `stats`, `importers`,
+  `transactionOps`), Vitest en entorno node, con helpers locales tipo
+  `tx()`/`bank()`/`manual()` para armar transacciones. Toda función pura nueva
+  o cambio de lógica de dinero → test. Las funciones reciben `now`/`createdAt`
+  por parámetro para poder testear fechas sin mocks.
+- `npm run typecheck` solo incluye los módulos puros (`types`, `utils`,
+  `reconcile`, `constants`, `storage`, `stats`, `importers`, `transactionOps`;
+  ver `tsconfig.json`, `strict: false`). Parsers,
   hooks y `supabaseClient` quedan fuera a propósito. Si agregas un archivo puro,
   súmalo al `include`.

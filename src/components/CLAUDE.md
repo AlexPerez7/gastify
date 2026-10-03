@@ -61,7 +61,7 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
 
 ## Mobile y UX
 
-- `useIsMobile()` (640px) para ramas de layout; en mobile hay `BottomNav`,
+- `useIsMobile()` (640px, en `src/hooks/`) para ramas de layout; en mobile hay `BottomNav`,
   swipe para editar/borrar y gestos táctiles.
 - Feedback al usuario con `pushToast(kind, msg)` (`ok` | `warn` | `error` |
   `loading`); errores de sync en el banner `syncError` de App.

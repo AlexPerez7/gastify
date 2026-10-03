@@ -14,7 +14,8 @@ los carga al trabajar dentro de ellas); léelos antes de tocar esa área:
 
 | Archivo | Cubre |
 | --- | --- |
-| [`src/lib/CLAUDE.md`](src/lib/CLAUDE.md) | Capa de datos: `storage.js`, tipos JSDoc, claves de dedupe, parsers, conciliación, utils, tests y typecheck |
+| [`src/lib/CLAUDE.md`](src/lib/CLAUDE.md) | Lógica pura y datos: `storage.js`, tipos JSDoc, claves de dedupe, importers, stats, conciliación, parsers, tests y typecheck |
+| [`src/hooks/CLAUDE.md`](src/hooks/CLAUDE.md) | Hooks que conectan la lógica con React: `useAppData` (estado + persistencia), acciones, importadores, derivados |
 | [`src/components/CLAUDE.md`](src/components/CLAUDE.md) | UI: Tailwind v4 sin preflight, tokens de tema, `Shared.jsx`, mapa de componentes, mobile |
 | [`supabase/CLAUDE.md`](supabase/CLAUDE.md) | Esquema, RLS, grants, migraciones y checklist para agregar tablas/columnas |
 
@@ -25,7 +26,7 @@ npm run dev        # Vite en http://localhost:5173/gastify/
 npm run build      # build a dist/ (requiere .env con VITE_SUPABASE_*)
 npm run lint       # ESLint 9 (config plana)
 npm run typecheck  # tsc sobre JSDoc, solo un subconjunto de src/lib
-npm test           # Vitest (utils + reconcile)
+npm test           # Vitest (lógica pura de src/lib)
 ```
 
 CI (`.github/workflows/deploy.yml`) corre **lint + typecheck + test** en cada
@@ -40,15 +41,15 @@ un falso "no tests"/FAIL la primera vez — reintentar una vez.
 ```
 main.jsx ─ registra SW (PWA autoUpdate, chequeo cada 1h) ─ ErrorBoundary ─ AuthGate
 AuthGate.jsx ─ sesión Supabase → Auth / ResetPassword / App
-App.jsx (~1300 líneas) ─ TODO el estado global y la lógica de negocio:
-   ├─ carga inicial (loadAllData) + recarga al volver a la pestaña
-   ├─ persist* optimista vía runPersist → storage.set (diff local) → Supabase
-   ├─ importadores: handleFile (débito xls/pdf), handleCreditFile, handleCreditStatementFile
-   ├─ CRUD de movimientos, categorías, reglas de comercio, suscripciones
-   ├─ conciliación (usa src/lib/reconcile.js)
-   └─ derivados con useMemo: stats, byCategory, heroStat, insights, reconcileStats…
+App.jsx (~260 líneas) ─ estado de UI (tab, filtros, modales) + composición + render
+   ├─ hooks/useAppData ─ estado de datos, carga, persist* optimista → storage.js → Supabase
+   ├─ hooks/useTransactionActions ─ CRUD movimientos débito/crédito + conciliación
+   ├─ hooks/useCatalogActions ─ categorías y suscripciones
+   ├─ hooks/useImporters ─ archivos débito xls/PDF, Excel CMR, PDF estado de cuenta
+   └─ hooks/useDerivedData ─ mes seleccionado + stats, gráficos, hero, conciliación (useMemo)
+lib/ ─ lógica pura y testeable (utils, stats, importers, transactionOps, reconcile, parsers)
+       + adaptadores Supabase (storage, accountSettings)
 components/ ─ presentacionales; reciben datos y callbacks por props desde App
-lib/ ─ lógica pura (utils, reconcile, parsers) + adaptadores Supabase
 ```
 
 Tabs (`tab` en App): `resumen` | `movimientos` (sub-vista `debito`/`credito`) |
@@ -63,16 +64,16 @@ bundle inicial; `xlsx` y `pdfjs-dist` se importan dinámicamente solo al importa
 2. **Fechas** como string ISO `YYYY-MM-DD`; meses como `YYYY-MM`. Aritmética de
    meses solo con `addMonths`/`nextMonthKey`/`prevMonthKey`/`monthKeyOf`.
 3. **Estado local = fuente de verdad**. Todo cambio pasa por un `persist*`
-   (patrón optimista con rollback). Nunca escribir a Supabase directo desde un
-   componente (excepción: `accountSettings.js`, tabla de una fila).
+   (patrón optimista con rollback, en `useAppData`). Nunca escribir a Supabase
+   directo desde un componente (excepción: `accountSettings.js`, tabla de una fila).
 4. **camelCase en la app, snake_case en la DB**. El mapeo vive solo en
    `TABLES` de `src/lib/storage.js`; un campo nuevo exige tocar toRow, fromRow,
    `types.js` y el SQL (ver `supabase/CLAUDE.md`).
 5. **Gasto real** = `amount < 0` y categoría sin `excludeFromExpense`. Usar
-   `isRealExpense` / `excludedCategoryIds` de App, no reinventarlo.
-6. Lógica nueva que no dependa de React va a `src/lib/` como función pura
-   **con test**. App.jsx ya es demasiado grande; no seguir engordándolo con
-   lógica testeable.
+   `isRealExpense` / `excludedCategoryIdsOf` de `src/lib/stats.js`, no reinventarlo.
+6. **Capas**: lógica → función pura en `src/lib/` **con test**; conexión con
+   React → hook en `src/hooks/`; App.jsx solo compone y renderiza. No volver a
+   meter lógica de negocio en App.jsx ni en componentes.
 7. Sin TypeScript: tipos vía JSDoc (`src/lib/types.js`). No convertir a `.ts`.
 8. Comentarios explican el **porqué** (el código ya tiene ese estilo, denso y en
    español). Mantenerlo al editar.
@@ -86,5 +87,5 @@ bundle inicial; `xlsx` y `pdfjs-dist` se importan dinámicamente solo al importa
   lanza al arrancar.
 - `vite.config.js` fija `base: "/gastify/"` (GitHub Pages).
 - El `README.md` describe features y setup, pero su sección "Estructura" está
-  desactualizada (no menciona CreditCard, Subscriptions, HelpModal, parsers);
+  desactualizada (no menciona hooks/, CreditCard, Subscriptions, HelpModal, parsers);
   confía en estos CLAUDE.md para la estructura.

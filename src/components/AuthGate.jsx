@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useTheme } from "../lib/useTheme.js";
+import { useTheme } from "../hooks/useTheme.js";
 import { supabase } from "../lib/supabaseClient.js";
 import { Auth } from "./Auth.jsx";
 import { ResetPassword } from "./ResetPassword.jsx";

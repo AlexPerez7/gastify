@@ -25,7 +25,10 @@
     "src/lib/utils.js",
     "src/lib/reconcile.js",
     "src/lib/constants.js",
-    "src/lib/storage.js"
+    "src/lib/storage.js",
+    "src/lib/stats.js",
+    "src/lib/importers.js",
+    "src/lib/transactionOps.js"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.js"]
 }
