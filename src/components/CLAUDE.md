@@ -54,6 +54,13 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
 - Las vars crudas se llaman `--c-*`; en JS se referencian vía `TOKENS` de
   `src/lib/constants.js` (para props de recharts/SVG, que no aceptan clases).
 - `dark:` sigue al toggle manual `data-theme`, no a `prefers-color-scheme`.
+- **Tamaños de texto: solo la escala con nombre** — `text-micro` (etiquetas
+  tipo "nuevo"), `text-caption` (etiquetas de campo, metadatos), `text-small`
+  (ayudas, botones compactos), `text-body` (texto principal), `text-body-lg`
+  (nombres destacados), `text-title` (títulos de panel/modal). Crecen solos
+  en mobile (variables `--fs-*` en `index.css`). Nada de `text-[12.5px]` ni
+  `text-xs`; tamaños propios solo para números grandes (saldo, montos
+  destacados) y el mapa de actividad.
 - Fuentes: `font-sans` (Inter), `font-display`/`.display` (Space Grotesk),
   `font-mono`/`.mono` (JetBrains Mono, para cifras).
 - `style={{}}` solo para valores realmente dinámicos: color de categoría

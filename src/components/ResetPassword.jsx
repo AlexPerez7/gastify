@@ -38,19 +38,19 @@ export function ResetPassword({ onDone }) {
         <div className="display text-[17px] font-semibold text-ink mb-1">
           Elige una nueva contraseña
         </div>
-        <div className="text-[12.5px] text-muted mb-5">
+        <div className="text-body text-muted mb-5">
           Esto reemplaza tu contraseña anterior en todos tus dispositivos.
         </div>
 
         <FieldInput label="Contraseña nueva" type="password" value={password} onChange={setPassword} required minLength={6} autoComplete="new-password" style={{ marginBottom: 12 }} />
         <FieldInput label="Repetir contraseña" type="password" value={confirm} onChange={setConfirm} required minLength={6} autoComplete="new-password" style={{ marginBottom: 16 }} />
 
-        {error && <div className="text-[12.5px] text-expense mb-3.5">{error}</div>}
+        {error && <div className="text-body text-expense mb-3.5">{error}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg text-[13.5px] font-semibold disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg text-body-lg font-semibold disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
         >
           {loading ? "Un momento…" : "Guardar contraseña"}
         </button>

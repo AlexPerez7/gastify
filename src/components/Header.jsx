@@ -33,14 +33,14 @@ function SaveIndicator({ saving }) {
 
   if (saving) {
     return (
-      <span className="flex items-center gap-1 text-faint text-[11.5px]">
+      <span className="flex items-center gap-1 text-faint text-small">
         <Loader2 size={11} className="spin" /> Guardando…
       </span>
     );
   }
   if (showSaved) {
     return (
-      <span className="flex items-center gap-1 text-income text-[11.5px]">
+      <span className="flex items-center gap-1 text-income text-small">
         <Check size={11} /> Guardado
       </span>
     );
@@ -64,7 +64,7 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
         <div className="flex items-center gap-2.5">
           <img src={logo} alt="" width={30} height={30} className="block" />
           <div className="display text-lg font-bold tracking-[-0.02em]">Gastify</div>
-          <div className="header-subtitle text-faint text-xs ml-0.5">· cuenta corriente CLP</div>
+          <div className="header-subtitle text-faint text-small ml-0.5">· cuenta corriente CLP</div>
           <SaveIndicator saving={saving} />
         </div>
         <div className="header-controls flex items-center gap-2.5">
@@ -78,7 +78,7 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
                   onClick={() => setTab(it.id)}
                   aria-label={it.label}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-1.5 px-3 py-[7px] rounded-[7px] border-0 cursor-pointer text-[13px] font-medium ${
+                  className={`flex items-center gap-1.5 px-3 py-[7px] rounded-[7px] border-0 cursor-pointer text-body font-medium ${
                     active ? "bg-bg text-ink" : "bg-transparent text-muted"
                   }`}
                 >
@@ -260,7 +260,7 @@ export function MonthBar({ months, monthFilter, setMonthFilter, monthHealth, rig
                   <button
                     key={y}
                     onClick={() => setYearOverride(y)}
-                    className={`px-3 py-[5px] rounded-[7px] border-0 cursor-pointer text-[12.5px] font-medium shrink-0 ${
+                    className={`px-3 py-[5px] rounded-[7px] border-0 cursor-pointer text-body font-medium shrink-0 ${
                       active ? "bg-bg text-ink" : "bg-transparent text-muted"
                     }`}
                   >

@@ -82,7 +82,7 @@ export function Auth({ initialError }) {
         <div className="display text-[17px] font-semibold text-ink mb-1">
           {titles[mode]}
         </div>
-        <div className="text-[12.5px] text-muted mb-5">
+        <div className="text-body text-muted mb-5">
           {mode === "forgot"
             ? "Escribe tu email y te mandamos un link para elegir una nueva contraseña."
             : "Tus movimientos y categorías, sincronizados entre tus dispositivos."}
@@ -94,13 +94,13 @@ export function Auth({ initialError }) {
             autoComplete={mode === "signin" ? "current-password" : "new-password"} style={{ marginBottom: 16 }} />
         )}
 
-        {error && <div className="text-[12.5px] text-expense mb-3.5">{error}</div>}
-        {info && <div className="text-[12.5px] text-income mb-3.5">{info}</div>}
+        {error && <div className="text-body text-expense mb-3.5">{error}</div>}
+        {info && <div className="text-body text-income mb-3.5">{info}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg text-[13.5px] font-semibold disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+          className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg text-body-lg font-semibold disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
         >
           {loading ? "Un momento…" : submitLabels[mode]}
         </button>
@@ -109,14 +109,14 @@ export function Auth({ initialError }) {
           <>
             <div className="flex items-center gap-2.5 my-4">
               <div className="flex-1 h-px bg-border" />
-              <span className="text-[11px] text-faint">o</span>
+              <span className="text-caption text-faint">o</span>
               <div className="flex-1 h-px bg-border" />
             </div>
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-[9px] py-[9px] rounded-lg border border-border bg-bg text-ink text-[13px] font-medium disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+              className="w-full flex items-center justify-center gap-[9px] py-[9px] rounded-lg border border-border bg-bg text-ink text-body font-medium disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
             >
               <GoogleIcon size={16} />
               {googleLoading ? "Redirigiendo…" : "Continuar con Google"}
@@ -125,12 +125,12 @@ export function Auth({ initialError }) {
         )}
 
         {mode === "signin" && (
-          <div className="mt-3 text-center text-xs text-faint">
+          <div className="mt-3 text-center text-small text-faint">
             <span onClick={() => switchMode("forgot")} className="cursor-pointer">¿Olvidaste tu contraseña?</span>
           </div>
         )}
 
-        <div className="mt-4 text-center text-[12.5px] text-muted">
+        <div className="mt-4 text-center text-body text-muted">
           {mode === "forgot" ? (
             <span onClick={() => switchMode("signin")} className="text-accent cursor-pointer">Volver a iniciar sesión</span>
           ) : (

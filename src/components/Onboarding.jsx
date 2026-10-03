@@ -50,7 +50,7 @@ export function Onboarding({ onDone }) {
           </div>
 
           <div className="display text-[17px] font-semibold mb-2">{title}</div>
-          <div className="text-[13px] text-muted leading-[1.5] mb-[22px]">{text}</div>
+          <div className="text-body text-muted leading-[1.5] mb-[22px]">{text}</div>
         </div>
 
         <div className="flex justify-center gap-1.5 mb-5">
@@ -66,13 +66,13 @@ export function Onboarding({ onDone }) {
 
         <button
           onClick={() => (isLast ? onDone() : setStep((s) => s + 1))}
-          className="w-full py-2.5 rounded-lg border-0 cursor-pointer bg-accent text-bg font-semibold text-[13px] flex items-center justify-center gap-1.5"
+          className="w-full py-2.5 rounded-lg border-0 cursor-pointer bg-accent text-bg font-semibold text-body flex items-center justify-center gap-1.5"
         >
           {isLast ? "Empezar" : "Siguiente"}
           {!isLast && <ChevronRight size={14} />}
         </button>
 
-        <div className="text-[11px] text-faint mt-3.5">
+        <div className="text-caption text-faint mt-3.5">
           ¿Necesitas verlo de nuevo? Búscalo en el botón <strong>?</strong> de arriba.
         </div>
       </div>

@@ -56,8 +56,8 @@ export function HelpModal({ onClose }) {
               <Icon size={16} color={TOKENS.accent} />
             </div>
             <div>
-              <div className="text-[13px] font-semibold mb-[3px]">{title}</div>
-              <div className="text-xs text-muted leading-[1.5]">{text}</div>
+              <div className="text-body font-semibold mb-[3px]">{title}</div>
+              <div className="text-small text-muted leading-[1.5]">{text}</div>
             </div>
           </div>
         ))}

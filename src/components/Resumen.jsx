@@ -86,7 +86,7 @@ export function Resumen({
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-small disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exporting ? <Loader2 size={13} className="spin" /> : <ImageDown size={13} />}
             {exporting ? "Generando…" : "Guardar resumen"}
@@ -99,11 +99,11 @@ export function Resumen({
 
       <div className="bg-surface border border-border rounded-[14px] px-6 py-[22px] mb-5 flex justify-between items-start gap-3">
         <div className="min-w-0">
-          <div className="text-[12.5px] text-muted mb-1.5">Saldo actual</div>
+          <div className="text-body text-muted mb-1.5">Saldo actual</div>
           <div className="mono text-[34px] font-bold text-accent tracking-[-0.01em] leading-[1.1]">
             {dynamicBalance != null ? formatCLP(dynamicBalance) : "—"}
           </div>
-          <div className="text-xs text-faint mt-3">
+          <div className="text-small text-faint mt-3">
             {lastSyncDate ? `ajustado el ${formatSyncDate(lastSyncDate)}` : "ajusta tu saldo para verlo actualizado"}
           </div>
         </div>
@@ -159,7 +159,7 @@ export function Resumen({
           relación con el mes seleccionado acá arriba. */}
       {creditStatement && (
         <div className="mb-6">
-          <div className="text-[11px] text-faint uppercase tracking-[0.03em] font-semibold mb-2">
+          <div className="text-caption text-faint uppercase tracking-[0.03em] font-semibold mb-2">
             Tarjeta de crédito
           </div>
           <button
@@ -174,7 +174,7 @@ export function Resumen({
                 <CreditCardIcon size={15} color={TOKENS.textMuted} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] text-muted mb-0.5">
+                <div className="text-caption text-muted mb-0.5">
                   {creditStatement.payBy ? `Paga hasta ${formatDateDisplay(creditStatement.payBy)}` : "Total facturado"}
                 </div>
                 <div className="mono text-lg font-semibold text-expense">{formatCLP(creditStatement.totalToPay)}</div>
@@ -182,8 +182,8 @@ export function Resumen({
             </div>
             {creditStatement.cupoAvailable != null && (
               <div className="text-right">
-                <div className="text-[11px] text-muted mb-0.5">Cupo disponible</div>
-                <div className="mono text-sm text-ink">
+                <div className="text-caption text-muted mb-0.5">Cupo disponible</div>
+                <div className="mono text-body-lg text-ink">
                   {formatCLP(creditStatement.cupoAvailable)}
                   {creditStatement.cupoTotal != null && <span className="text-faint"> / {formatCLP(creditStatement.cupoTotal)}</span>}
                 </div>
@@ -237,6 +237,7 @@ export function Resumen({
       </div>
 
       {budgetedCategories.length > 0 && (
+        <div className="mb-4">
         <Panel title={`Presupuestos${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>
           <div className="flex flex-col gap-3.5">
             {budgetedCategories.map((c) => {
@@ -251,7 +252,7 @@ export function Resumen({
                   title={`Ver movimientos de ${c.name}`}
                   className={`bg-transparent border-0 p-0 text-left w-full ${onCategoryClick ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <div className="flex items-center justify-between mb-1.5 text-[12.5px]">
+                  <div className="flex items-center justify-between mb-1.5 text-body">
                     <div className="flex items-center gap-[7px] text-ink">
                       <span
                         className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center shrink-0"
@@ -269,7 +270,7 @@ export function Resumen({
                     <div className="h-full rounded-[3px]" style={{ width: `${pct}%`, background: barColor }} />
                   </div>
                   {over && (
-                    <div className="text-[11px] text-expense mt-1">
+                    <div className="text-caption text-expense mt-1">
                       {formatCLP(c.spent - c.budget)} sobre el presupuesto
                     </div>
                   )}
@@ -278,6 +279,7 @@ export function Resumen({
             })}
           </div>
         </Panel>
+        </div>
       )}
 
       <Panel title="Actividad de gasto diaria">
@@ -358,7 +360,7 @@ function CategoryDonut({ data, onCategoryClick, emptyIcon, emptyTitle, emptyText
               key={c.id}
               onClick={() => onCategoryClick?.(c.id)}
               title={`Ver movimientos de ${c.name}`}
-              className={`category-legend-row flex items-center justify-between text-[12.5px] bg-transparent border-0 px-1.5 py-1 -mx-1.5 rounded-[7px] w-[calc(100%+12px)] text-left overflow-hidden ${
+              className={`category-legend-row flex items-center justify-between text-body bg-transparent border-0 px-1.5 py-1 -mx-1.5 rounded-[7px] w-[calc(100%+12px)] text-left overflow-hidden ${
                 onCategoryClick ? "cursor-pointer" : "cursor-default"
               }`}
             >
@@ -403,7 +405,7 @@ function AdjustAmountModal({ title, help, label, submitLabel, initial, onAdjust,
 
   return (
     <Modal title={title} onClose={onClose} dismissOnBackdrop={value === initialValue}>
-      <div className="text-xs text-muted mb-3.5 leading-[1.4]">{help}</div>
+      <div className="text-small text-muted mb-3.5 leading-[1.4]">{help}</div>
       <FieldInput
         label={label} type="number" inputMode="numeric" value={value} onChange={setValue} placeholder="0" autoFocus
         onKeyDown={(e) => { if (e.key === "Enter") submit(); }} enterKeyHint="done" style={{ marginBottom: 14 }}
@@ -411,7 +413,7 @@ function AdjustAmountModal({ title, help, label, submitLabel, initial, onAdjust,
       <button
         onClick={submit}
         disabled={saving || value === ""}
-        className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+        className="w-full py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-body disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
       >
         {saving ? "Guardando…" : submitLabel}
       </button>

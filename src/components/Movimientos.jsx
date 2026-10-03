@@ -12,7 +12,7 @@ const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) reve
 
 // botón de acción de la barra de herramientas de Movimientos
 const ACTION_BTN =
-  "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-[12.5px] cursor-pointer whitespace-nowrap";
+  "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-body cursor-pointer whitespace-nowrap";
 
 export function Movimientos({
   filteredTx, hasTransactions, categories, getCat, search, setSearch, catFilter, setCatFilter,
@@ -117,7 +117,7 @@ export function Movimientos({
             key={v}
             onClick={() => setViewMode(v)}
             aria-pressed={viewMode === v}
-            className={`flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border-0 text-[12.5px] font-semibold cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-[7px] rounded-full border-0 text-body font-semibold cursor-pointer ${
               viewMode === v ? "bg-accent text-bg" : "bg-transparent text-muted"
             }`}
           >
@@ -154,7 +154,7 @@ export function Movimientos({
             onClick={onExportCsv}
             disabled={exportingCsv}
             title="Descarga tus movimientos en .csv, para abrir en Excel o Sheets"
-            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-small disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exportingCsv ? <Loader2 size={13} className="spin" /> : <FileSpreadsheet size={13} />}
             {exportingCsv ? "Generando CSV…" : "Exportar CSV"}
@@ -163,7 +163,7 @@ export function Movimientos({
             onClick={onExportBackup}
             disabled={exportingBackup}
             title="Descarga un .json con todos tus movimientos y categorías"
-            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-xs disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-small disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
           >
             {exportingBackup ? <Loader2 size={13} className="spin" /> : <Download size={13} />}
             {exportingBackup ? "Generando respaldo…" : "Descargar respaldo"}
@@ -186,8 +186,8 @@ export function Movimientos({
               <Plus size={16} color={TOKENS.pending} />
             </div>
             <div>
-              <div className="text-[13px] font-medium">Agregar gasto o ingreso manual</div>
-              <div className="text-[11.5px] text-faint">Para movimientos que aún no aparecen en el banco</div>
+              <div className="text-body font-medium">Agregar gasto o ingreso manual</div>
+              <div className="text-small text-faint">Para movimientos que aún no aparecen en el banco</div>
             </div>
           </button>
         </div>
@@ -208,7 +208,7 @@ export function Movimientos({
               style={{ accentColor: "var(--c-accent)", cursor: filteredTx.length === 0 ? "default" : "pointer" }}
             />
             {selectedIds.length > 0 && (
-              <span className="text-xs text-muted whitespace-nowrap">
+              <span className="text-small text-muted whitespace-nowrap">
                 {selectedIds.length} seleccionado{selectedIds.length === 1 ? "" : "s"}
               </span>
             )}
@@ -219,7 +219,7 @@ export function Movimientos({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar movimiento…"
-            className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
+            className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body"
           />
         </div>
         {isMobile ? (
@@ -232,7 +232,7 @@ export function Movimientos({
             >
               <SlidersHorizontal size={15} />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-accent text-bg text-[10px] font-bold">
+                <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-accent text-bg text-micro font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -246,7 +246,7 @@ export function Movimientos({
               >
                 <ScanLine size={15} />
                 {reconcileStats?.manuals?.length > 0 && (
-                  <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-[10px] font-bold">
+                  <span className="absolute -top-[5px] -right-[5px] flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-micro font-bold">
                     {reconcileStats.manuals.length}
                   </span>
                 )}
@@ -268,7 +268,7 @@ export function Movimientos({
                 <select
                   value={sourceFilter}
                   onChange={(e) => setSourceFilter(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px] cursor-pointer"
+                  className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body cursor-pointer"
                   aria-label="Filtrar por origen del movimiento"
                   title="Filtrar por origen: manual o banco"
                 >
@@ -282,7 +282,7 @@ export function Movimientos({
               <button
                 onClick={() => setTxTypeFilter?.("all")}
                 title="Quitar filtro de tipo de movimiento"
-                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-[12.5px] cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-body cursor-pointer whitespace-nowrap ${
                   txTypeFilter === "income" ? "border-income bg-tint-income text-income" : "border-expense bg-tint-expense text-expense"
                 }`}
               >
@@ -306,7 +306,7 @@ export function Movimientos({
                   <button onClick={onOpenConciliacion} className={ACTION_BTN} title="Revisar y conciliar movimientos manuales contra el reporte del banco">
                     <ScanLine size={13} /> Conciliación
                     {reconcileStats?.manuals?.length > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-[10px] font-bold">
+                      <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-pending text-bg text-micro font-bold">
                         {reconcileStats.manuals.length}
                       </span>
                     )}
@@ -336,12 +336,12 @@ export function Movimientos({
       {recentImportIds.length > 0 && (
         <div className="flex items-center gap-2.5 px-3 py-[9px] rounded-[10px] bg-tint-accent-soft border border-accent mb-3.5 flex-wrap">
           <Sparkles size={14} color={TOKENS.accent} className="shrink-0" />
-          <span className="text-[12.5px] text-ink flex-[1_1_160px]">
+          <span className="text-body text-ink flex-[1_1_160px]">
             {recentImportIds.length} movimiento{recentImportIds.length === 1 ? "" : "s"} importado{recentImportIds.length === 1 ? "" : "s"} recién — marcado{recentImportIds.length === 1 ? "" : "s"} como "nuevo" abajo
           </span>
           <button
             onClick={() => setOnlyRecent((v) => !v)}
-            className={`px-2.5 py-1.5 rounded-[7px] border border-accent text-xs cursor-pointer font-semibold ${
+            className={`px-2.5 py-1.5 rounded-[7px] border border-accent text-small cursor-pointer font-semibold ${
               onlyRecent ? "bg-accent text-bg" : "bg-transparent text-accent"
             }`}
           >
@@ -404,7 +404,7 @@ export function Movimientos({
         ) : (
           groupByDate(visibleTx).map((group) => (
             <div key={group.date}>
-              <div className="px-4 py-[9px] text-[11px] font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
+              <div className="px-4 py-[9px] text-caption font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
                 {formatDayHeading(group.date)}
               </div>
               {group.items.map((t, i) => (
@@ -472,7 +472,7 @@ function FilterSheet({
       panelClassName="px-5 pt-[18px] pb-[calc(20px+env(safe-area-inset-bottom,0px))] overflow-y-auto overscroll-contain"
     >
 
-        <div className="text-[11px] text-faint mb-1.5">Categoría</div>
+        <div className="text-caption text-faint mb-1.5">Categoría</div>
         <div className="mb-4">
           <CategorySelect
             categories={categories}
@@ -482,7 +482,7 @@ function FilterSheet({
           />
         </div>
 
-        <div className="text-[11px] text-faint mb-1.5">Tipo</div>
+        <div className="text-caption text-faint mb-1.5">Tipo</div>
         <div className="filter-seg-row mb-4">
           {typeOptions.map((opt) => (
             <button
@@ -497,7 +497,7 @@ function FilterSheet({
 
         {setSourceFilter && (
           <>
-            <div className="text-[11px] text-faint mb-1.5">Origen</div>
+            <div className="text-caption text-faint mb-1.5">Origen</div>
             <div className="filter-seg-row mb-5">
               {sourceOptions.map((opt) => (
                 <button
@@ -516,13 +516,13 @@ function FilterSheet({
           <button
             onClick={onClear}
             disabled={activeFilterCount === 0}
-            className="flex-1 py-2.5 rounded-lg border border-border bg-transparent text-muted text-[13px] disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
+            className="flex-1 py-2.5 rounded-lg border border-border bg-transparent text-muted text-body disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] cursor-pointer"
+            className="flex-1 py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-body cursor-pointer"
           >
             Listo
           </button>
@@ -564,7 +564,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
       className="bulk-action-bar fixed left-1/2 bottom-5 -translate-x-1/2 z-[1500] flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-surface-alt border border-border flex-wrap justify-center"
       style={{ boxShadow: "0 10px 28px rgba(0,0,0,0.4)", maxWidth: "calc(100vw - 28px)" }}
     >
-      <span className="text-[12.5px] font-semibold text-ink whitespace-nowrap">
+      <span className="text-body font-semibold text-ink whitespace-nowrap">
         {count} seleccionado{count === 1 ? "" : "s"}
       </span>
 
@@ -581,7 +581,7 @@ function BulkActionsBar({ count, categories, onDelete, onChangeCategory, onClose
       <button
         onClick={handleDeleteClick}
         disabled={busy}
-        className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border-0 bg-tint-expense text-expense text-[12.5px] font-semibold disabled:cursor-default enabled:cursor-pointer"
+        className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border-0 bg-tint-expense text-expense text-body font-semibold disabled:cursor-default enabled:cursor-pointer"
       >
         {busy ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />} Borrar seleccionados
       </button>
@@ -624,8 +624,8 @@ function ImportDropzone({ onFile, disabled }) {
         {disabled ? <Loader2 size={16} color={TOKENS.accent} className="spin" /> : <Upload size={16} color={TOKENS.accent} />}
       </div>
       <div>
-        <div className="text-[13px] font-medium">{disabled ? "Procesando archivo…" : "Subir movimientos del banco"}</div>
-        <div className="text-[11.5px] text-faint">
+        <div className="text-body font-medium">{disabled ? "Procesando archivo…" : "Subir movimientos del banco"}</div>
+        <div className="text-small text-faint">
           {disabled ? "Espera a que termine antes de subir otro." : "Arrastra el .xls de reportCollection o la cartola en .pdf, o haz clic para elegirlo"}
         </div>
       </div>
@@ -754,15 +754,15 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="flex-1 min-w-0 truncate text-[15px] font-medium text-ink">{name}</span>
-                  <TxAmount amount={t.amount} className="text-[15px] shrink-0" />
+                  <span className="flex-1 min-w-0 truncate text-body-lg font-medium text-ink">{name}</span>
+                  <TxAmount amount={t.amount} className="text-body-lg shrink-0" />
                 </div>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[12.5px] text-muted min-w-0">
+                <div className="flex items-center gap-1.5 mt-0.5 text-small text-muted min-w-0">
                   {isRecent && <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" title="Recién importado" aria-label="Recién importado" />}
                   {isDuplicate && (
                     <span
                       title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces."
-                      className="text-[11.5px] font-semibold text-pending shrink-0"
+                      className="text-caption font-semibold text-pending shrink-0"
                     >
                       ¿Duplicado?
                     </span>
@@ -800,7 +800,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
               style={{ accentColor: "var(--c-accent)" }}
             />
           </div>
-          <div className="flex items-center gap-1.5 text-[13px] min-w-0">
+          <div className="flex items-center gap-1.5 text-body min-w-0">
             {/* el texto trunca solo a sí mismo (flex 1 + min-width 0) — así el
                 tag de origen y los avisos de "nuevo"/duplicado quedan siempre
                 enteros al lado, en vez de cortarse junto con la descripción. */}
@@ -808,7 +808,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
               {t.alias ? (
                 <>
                   <span className="font-medium">{t.alias}</span>
-                  <span className="text-faint text-[11.5px]"> · {t.description}</span>
+                  <span className="text-faint text-small"> · {t.description}</span>
                 </>
               ) : t.description}
             </span>
@@ -820,20 +820,20 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
               {t.source === "bank" ? <Landmark size={10} /> : <PenLine size={10} />}
             </span>
             {isRecent && (
-              <span className="text-[10px] text-accent border border-accent rounded-[4px] px-[5px] py-px font-semibold shrink-0">
+              <span className="text-micro text-accent border border-accent rounded-[4px] px-[5px] py-px font-semibold shrink-0">
                 nuevo
               </span>
             )}
             {isDuplicate && (
               <span
                 title="Hay otro movimiento con el mismo monto y una fecha muy cercana — revisa que no sea el mismo gasto anotado dos veces (uno a mano y otro del banco, por ejemplo)."
-                className="text-[10px] text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0"
+                className="text-micro text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0"
               >
                 posible duplicado
               </span>
             )}
           </div>
-          <div className="text-[11.5px] flex items-center gap-1.5 overflow-hidden text-muted">
+          <div className="text-small flex items-center gap-1.5 overflow-hidden text-muted">
             <span
               className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
               style={{ background: `${cat.color}22` }}
@@ -842,7 +842,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
             </span>
             <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cat.label}</span>
           </div>
-          <TxAmount amount={t.amount} className="text-[13px] text-right" />
+          <TxAmount amount={t.amount} className="text-body text-right" />
           <div className="flex">
             <button onClick={() => setEditing((v) => !v)} aria-label={editing ? "Cerrar edición" : "Editar movimiento"} title="Editar" className={`bg-transparent border-0 cursor-pointer p-2 ${editing ? "text-accent" : "text-faint"}`}>
               <Pencil size={13} />
@@ -878,7 +878,7 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
     <div className="bg-surface-alt px-4 py-3.5 border-t border-border">
       <div className="form-grid-2 grid grid-cols-2 gap-2.5 mb-2.5">
         <div>
-          <div className="text-[11px] text-faint mb-1">Categoría</div>
+          <div className="text-caption text-faint mb-1">Categoría</div>
           <CategorySelect
             categories={relevantCategories}
             value={category}
@@ -887,19 +887,19 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
           />
         </div>
         <div>
-          <div className="text-[11px] text-faint mb-1">Nombre para mostrar (opcional)</div>
-          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" className="w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-[12.5px]" />
+          <div className="text-caption text-faint mb-1">Nombre para mostrar (opcional)</div>
+          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" className="w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-body" />
         </div>
       </div>
 
       {t.amount < 0 && onToggleSubscription && (
         <div className="mb-2.5">
-          <label className="flex items-center gap-[7px] text-xs text-muted cursor-pointer">
+          <label className="flex items-center gap-[7px] text-small text-muted cursor-pointer">
             <input type="checkbox" checked={!!t.subscriptionId} onChange={(e) => onToggleSubscription(e.target.checked)} />
             ¿Es suscripción?
           </label>
           {t.subscriptionId && (
-            <div className="text-[10.5px] text-faint mt-[3px] ml-[23px]">
+            <div className="text-micro text-faint mt-[3px] ml-[23px]">
               Va a aparecer en la pestaña Suscripciones y a generarse solo los meses siguientes.
             </div>
           )}
@@ -908,14 +908,14 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
 
       {t.source === "bank" && (
         <div className="mb-2.5">
-          <label className={`flex items-center gap-[7px] text-xs text-muted cursor-pointer ${remember ? "mb-[7px]" : "mb-0"}`}>
+          <label className={`flex items-center gap-[7px] text-small text-muted cursor-pointer ${remember ? "mb-[7px]" : "mb-0"}`}>
             <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
             Recordar esto para futuros movimientos con una descripción parecida
           </label>
           {remember && (
             <div>
-              <div className="text-[10.5px] text-faint mb-[3px]">Se aplicará a movimientos cuya descripción contenga:</div>
-              <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-accent text-[11.5px]" />
+              <div className="text-micro text-faint mb-[3px]">Se aplicará a movimientos cuya descripción contenga:</div>
+              <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-accent text-small" />
             </div>
           )}
         </div>
@@ -986,7 +986,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
       panelClassName="max-w-[440px] max-h-[88dvh] flex flex-col overflow-hidden"
     >
       <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
-        <div className="display text-[14.5px] font-semibold">Nuevo movimiento</div>
+        <div className="display text-title font-semibold">Nuevo movimiento</div>
         <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1"><X size={16} /></button>
       </div>
 
@@ -996,7 +996,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
             key={v}
             onClick={() => setType(v)}
             aria-pressed={type === v}
-            className={`flex-[1_1_0] min-w-0 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 text-center transition-colors duration-150 ${
+            className={`flex-[1_1_0] min-w-0 py-2 rounded-full text-body font-semibold cursor-pointer border-0 text-center transition-colors duration-150 ${
               type === v ? "text-bg" : "bg-transparent text-muted"
             }`}
             style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
@@ -1008,7 +1008,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
 
       <div className="px-5 pt-4 pb-2 overflow-y-auto overscroll-contain flex-[1_1_auto]">
         <label className="block mb-3.5">
-          <span className="block text-[11px] text-faint mb-1">Monto (CLP)</span>
+          <span className="block text-caption text-faint mb-1">Monto (CLP)</span>
           <span className="flex items-baseline gap-1 border-b-2 pb-1" style={{ borderColor: accent }}>
             <span className="mono text-[22px] font-semibold text-faint">$</span>
             <input
@@ -1033,7 +1033,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
           style={{ marginBottom: 16 }}
         />
 
-        <div className="text-[11px] text-faint mb-2.5">Categoría</div>
+        <div className="text-caption text-faint mb-2.5">Categoría</div>
         <div className="grid grid-cols-4 gap-3">
           {relevantCategories.map((c) => {
             const CatIcon = resolveCategoryIcon(c);
@@ -1056,7 +1056,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
                   <CatIcon size={19} color={selected ? TOKENS.bg : c.color} />
                 </div>
                 <div
-                  className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${selected ? "text-ink" : "text-muted"}`}
+                  className={`text-micro text-center leading-[1.2] overflow-hidden text-ellipsis ${selected ? "text-ink" : "text-muted"}`}
                   style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
                 >
                   {c.label}
@@ -1079,7 +1079,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
               >
                 <Plus size={19} color={addingCategory ? TOKENS.bg : TOKENS.textFaint} />
               </div>
-              <div className="text-[10.5px] text-muted text-center leading-[1.2]">
+              <div className="text-micro text-muted text-center leading-[1.2]">
                 Nueva
               </div>
             </button>
@@ -1095,7 +1095,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
           />
         )}
 
-        <div className="text-[11px] text-faint mt-4 mb-1.5">Fecha</div>
+        <div className="text-caption text-faint mt-4 mb-1.5">Fecha</div>
         <div className="flex gap-2 items-center flex-wrap">
           {[[today, "Hoy"], [yesterday, "Ayer"]].map(([iso, text]) => (
             <button key={text} onClick={() => setDate(iso)} aria-pressed={date === iso} className={pillClass(date === iso)}>
@@ -1108,7 +1108,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
             max={today}
             onChange={(e) => setDate(e.target.value)}
             aria-label="Otra fecha"
-            className={`px-2.5 py-1.5 rounded-full border bg-surface text-[12.5px] ${
+            className={`px-2.5 py-1.5 rounded-full border bg-surface text-body ${
               date !== today && date !== yesterday ? "border-accent text-accent" : "border-border text-muted"
             }`}
           />
@@ -1119,7 +1119,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
         <button
           onClick={submit}
           disabled={!valid}
-          className="w-full py-[11px] rounded-lg border-0 bg-accent text-bg font-semibold text-[13.5px] disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
+          className="w-full py-[11px] rounded-lg border-0 bg-accent text-bg font-semibold text-body-lg disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
         >
           {valid
             ? `Guardar ${type === "expense" ? "gasto" : "ingreso"} de $${formatThousands(amountDigits)}`

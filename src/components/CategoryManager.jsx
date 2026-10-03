@@ -19,7 +19,7 @@ export function CategoryManager({ categories, onAdd, onRename, onDelete, onIconC
           <button
             key={v}
             onClick={() => { setType(v); setPickerFor(null); }}
-            className={`flex-1 py-2 rounded-full text-[13px] font-semibold cursor-pointer border-0 transition-colors duration-150 ${
+            className={`flex-1 py-2 rounded-full text-body font-semibold cursor-pointer border-0 transition-colors duration-150 ${
               type === v ? "text-bg" : "bg-transparent text-muted"
             }`}
             style={type === v ? { background: v === "expense" ? TOKENS.expense : TOKENS.income } : undefined}
@@ -72,7 +72,7 @@ function CategorySection({
                 <CatIcon size={19} color={open ? TOKENS.bg : c.color} />
               </div>
               <div
-                className={`text-[10.5px] text-center leading-[1.2] overflow-hidden text-ellipsis ${open ? "text-ink" : "text-muted"}`}
+                className={`text-micro text-center leading-[1.2] overflow-hidden text-ellipsis ${open ? "text-ink" : "text-muted"}`}
                 style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
               >
                 {c.label}
@@ -95,7 +95,7 @@ function CategorySection({
           >
             <Plus size={19} color={addingNew ? TOKENS.bg : TOKENS.textFaint} />
           </div>
-          <div className="text-[10.5px] text-muted text-center leading-[1.2]">
+          <div className="text-micro text-muted text-center leading-[1.2]">
             Nueva
           </div>
         </button>
@@ -143,7 +143,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onBlur={() => { if (label.trim() && label.trim() !== cat.label) onRename(cat.id, label.trim()); }}
-          className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
+          className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body"
         />
         <ConfirmDeleteButton
           onConfirm={() => { onDelete(cat.id); onClose(); }}
@@ -152,7 +152,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         />
       </div>
 
-      <div className="text-[10.5px] text-faint mb-2">Tipo</div>
+      <div className="text-micro text-faint mb-2">Tipo</div>
       <div className="flex gap-2 mb-3">
         {[["expense", "Gasto", TOKENS.expense], ["income", "Ingreso", TOKENS.income]].map(([v, text, accent]) => {
           const selected = type === v;
@@ -161,7 +161,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
               key={v}
               onClick={() => onTypeChange(cat.id, v)}
               aria-pressed={selected}
-              className="flex-1 py-[7px] rounded-[7px] text-xs font-semibold cursor-pointer border"
+              className="flex-1 py-[7px] rounded-[7px] text-small font-semibold cursor-pointer border"
               style={{
                 borderColor: selected ? accent : "var(--c-border)",
                 background: selected ? `${accent}22` : "transparent",
@@ -195,7 +195,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         })}
       </div>
 
-      <div className="text-[10.5px] text-faint mb-2">Ícono</div>
+      <div className="text-micro text-faint mb-2">Ícono</div>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {ICON_NAMES.map((name) => {
           const OptionIcon = ICONS[name];
@@ -230,7 +230,7 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
             style={{ marginBottom: 12 }}
           />
           <div className="flex items-center justify-between gap-2.5 mb-3">
-            <div className="text-xs text-ink">Cuenta como gasto en resúmenes y gráficos</div>
+            <div className="text-small text-ink">Cuenta como gasto en resúmenes y gráficos</div>
             <ToggleSwitch
               checked={!cat.excludeFromExpense}
               onChange={() => onToggleExpense(cat.id)}
@@ -243,8 +243,8 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
       <div className="w-full h-px bg-border mt-1 mb-3" />
       <div className="flex items-center justify-between gap-2.5">
         <div>
-          <div className="text-xs text-ink">Suma al "Total ahorrado"</div>
-          <div className="text-[10.5px] text-faint mt-0.5 leading-[1.4]">
+          <div className="text-small text-ink">Suma al "Total ahorrado"</div>
+          <div className="text-micro text-faint mt-0.5 leading-[1.4]">
             Sus movimientos se acumulan en una tarjeta aparte en Resumen, sin contar como gasto.
           </div>
         </div>

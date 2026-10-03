@@ -40,7 +40,7 @@ export function CreditCard({
             <button
               onClick={() => setShowImportModal(true)}
               disabled={isImporting}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-[12.5px] whitespace-nowrap disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-body whitespace-nowrap disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
             >
               {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar cartola CMR
             </button>
@@ -48,7 +48,7 @@ export function CreditCard({
               onClick={() => setShowStatementModal(true)}
               disabled={isImportingStatement}
               title="Trae el cupo, la fecha de pago y el total a pagar — no hace falta para ver los movimientos"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-[12.5px] whitespace-nowrap disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-body whitespace-nowrap disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
             >
               {isImportingStatement ? <Loader2 size={13} className="spin" /> : <FileText size={13} />} Estado de cuenta (PDF)
             </button>
@@ -59,7 +59,7 @@ export function CreditCard({
       {months.length > 0 && (
         <div className="bg-surface border border-border rounded-xl px-4 py-3.5 mb-4 flex gap-6 flex-wrap">
           <div>
-            <div className="text-[11px] text-muted mb-1">Total facturado este ciclo</div>
+            <div className="text-caption text-muted mb-1">Total facturado este ciclo</div>
             {statement?.totalToPay != null ? (
               // el Estado de Cuenta es la fuente autoritativa: una compra en
               // cuotas recién registrada aparece en el Excel con su VALOR
@@ -80,7 +80,7 @@ export function CreditCard({
           </div>
           {stats.pendingCount > 0 && (
             <div>
-              <div className="text-[11px] text-muted mb-1">
+              <div className="text-caption text-muted mb-1">
                 {isLatestCycle ? "Compras con cuotas pendientes" : "Compras con cuotas pendientes (en ese momento)"}
               </div>
               <div className="mono text-xl font-semibold text-pending">{stats.pendingCount}</div>
@@ -91,21 +91,21 @@ export function CreditCard({
               antes (el detalle de movimientos ya funciona solo con el Excel). */}
           {statement?.cupoAvailable != null && (
             <div>
-              <div className="text-[11px] text-muted mb-1">Cupo disponible</div>
+              <div className="text-caption text-muted mb-1">Cupo disponible</div>
               <div className="mono text-xl font-semibold text-ink">
                 {formatCLP(statement.cupoAvailable)}
                 {statement.cupoTotal != null && (
-                  <span className="text-xs text-faint font-normal"> / {formatCLP(statement.cupoTotal)}</span>
+                  <span className="text-small text-faint font-normal"> / {formatCLP(statement.cupoTotal)}</span>
                 )}
               </div>
             </div>
           )}
           {statement?.payBy && (
             <div>
-              <div className="text-[11px] text-muted mb-1">Pagar hasta</div>
+              <div className="text-caption text-muted mb-1">Pagar hasta</div>
               <div className="mono text-xl font-semibold text-ink">{formatDateDisplay(statement.payBy)}</div>
               {statement.minToPay != null && (
-                <div className="text-[10.5px] text-faint mt-[3px]">Mínimo: {formatCLP(statement.minToPay)}</div>
+                <div className="text-micro text-faint mt-[3px]">Mínimo: {formatCLP(statement.minToPay)}</div>
               )}
             </div>
           )}
@@ -143,7 +143,7 @@ export function CreditCard({
             action={
               <button
                 onClick={() => setShowImportModal(true)}
-                className="flex items-center gap-1.5 px-4 py-[9px] rounded-lg border-0 bg-accent text-bg font-semibold text-[13px] cursor-pointer mx-auto"
+                className="flex items-center gap-1.5 px-4 py-[9px] rounded-lg border-0 bg-accent text-bg font-semibold text-body cursor-pointer mx-auto"
               >
                 <Upload size={14} /> Importar cartola CMR
               </button>
@@ -154,7 +154,7 @@ export function CreditCard({
         ) : (
           groupByDate(tx).map((group) => (
             <div key={group.date}>
-              <div className="px-4 py-[9px] text-[11px] font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
+              <div className="px-4 py-[9px] text-caption font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
                 {formatDayHeading(group.date)}
               </div>
               {group.items.map((t, i) => (
@@ -186,12 +186,12 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
   return (
     <div className={isLast ? "" : "border-b border-border"}>
       <div className="grid grid-cols-[1fr_170px_130px_auto] items-center gap-2.5 px-4 py-[11px] bg-surface">
-        <div className="flex items-center gap-1.5 text-[13px] min-w-0">
+        <div className="flex items-center gap-1.5 text-body min-w-0">
           <span className="flex-[1_1_0%] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
             {t.alias ? (
               <>
                 <span className="font-medium">{t.alias}</span>
-                <span className="text-faint text-[11.5px]"> · {t.description}</span>
+                <span className="text-faint text-small"> · {t.description}</span>
               </>
             ) : t.description}
           </span>
@@ -202,13 +202,13 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
                   ? `Quedan ${t.installmentsPending} cuota${plural} después de esta`
                   : `Quedaban ${t.installmentsPending} cuota${plural} después de esta, al momento de este ciclo — puede que ya se hayan seguido pagando en ciclos más nuevos`
               }
-              className="inline-flex items-center gap-[3px] text-[10px] text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0 whitespace-nowrap"
+              className="inline-flex items-center gap-[3px] text-micro text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0 whitespace-nowrap"
             >
               <Layers size={9} /> {isLatestCycle ? "quedan" : "quedaban"} {t.installmentsPending}
             </span>
           )}
         </div>
-        <div className="text-[11.5px] flex items-center gap-1.5 overflow-hidden" style={{ color: cat.color }}>
+        <div className="text-small flex items-center gap-1.5 overflow-hidden" style={{ color: cat.color }}>
           <span
             className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
             style={{ background: `${cat.color}22` }}
@@ -217,7 +217,7 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
           </span>
           <span className="overflow-hidden text-ellipsis whitespace-nowrap">{cat.label}</span>
         </div>
-        <div className={`mono text-[13px] text-right font-medium ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
+        <div className={`mono text-body text-right font-medium ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
           {formatCLP(t.amount)}
         </div>
         <div className="flex">
@@ -251,24 +251,24 @@ function CreditTxEditPanel({ t, categories, onSave, onCancel }) {
     <div className="bg-surface-alt px-4 py-3.5 border-t border-border">
       <div className="form-grid-2 grid grid-cols-2 gap-2.5 mb-2.5">
         <div>
-          <div className="text-[11px] text-faint mb-1">Categoría</div>
+          <div className="text-caption text-faint mb-1">Categoría</div>
           <CategorySelect categories={categories} value={category} onChange={setCategory} placeholder="Elige la categoría correcta…" />
         </div>
         <div>
-          <div className="text-[11px] text-faint mb-1">Nombre para mostrar (opcional)</div>
-          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" className="w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-[12.5px]" />
+          <div className="text-caption text-faint mb-1">Nombre para mostrar (opcional)</div>
+          <input value={alias} onChange={(e) => setAlias(e.target.value)} placeholder="Ej: Claude" className="w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-body" />
         </div>
       </div>
 
       <div className="mb-2.5">
-        <label className={`flex items-center gap-[7px] text-xs text-muted cursor-pointer ${remember ? "mb-[7px]" : "mb-0"}`}>
+        <label className={`flex items-center gap-[7px] text-small text-muted cursor-pointer ${remember ? "mb-[7px]" : "mb-0"}`}>
           <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           Recordar esto para futuros movimientos con una descripción parecida
         </label>
         {remember && (
           <div>
-            <div className="text-[10.5px] text-faint mb-[3px]">Se aplicará a movimientos (de débito y de esta tarjeta) cuya descripción contenga:</div>
-            <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-accent text-[11.5px]" />
+            <div className="text-micro text-faint mb-[3px]">Se aplicará a movimientos (de débito y de esta tarjeta) cuya descripción contenga:</div>
+            <input value={matchText} onChange={(e) => setMatchText(e.target.value)} className="mono w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-accent text-small" />
           </div>
         )}
       </div>
@@ -311,8 +311,8 @@ function CreditImportModal({ title, accept, helpTitle, helpText, onClose, onImpo
             <Upload size={16} color={TOKENS.accent} />
           </div>
           <div>
-            <div className="text-[13px] font-medium">{helpTitle}</div>
-            <div className="text-[11.5px] text-faint">{helpText}</div>
+            <div className="text-body font-medium">{helpTitle}</div>
+            <div className="text-small text-faint">{helpText}</div>
           </div>
         </label>
     </Modal>

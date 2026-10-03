@@ -17,7 +17,7 @@ function BackToMovimientosButton({ onBack }) {
   return (
     <button
       onClick={onBack}
-      className="flex items-center gap-1 mb-3 px-0.5 py-1 bg-transparent border-0 text-muted text-[12.5px] cursor-pointer"
+      className="flex items-center gap-1 mb-3 px-0.5 py-1 bg-transparent border-0 text-muted text-body cursor-pointer"
     >
       <ChevronLeft size={14} /> Movimientos
     </button>
@@ -72,21 +72,21 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
       <Panel
         title={`Conciliar ${fmtMonth(currentMonth)}`}
         right={
-          <button onClick={() => { const n = reconcileMonth(currentMonth); setResult(n); }} className="px-3.5 py-[7px] rounded-lg border-0 bg-accent text-bg text-[12.5px] font-semibold cursor-pointer flex items-center gap-1.5">
+          <button onClick={() => { const n = reconcileMonth(currentMonth); setResult(n); }} className="px-3.5 py-[7px] rounded-lg border-0 bg-accent text-bg text-body font-semibold cursor-pointer flex items-center gap-1.5">
             <ScanLine size={13} /> Conciliar mes
           </button>
         }
       >
-        <div className="text-[12.5px] text-muted mb-1">
+        <div className="text-body text-muted mb-1">
           El reporte del banco es la fuente oficial: compara tus movimientos manuales contra él (mismo monto, hasta 5 días después por la fecha contable del banco) y confirma los que calzan.
         </div>
         {result !== null && (
-          <div className="text-xs text-income mt-1.5">
+          <div className="text-small text-income mt-1.5">
             {result > 0 ? `${result} movimiento${result === 1 ? "" : "s"} confirmado${result === 1 ? "" : "s"} en esta pasada.` : "No se encontraron nuevas coincidencias."}
           </div>
         )}
         {!bankExists && (
-          <div className="flex items-center gap-1.5 text-xs text-pending mt-2">
+          <div className="flex items-center gap-1.5 text-small text-pending mt-2">
             <Info size={13} /> Todavía no has importado el reporte del banco de este mes — no se puede confirmar nada hasta que lo subas.
           </div>
         )}
@@ -107,7 +107,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
           <Panel title={`Sin reporte del banco (${pendingNoReport.length})`}>
             {pendingNoReport.length === 0 ? <EmptyNote text="—" /> : (
               <>
-                <div className="text-[11px] text-faint mb-2">Aún no importas el .xls de este mes, así que no se pueden comparar todavía.</div>
+                <div className="text-caption text-faint mb-2">Aún no importas el .xls de este mes, así que no se pueden comparar todavía.</div>
                 {pendingNoReport.map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
               </>
             )}
@@ -117,7 +117,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 
       {bankExists && pendingMismatch.length > 0 && (
         <Panel title={`⚠ Posible descuadre — no coinciden con el reporte (${pendingMismatch.length})`} right={null}>
-          <div className="text-[11.5px] text-faint mb-2.5">
+          <div className="text-small text-faint mb-2.5">
             Ya subiste el reporte de este mes, pero estos movimientos manuales no encontraron un cargo o abono equivalente. Revisa el monto, la fecha, o si el banco aún no procesa ese movimiento.
           </div>
           {pendingMismatch.map((t) => (
@@ -133,20 +133,20 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
             <button
               onClick={() => setShowBankOnly((v) => !v)}
               aria-expanded={showBankOnly}
-              className="flex items-center gap-[5px] bg-transparent border-0 text-muted text-xs cursor-pointer p-1"
+              className="flex items-center gap-[5px] bg-transparent border-0 text-muted text-small cursor-pointer p-1"
             >
               {showBankOnly ? "Ocultar" : "Mostrar"}
               {showBankOnly ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           }
         >
-          <div className={`text-[11.5px] text-faint ${showBankOnly ? "mb-2.5" : "mb-0"}`}>
+          <div className={`text-small text-faint ${showBankOnly ? "mb-2.5" : "mb-0"}`}>
             Es normal: son movimientos que solo conoces por la cartola (compras con tarjeta, cargos automáticos, etc.) — no requieren nada de ti.
           </div>
           {showBankOnly && (
             <>
               {bankOnly.slice(0, 8).map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
-              {bankOnly.length > 8 && <div className="text-[11.5px] text-faint mt-1.5">+ {bankOnly.length - 8} más</div>}
+              {bankOnly.length > 8 && <div className="text-small text-faint mt-1.5">+ {bankOnly.length - 8} más</div>}
             </>
           )}
         </Panel>
@@ -158,12 +158,12 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
 function ReconcileRow({ t, icon: Icon, color }) {
   return (
     <div className="flex items-center justify-between py-[7px] border-b border-border">
-      <div className="flex items-center gap-2 text-[12.5px] overflow-hidden flex-1 min-w-0">
+      <div className="flex items-center gap-2 text-body overflow-hidden flex-1 min-w-0">
         {Icon && <Icon size={13} color={color} className="shrink-0" />}
-        <span className="mono text-faint text-[11px] shrink-0">{formatDateDisplay(t.date)}</span>
+        <span className="mono text-faint text-caption shrink-0">{formatDateDisplay(t.date)}</span>
         <span className="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">{t.alias || t.description}</span>
       </div>
-      <span className={`mono text-xs shrink-0 ml-2 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
+      <span className={`mono text-small shrink-0 ml-2 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
         {formatCLP(t.amount)}
       </span>
     </div>
@@ -241,12 +241,12 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
             onDragEnd: handleDragEnd,
           } : {})}
         >
-          <div className="flex items-center gap-2 text-[12.5px] overflow-hidden flex-1 min-w-0">
+          <div className="flex items-center gap-2 text-body overflow-hidden flex-1 min-w-0">
             <AlertTriangle size={13} color={TOKENS.pending} className="shrink-0" />
-            <span className="mono text-faint text-[11px]">{formatDateDisplay(t.date)}</span>
+            <span className="mono text-faint text-caption">{formatDateDisplay(t.date)}</span>
             <span className="overflow-hidden text-ellipsis whitespace-nowrap">{t.alias || t.description}</span>
           </div>
-          <span className={`mono text-xs shrink-0 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
+          <span className={`mono text-small shrink-0 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
             {formatCLP(t.amount)}
           </span>
           <div className="tx-actions flex gap-0.5 shrink-0">
@@ -281,7 +281,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
             <FieldInput label="Monto (CLP)" type="number" value={amount} onChange={setAmount} />
           </div>
           <div className="flex gap-2">
-            <button onClick={saveEdit} className="flex-1 px-3 py-2 rounded-[7px] border-0 bg-accent text-bg font-semibold text-xs cursor-pointer">
+            <button onClick={saveEdit} className="flex-1 px-3 py-2 rounded-[7px] border-0 bg-accent text-bg font-semibold text-small cursor-pointer">
               Guardar
             </button>
             <button onClick={close} aria-label="Cancelar" className="p-2 rounded-[7px] border border-border bg-transparent text-muted cursor-pointer">
@@ -296,7 +296,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           <select
             value={bankId}
             onChange={(e) => setBankId(e.target.value)}
-            className="flex-[1_1_220px] px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-[12.5px]"
+            className="flex-[1_1_220px] px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-body"
           >
             <option value="">Elige el movimiento del banco…</option>
             {bankCandidates.map((b) => (
@@ -308,7 +308,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           <button
             onClick={confirmMatch}
             disabled={!bankId}
-            className="px-3 py-2 rounded-[7px] border-0 font-semibold text-xs bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
+            className="px-3 py-2 rounded-[7px] border-0 font-semibold text-small bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
           >
             Vincular
           </button>

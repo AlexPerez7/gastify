@@ -50,6 +50,40 @@
   --font-sans: "Inter", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  /* escala tipográfica: 6 tamaños con nombre (text-micro … text-title). El
+     valor real vive en --fs-* (abajo) y crece en mobile, así un mismo
+     componente se lee bien en el teléfono sin clases sm:/max-sm: sueltas. */
+  --text-micro: var(--fs-micro);
+  --text-caption: var(--fs-caption);
+  --text-small: var(--fs-small);
+  --text-body: var(--fs-body);
+  --text-body-lg: var(--fs-body-lg);
+  --text-title: var(--fs-title);
+}
+
+/* micro: etiquetas tipo "nuevo", contadores · caption: etiquetas de campo,
+   metadatos · small: ayudas, botones compactos · body: texto principal,
+   listas, botones · body-lg: nombres destacados · title: títulos de panel y
+   modal. Los números grandes (saldo, montos destacados) usan tamaños propios. */
+:root {
+  --fs-micro: 10.5px;
+  --fs-caption: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-body-lg: 14px;
+  --fs-title: 15px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --fs-micro: 11px;
+    --fs-caption: 12px;
+    --fs-small: 13px;
+    --fs-body: 14px;
+    --fs-body-lg: 15px;
+    --fs-title: 16px;
+  }
 }
 
 /* ---- theme tokens — paleta "fintech esmeralda", oscuro por defecto ---- */
@@ -200,6 +234,12 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 1px;
+}
+
+/* el monto grande del formulario manual ya marca el foco con su subrayado
+   de color — el recuadro encima se ve como un error */
+input.amount-input:focus-visible {
+  outline: none;
 }
 
 /* en touch, :hover queda "pegado" después del tap — solo con mouse */
@@ -407,7 +447,7 @@ select:focus-visible {
   border: none;
   background: transparent;
   color: var(--c-text);
-  font-size: 13px;
+  font-size: var(--fs-body);
   text-align: left;
   cursor: pointer;
 }
@@ -458,7 +498,7 @@ select:focus-visible {
   border-radius: 999px;
   border: none;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: var(--fs-body);
   font-weight: 600;
   text-align: center;
   transition: background 150ms ease, color 150ms ease;

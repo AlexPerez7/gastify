@@ -106,7 +106,7 @@ export function Modal({
       >
         {title && (
           <div className="flex justify-between items-center mb-3.5">
-            <div className="display text-[14.5px] font-semibold">{title}</div>
+            <div className="display text-title font-semibold">{title}</div>
             <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1">
               <X size={16} />
             </button>
@@ -122,7 +122,7 @@ export function Panel({ title, right, children }) {
   return (
     <div className="bg-surface border border-border rounded-xl p-[18px]">
       <div className="flex justify-between items-center mb-3.5">
-        <div className="display text-[13.5px] font-semibold">{title}</div>
+        <div className="display text-body-lg font-semibold">{title}</div>
         {right}
       </div>
       {children}
@@ -131,7 +131,7 @@ export function Panel({ title, right, children }) {
 }
 
 export function EmptyNote({ text }) {
-  return <div className="text-faint text-[12.5px] py-[30px] text-center">{text}</div>;
+  return <div className="text-faint text-body py-[30px] text-center">{text}</div>;
 }
 
 export function EmptyState({ icon: Icon, title, text, action }) {
@@ -140,8 +140,8 @@ export function EmptyState({ icon: Icon, title, text, action }) {
       <div className="w-11 h-11 rounded-xl bg-surface-alt flex items-center justify-center mx-auto mb-3.5">
         <Icon size={20} color={TOKENS.textFaint} />
       </div>
-      <div className="display text-sm font-semibold text-ink mb-[5px]">{title}</div>
-      <div className="text-[12.5px] text-faint max-w-[320px] mx-auto leading-[1.5]">{text}</div>
+      <div className="display text-body-lg font-semibold text-ink mb-[5px]">{title}</div>
+      <div className="text-body text-faint max-w-[320px] mx-auto leading-[1.5]">{text}</div>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -153,11 +153,11 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
   return (
     <div className="bg-surface border border-border rounded-xl px-4 py-[13px]">
       <div className="flex justify-between items-start">
-        <div className="text-[11px] text-muted mb-1.5 leading-[1.4]">{label}</div>
+        <div className="text-caption text-muted mb-1.5 leading-[1.4]">{label}</div>
         {action || (Icon && <Icon size={13} color={accent} />)}
       </div>
       <div className="mono text-[17px] font-semibold" style={{ color: accent }}>{value}</div>
-      {sub && <div className="text-[10.5px] text-faint mt-[3px]">{sub}</div>}
+      {sub && <div className="text-micro text-faint mt-[3px]">{sub}</div>}
     </div>
   );
 }
@@ -167,11 +167,11 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
 export function FieldInput({ label, style, ...props }) {
   return (
     <label className="block" style={style}>
-      <span className="block text-[11px] text-faint mb-1">{label}</span>
+      <span className="block text-caption text-faint mb-1">{label}</span>
       <input
         {...props}
         onChange={(e) => props.onChange(e.target.value)}
-        className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-[13px]"
+        className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body"
       />
     </label>
   );
@@ -205,12 +205,12 @@ export function ToggleSwitch({ checked, onChange, disabled = false, title, ariaL
 
 // botones compactos de formulario, mismo look en toda la app
 export const BTN_PRIMARY =
-  "px-3.5 py-[7px] rounded-[7px] border-0 text-xs font-semibold bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer";
+  "px-3.5 py-[7px] rounded-[7px] border-0 text-small font-semibold bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer";
 export const BTN_GHOST =
-  "px-3.5 py-[7px] rounded-[7px] border border-border bg-transparent text-muted text-xs cursor-pointer";
+  "px-3.5 py-[7px] rounded-[7px] border border-border bg-transparent text-muted text-small cursor-pointer";
 
 export function pillClass(active) {
-  return `px-[13px] py-1.5 rounded-full text-[12.5px] font-medium cursor-pointer capitalize border ${
+  return `px-[13px] py-1.5 rounded-full text-body font-medium cursor-pointer capitalize border ${
     active ? "border-accent bg-tint-accent text-accent" : "border-border bg-transparent text-muted"
   }`;
 }
@@ -245,7 +245,7 @@ export function CategoryQuickAdd({ type, onAdd, onAddCategory, onCancel }) {
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
           placeholder={`Nueva categoría de ${type === "expense" ? "gasto" : "ingreso"}`}
           autoFocus
-          className="flex-1 min-w-0 px-[9px] py-1.5 rounded-md border border-border bg-surface text-ink text-[12.5px]"
+          className="flex-1 min-w-0 px-[9px] py-1.5 rounded-md border border-border bg-surface text-ink text-body"
         />
       </div>
       <div className="flex flex-wrap gap-1.5 mb-2.5">
@@ -369,7 +369,7 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
             <span className="w-5 h-5 rounded-md bg-surface-alt flex items-center justify-center shrink-0">
               <Tags size={12} color={TOKENS.textFaint} />
             </span>
-            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] text-ink">
+            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-body text-ink">
               {allOption.label}
             </span>
           </>
@@ -381,12 +381,12 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
             >
               <SelectedIcon size={12} color={selected.color} />
             </span>
-            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] text-ink">
+            <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-body text-ink">
               {labelWithTypeIfAmbiguous(selected, categories)}
             </span>
           </>
         ) : (
-          <span className="flex-1 text-[12.5px] text-faint">{placeholder}</span>
+          <span className="flex-1 text-body text-faint">{placeholder}</span>
         )}
         <ChevronDown size={13} color={TOKENS.textFaint} className="shrink-0" />
       </button>
@@ -415,7 +415,7 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
               <span className="w-[22px] h-[22px] rounded-md bg-bg flex items-center justify-center shrink-0">
                 <Tags size={12.5} color={TOKENS.textFaint} />
               </span>
-              <span className={`text-[12.5px] ${isAllSelected ? "text-ink font-semibold" : "text-muted"}`}>
+              <span className={`text-body ${isAllSelected ? "text-ink font-semibold" : "text-muted"}`}>
                 {allOption.label}
               </span>
             </button>
@@ -440,7 +440,7 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
                 >
                   <Icon size={12.5} color={c.color} />
                 </span>
-                <span className={`text-[12.5px] ${isSelected ? "text-ink font-semibold" : "text-muted"}`}>
+                <span className={`text-body ${isSelected ? "text-ink font-semibold" : "text-muted"}`}>
                   {labelWithTypeIfAmbiguous(c, categories)}
                 </span>
               </button>

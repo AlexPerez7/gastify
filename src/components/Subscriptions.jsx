@@ -26,7 +26,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
           !adding && (
             <button
               onClick={() => { setEditingId(null); setAdding(true); }}
-              className="flex items-center gap-[5px] px-[11px] py-1.5 rounded-[7px] border-0 bg-accent text-bg text-xs font-semibold cursor-pointer"
+              className="flex items-center gap-[5px] px-[11px] py-1.5 rounded-[7px] border-0 bg-accent text-bg text-small font-semibold cursor-pointer"
             >
               <Plus size={13} /> Agregar
             </button>
@@ -49,7 +49,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
             action={
               <button
                 onClick={() => setAdding(true)}
-                className="px-4 py-2 rounded-lg border-0 bg-accent text-bg text-[12.5px] font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-lg border-0 bg-accent text-bg text-body font-semibold cursor-pointer"
               >
                 Agregar suscripción
               </button>
@@ -77,12 +77,12 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
                   <CatIcon size={15} color={cat ? cat.color : TOKENS.textFaint} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] text-ink overflow-hidden text-ellipsis whitespace-nowrap">{sub.name}</div>
-                  <div className="text-[11px] text-faint mt-0.5">
+                  <div className="text-body text-ink overflow-hidden text-ellipsis whitespace-nowrap">{sub.name}</div>
+                  <div className="text-caption text-faint mt-0.5">
                     Cobra el {sub.dayOfMonth} de cada mes{!sub.active ? " · pausada" : ""}
                   </div>
                 </div>
-                <div className="mono text-[13px] font-semibold text-ink shrink-0">{formatCLP(sub.amount)}</div>
+                <div className="mono text-body font-semibold text-ink shrink-0">{formatCLP(sub.amount)}</div>
               </button>
 
               {open && (
@@ -94,7 +94,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
                     onSubmit={(values) => { onUpdate(sub.id, values); setEditingId(null); }}
                     extra={
                       <div className="flex items-center justify-between gap-2.5 mb-3">
-                        <div className="text-xs text-ink">Activa</div>
+                        <div className="text-small text-ink">Activa</div>
                         <ToggleSwitch checked={sub.active} onChange={(v) => onUpdate(sub.id, { active: v })} ariaLabel={`${sub.name} activa`} />
                       </div>
                     }
@@ -147,7 +147,7 @@ function SubscriptionForm({ categories, initial, onCancel, onSubmit, extra, dele
         <FieldInput label="Día del mes" type="number" min="1" max="31" value={dayOfMonth} onChange={setDayOfMonth} style={{ width: 100 }} />
       </div>
       <div className="mb-3">
-        <div className="text-[11px] text-faint mb-1">Categoría</div>
+        <div className="text-caption text-faint mb-1">Categoría</div>
         <CategorySelect categories={categories.filter((c) => categoryMatchesType(c, "expense"))} value={category} onChange={setCategory} />
       </div>
       {extra}

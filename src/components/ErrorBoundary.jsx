@@ -24,12 +24,12 @@ export class ErrorBoundary extends Component {
     if (this.state.error) {
       if (this.props.fallback) return this.props.fallback(this.handleReset);
       return (
-        <div className="flex flex-col items-center gap-2.5 px-5 py-10 text-center text-faint text-[12.5px]">
+        <div className="flex flex-col items-center gap-2.5 px-5 py-10 text-center text-faint text-body">
           <AlertTriangle size={20} color={TOKENS.expense} />
           <div>Esta sección tuvo un problema y no se pudo mostrar.</div>
           <button
             onClick={this.handleReset}
-            className="px-3 py-1.5 rounded-lg border border-border bg-transparent text-muted text-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-lg border border-border bg-transparent text-muted text-small cursor-pointer"
           >
             Reintentar
           </button>

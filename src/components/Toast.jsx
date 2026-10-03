@@ -26,11 +26,11 @@ export function ToastStack({ toasts, onDismiss, onPause, onResume }) {
           >
             <div className="flex items-start gap-2.5">
               <Icon size={16} color={color} className={`shrink-0 mt-px${spin ? " spin" : ""}`} />
-              <div className="text-[12.5px] text-ink flex-1 leading-[1.4]">{t.text}</div>
+              <div className="text-body text-ink flex-1 leading-[1.4]">{t.text}</div>
               {t.action && (
                 <button
                   onClick={() => { onDismiss(t.id); t.action.onClick(); }}
-                  className="tap-expand shrink-0 -my-1 px-2 py-1 rounded-md border-0 bg-transparent text-accent text-[12.5px] font-semibold cursor-pointer"
+                  className="tap-expand shrink-0 -my-1 px-2 py-1 rounded-md border-0 bg-transparent text-accent text-body font-semibold cursor-pointer"
                 >
                   {t.action.label}
                 </button>

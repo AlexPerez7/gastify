@@ -8,7 +8,7 @@ export function Insights({ items }) {
       {items.map((text, i) => (
         <div
           key={i}
-          className="flex items-center gap-2.5 bg-surface border border-border rounded-[10px] px-3.5 py-2.5 text-[12.5px] text-muted leading-[1.4]"
+          className="flex items-center gap-2.5 bg-surface border border-border rounded-[10px] px-3.5 py-2.5 text-body text-muted leading-[1.4]"
         >
           <Lightbulb size={14} color={TOKENS.accent} className="shrink-0" />
           <span>{text}</span>
