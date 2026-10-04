@@ -1,6 +1,6 @@
 # Gastify — CLAUDE.md principal
 
-PWA de gastos personales (React 18 + Vite 5 + Supabase). Importa cartolas de
+PWA de gastos personales (React 18 + Vite 8 + Supabase). Importa cartolas de
 Banco Falabella (débito `.xls`/PDF) y de la tarjeta CMR (`.xlsx` + PDF de estado
 de cuenta), categoriza, concilia manual↔banco y muestra un dashboard. **No hay
 backend propio**: toda la lógica corre en el cliente y habla directo con
@@ -42,10 +42,14 @@ workflow termina bien: `gh run list --limit 1` y `gh run watch <id>
 --exit-status`; si falla, `gh run view <id> --log-failed`. Estuvo un mes
 fallando sin que nadie lo notara (lock desincronizado).
 
-**Dependencias.** El runner usa Node 20 / **npm 10**; localmente hay npm 11,
-que arma un lock distinto (omite el `esbuild` que pide el `vite` 8 anidado de
-vitest 4) y rompe `npm ci` en CI. Si tocas `package.json`, regenera el lock con
-`npx npm@10 install` y verifica con `rm -rf node_modules && npx npm@10 ci`.
+**Dependencias.** El runner usa Node 22 / **npm 10**; localmente hay npm 11,
+que puede armar un lock distinto y romper `npm ci` en CI (pasó con el
+`esbuild` del vite 8 anidado de vitest, cuando la app seguía en vite 5). Si
+tocas `package.json`, regenera el lock con `npx npm@10 install` y verifica con
+`rm -rf node_modules && npx npm@10 ci`. Debe haber **un solo vite** en
+`npm ls vite` (el de la app, que vitest reutiliza). `@vitejs/plugin-react` se
+queda en 5.x: la 6 arrastra un peer opcional (`@rolldown/plugin-babel` →
+`@babel/core` 8) que choca con el babel 7 de workbox y npm 10 no lo resuelve.
 
 Quirk conocido: `vitest run` justo después de `npm run build` a veces reporta
 un falso "no tests"/FAIL la primera vez — reintentar una vez.

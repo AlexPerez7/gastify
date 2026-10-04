@@ -87,7 +87,7 @@ lo suyo y puede entrar desde cualquier dispositivo.
 
 ## Stack
 
-React 18 + Vite 5 · Tailwind CSS 4 · Supabase (Postgres, Auth, RLS) ·
+React 18 + Vite 8 · Tailwind CSS 4 · Supabase (Postgres, Auth, RLS) ·
 Recharts · Framer Motion · lucide-react · xlsx (SheetJS, build oficial desde
 cdn.sheetjs.com — la versión publicada en npm quedó sin mantención y con
 advisories) · pdfjs-dist · html-to-image · vite-plugin-pwa · Vitest ·

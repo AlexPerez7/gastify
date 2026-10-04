@@ -61,10 +61,9 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 
 ## 5. Deuda técnica
 
-- [ ] **vite 5 + vitest 4 (que trae vite 8)**: dos vites en el árbol, origen del
-      lock frágil que rompió el deploy. Subir `vite` a 7 (y revisar
-      `@vitejs/plugin-react`, `vite-plugin-pwa`, `@tailwindcss/vite`) para que
-      vitest use el mismo.
+- [ ] `npm audit`: 4 avisos, todos en herramientas de desarrollo (vitest/
+      `@vitest/mocker`, `brace-expansion` de eslint, `fast-uri`), nada llega al
+      bundle. Subir vitest a 4.1.11+/5 y correr `npm audit fix` con npm 10.
 
 ## 6. Opcional en Supabase
 
@@ -95,6 +94,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 | `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) y Node 22 en el runner |
 | `45ace1d` | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` (0007 ya corrida) |
 | `499ebec` | Clases compartidas a `components/classes.js` (lint sin warnings) |
-| — | Focus trap en `Modal` (`useFocusTrap`) + popovers en portal por encima del modal (el selector de categoría de Filtros quedaba tapado) |
+| `e302c9b` | Focus trap en `Modal` (`useFocusTrap`) + popovers en portal por encima del modal (el selector de categoría de Filtros quedaba tapado) |
+| — | vite 5 → 8 (un solo vite en el árbol, sin esbuild) + plugin-react 5.2; bundle inicial 478 → 433 KB |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
