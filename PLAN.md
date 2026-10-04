@@ -4,7 +4,11 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 (n.º) son los del análisis de UI/UX del 2026-10-03. Al terminar algo, se marca
 `[x]` y se mueve a "Hecho" con su commit.
 
-Última actualización: 2026-10-04.
+Última actualización: 2026-10-04 · último commit: `75908d4`.
+
+**Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 1.
+La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
+cartola PDF real a mano.
 
 ---
 
@@ -22,8 +26,12 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 - [ ] Borrar → **Deshacer** → recargar: el movimiento sigue en su lugar del día
       y el saldo actual no cambió (confirma que `created_at` se conserva).
 - [ ] Mapa de actividad: tocar un día muestra su monto.
+- [ ] Movimientos → Filtros: el selector de categoría se abre **encima** de la
+      hoja y se puede elegir (antes quedaba tapado; arreglado en `e302c9b`).
+- [ ] Ahorro base: con la 0007 ya corrida, declarar/editar "Total ahorrado"
+      guarda sin error.
 
-## 2. Conciliación y lista larga (n.º 18–19)
+## 1. Conciliación y lista larga (n.º 18–19)
 
 - [ ] **n.º 18 · Conciliación más visible.** En mobile solo se llega por un ícono
       chico en Movimientos. Agregar un aviso en Movimientos
@@ -38,7 +46,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       (y en mobile cada fila monta un `motion.div`). Paginar por mes con
       "Cargar más", o virtualizar. Medir antes con un fixture de ~2.000 filas.
 
-## 3. Revisión de animaciones
+## 2. Revisión de animaciones
 
 - [ ] Correr la skill `improve-animations` (solo lectura → plan priorizado).
       Ya identificado: la transición de cada cambio de pestaña desplaza el
@@ -46,7 +54,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       `.tx-row-wrap` anima `max-height` con `ease-in`; varios popovers sin
       `transform-origin` en su disparador.
 
-## 4. Pulido (de a poco, al tocar cada pantalla)
+## 3. Pulido (de a poco, al tocar cada pantalla)
 
 - [ ] **n.º 17** · Etiqueta "Suscripciones" de la barra inferior no cabe a
       320–360px → acortar ("Suscrip.") o cambiar qué pestañas van ahí.
@@ -59,13 +67,13 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 - [ ] Contraste del texto en el color de la categoría (amarillo/violeta en tema
       claro) donde todavía se use: `CreditCard.jsx`, `Conciliacion.jsx`.
 
-## 5. Deuda técnica
+## 4. Deuda técnica
 
 - [ ] Subir `pdfjs-dist` (6.2 → 6.4) y `supabase-js` (2.111 → 2.117) a
       propósito, probando la importación de cartolas PDF reales (los parsers
       no tienen tests). Quedaron fijados al regenerar el lock.
 
-## 6. Opcional en Supabase
+## 5. Opcional en Supabase
 
 - [ ] `supabase/migrations/0006_recolor_default_categories.sql`: pasa las
       categorías por defecto no personalizadas a la paleta validada. Sin
@@ -91,11 +99,11 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 
 | Commit | Qué |
 | --- | --- |
-| `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) y Node 22 en el runner |
+| `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) (Node 22 en el runner; pasó a 24 en `75908d4`) |
 | `45ace1d` | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` (0007 ya corrida) |
 | `499ebec` | Clases compartidas a `components/classes.js` (lint sin warnings) |
 | `e302c9b` | Focus trap en `Modal` (`useFocusTrap`) + popovers en portal por encima del modal (el selector de categoría de Filtros quedaba tapado) |
 | `eccd799` | vite 5 → 8 (un solo vite en el árbol, sin esbuild) + plugin-react 5.2; bundle inicial 478 → 433 KB |
-| — | `npm audit` en 0: vitest 4.1.11 + lock regenerado con npm 11; CI a Node 24 / npm 11 (npm 10 ya no resolvía el árbol) |
+| `75908d4` | `npm audit` en 0: vitest 4.1.11 + lock regenerado con npm 11; CI a Node 24 / npm 11 (npm 10 ya no resolvía el árbol) |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
