@@ -61,9 +61,9 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 
 ## 5. Deuda técnica
 
-- [ ] `npm audit`: 4 avisos, todos en herramientas de desarrollo (vitest/
-      `@vitest/mocker`, `brace-expansion` de eslint, `fast-uri`), nada llega al
-      bundle. Subir vitest a 4.1.11+/5 y correr `npm audit fix` con npm 10.
+- [ ] Subir `pdfjs-dist` (6.2 → 6.4) y `supabase-js` (2.111 → 2.117) a
+      propósito, probando la importación de cartolas PDF reales (los parsers
+      no tienen tests). Quedaron fijados al regenerar el lock.
 
 ## 6. Opcional en Supabase
 
@@ -95,6 +95,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 | `45ace1d` | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` (0007 ya corrida) |
 | `499ebec` | Clases compartidas a `components/classes.js` (lint sin warnings) |
 | `e302c9b` | Focus trap en `Modal` (`useFocusTrap`) + popovers en portal por encima del modal (el selector de categoría de Filtros quedaba tapado) |
-| — | vite 5 → 8 (un solo vite en el árbol, sin esbuild) + plugin-react 5.2; bundle inicial 478 → 433 KB |
+| `eccd799` | vite 5 → 8 (un solo vite en el árbol, sin esbuild) + plugin-react 5.2; bundle inicial 478 → 433 KB |
+| — | `npm audit` en 0: vitest 4.1.11 + lock regenerado con npm 11; CI a Node 24 / npm 11 (npm 10 ya no resolvía el árbol) |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.

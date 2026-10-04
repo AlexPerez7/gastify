@@ -42,14 +42,17 @@ workflow termina bien: `gh run list --limit 1` y `gh run watch <id>
 --exit-status`; si falla, `gh run view <id> --log-failed`. Estuvo un mes
 fallando sin que nadie lo notara (lock desincronizado).
 
-**Dependencias.** El runner usa Node 22 / **npm 10**; localmente hay npm 11,
-que puede armar un lock distinto y romper `npm ci` en CI (pasó con el
-`esbuild` del vite 8 anidado de vitest, cuando la app seguía en vite 5). Si
-tocas `package.json`, regenera el lock con `npx npm@10 install` y verifica con
-`rm -rf node_modules && npx npm@10 ci`. Debe haber **un solo vite** en
-`npm ls vite` (el de la app, que vitest reutiliza). `@vitejs/plugin-react` se
-queda en 5.x: la 6 arrastra un peer opcional (`@rolldown/plugin-babel` →
-`@babel/core` 8) que choca con el babel 7 de workbox y npm 10 no lo resuelve.
+**Dependencias.** El runner usa **Node 24 / npm 11**, igual que la máquina
+local: el lock se arma con el `npm` normal. (Antes CI tenía npm 10 y los locks
+de npm 11 lo rompían; y desde vite 8, npm 10 ya ni siquiera resuelve este
+árbol desde cero — falla con `Cannot read properties of null (reading
+'edgesOut')`.) Tras tocar `package.json`: `rm -rf node_modules && npm ci` y
+`npm audit`. Debe haber **un solo vite** en `npm ls vite` (el de la app, que
+vitest reutiliza). `@vitejs/plugin-react` se queda en 5.x: la 6 arrastra un
+peer opcional (`@rolldown/plugin-babel` → `@babel/core` 8) que choca con el
+babel 7 de workbox. Ojo: regenerar el lock desde cero sube todo lo que cabe en
+los rangos (incluidos `pdfjs-dist` y `supabase-js`); si no es lo que se busca,
+fijarlos con `npm install pkg@<versión anterior>`.
 
 Quirk conocido: `vitest run` justo después de `npm run build` a veces reporta
 un falso "no tests"/FAIL la primera vez — reintentar una vez.
