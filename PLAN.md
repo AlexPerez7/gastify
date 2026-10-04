@@ -23,12 +23,6 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       y el saldo actual no cambió (confirma que `created_at` se conserva).
 - [ ] Mapa de actividad: tocar un día muestra su monto.
 
-## 1. Correr en Supabase
-
-- [ ] `supabase/migrations/0007_account_settings_nullable_balance.sql`
-      (arregla guardar el ahorro base antes de ajustar el saldo). El código
-      ya desplegado funciona igual sin ella; solo sigue fallando ese caso.
-
 ## 2. Conciliación y lista larga (n.º 18–19)
 
 - [ ] **n.º 18 · Conciliación más visible.** En mobile solo se llega por un ícono
@@ -71,9 +65,6 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       lock frágil que rompió el deploy. Subir `vite` a 7 (y revisar
       `@vitejs/plugin-react`, `vite-plugin-pwa`, `@tailwindcss/vite`) para que
       vitest use el mismo.
-- [ ] Warning de ESLint en `Shared.jsx` (`react-refresh/only-export-components`
-      por `BTN_PRIMARY`, `BTN_GHOST`, `pillClass`) → mover constantes a
-      `src/components/classes.js`.
 - [ ] Focus trap en `Modal` (hoy: Esc + autofocus, pero Tab puede salir del
       diálogo).
 
@@ -104,6 +95,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 | Commit | Qué |
 | --- | --- |
 | `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) y Node 22 en el runner |
-| (mig. 0007) | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` |
+| `45ace1d` | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` (0007 ya corrida) |
+| — | Clases compartidas a `components/classes.js` (lint sin warnings) |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.

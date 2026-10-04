@@ -34,8 +34,10 @@ mientras un formulario tenga datos, `sheetOnMobile` para que suba desde abajo
 en mobile, rol de diálogo), `Panel`, `StatCard`, `EmptyState`, `EmptyNote`,
 `FieldInput` (es un `<label>`), `ToggleSwitch`,
 `CategorySelect` (con `allOption`), `CategoryQuickAdd`, skeletons
-(`AppShellSkeleton`, `ResumenSkeleton`, `MovimientosSkeleton`, `Skeleton`), y
-clases: `BTN_PRIMARY`, `BTN_GHOST`, `pillClass(active)`. Constantes locales
+(`AppShellSkeleton`, `ResumenSkeleton`, `MovimientosSkeleton`, `Skeleton`).
+Clases compartidas en **`classes.js`** (no en Shared.jsx: un archivo que
+exporta componentes y constantes rompe el fast refresh): `BTN_PRIMARY`,
+`BTN_GHOST`, `pillClass(active)`. Constantes locales
 existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
 
 ## Estilos: Tailwind v4 (migración de inline styles terminada)

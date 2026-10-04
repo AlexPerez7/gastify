@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText, Trash2 } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, CategorySelect, pillClass, BTN_PRIMARY, BTN_GHOST, Modal } from "./Shared.jsx";
+import { EmptyState, CategorySelect, Modal } from "./Shared.jsx";
+import { pillClass, BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function monthLabel(mk) {

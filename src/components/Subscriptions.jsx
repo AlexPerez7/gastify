@@ -3,7 +3,8 @@ import { Plus, Repeat } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP } from "../lib/utils.js";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
-import { Panel, EmptyState, StatCard, FieldInput, ToggleSwitch, CategorySelect, BTN_PRIMARY, BTN_GHOST } from "./Shared.jsx";
+import { Panel, EmptyState, StatCard, FieldInput, ToggleSwitch, CategorySelect } from "./Shared.jsx";
+import { BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 
 const DEFAULT_CATEGORY_ID = "suscripciones";
 

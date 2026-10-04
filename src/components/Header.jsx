@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download } from "lucide-react";
-import { pillClass } from "./Shared.jsx";
+import { pillClass } from "./classes.js";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
 
