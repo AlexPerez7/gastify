@@ -58,8 +58,10 @@ create table merchant_rules (
 -- conciliación automática que hace la app al importar el .xls del banco
 create table account_settings (
   user_id uuid primary key default auth.uid() references auth.users (id),
-  base_balance numeric not null,
-  last_sync_date timestamptz not null default now(),
+  -- ambas null = saldo nunca ajustado (la fila puede existir solo por el ahorro
+  -- base); la app siempre manda last_sync_date junto con base_balance
+  base_balance numeric,
+  last_sync_date timestamptz,
   savings_base numeric,          -- ancla manual de "Total ahorrado" (lo ahorrado antes de usar la app); null = nunca declarado
   savings_base_date timestamptz  -- desde cuándo rige ese ancla
 );

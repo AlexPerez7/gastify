@@ -191,7 +191,8 @@ export function computeTotalSavings(transactions, categories, accountSettings) {
 // 16:00 tras ajustar el saldo a las 15:00 no se distinguiría por fecha.
 /** @param {Transaction[]} transactions @param {AccountSettings|null} accountSettings @returns {number|null} */
 export function computeDynamicBalance(transactions, accountSettings) {
-  if (!accountSettings) return null;
+  // la fila puede existir solo por el ahorro base, sin saldo ajustado todavía
+  if (accountSettings?.baseBalance == null || !accountSettings.lastSyncDate) return null;
   const syncTime = new Date(accountSettings.lastSyncDate).getTime();
   const netManualSince = transactions
     .filter((t) => t.source === "manual" && t.createdAt && new Date(t.createdAt).getTime() > syncTime)

@@ -4,7 +4,7 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 (n.º) son los del análisis de UI/UX del 2026-10-03. Al terminar algo, se marca
 `[x]` y se mueve a "Hecho" con su commit.
 
-Última actualización: 2026-10-03 · último commit: `cf8d117` (deploy arreglado).
+Última actualización: 2026-10-04.
 
 ---
 
@@ -23,16 +23,11 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       y el saldo actual no cambió (confirma que `created_at` se conserva).
 - [ ] Mapa de actividad: tocar un día muestra su monto.
 
-## 1. Mantención del deploy (5 min)
+## 1. Correr en Supabase
 
-- [ ] Actualizar `.github/workflows/deploy.yml`: GitHub marca Node 20 como
-      obsoleto para las acciones (`actions/checkout`, `setup-node`,
-      `upload-pages-artifact`, `deploy-pages` → versiones nuevas) y
-      `ubuntu-latest` pasa a Ubuntu 26 desde el **2026-10-19**. Subir también
-      `node-version` a 22.
-- [ ] Al tocar dependencias: regenerar el lock con `npx npm@10 install` (el npm
-      del runner) y verificar con `rm -rf node_modules && npx npm@10 ci`.
-      Después de cada push: `gh run watch <id> --exit-status`.
+- [ ] `supabase/migrations/0007_account_settings_nullable_balance.sql`
+      (arregla guardar el ahorro base antes de ajustar el saldo). El código
+      ya desplegado funciona igual sin ella; solo sigue fallando ese caso.
 
 ## 2. Conciliación y lista larga (n.º 18–19)
 
@@ -76,9 +71,6 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       lock frágil que rompió el deploy. Subir `vite` a 7 (y revisar
       `@vitejs/plugin-react`, `vite-plugin-pwa`, `@tailwindcss/vite`) para que
       vitest use el mismo.
-- [ ] `saveSavingsBase` crea la fila de `account_settings` sin `base_balance`
-      (columna `not null`): falla si se declara el ahorro antes de ajustar el
-      saldo por primera vez. Ver `supabase/CLAUDE.md`.
 - [ ] Warning de ESLint en `Shared.jsx` (`react-refresh/only-export-components`
       por `BTN_PRIMARY`, `BTN_GHOST`, `pillClass`) → mover constantes a
       `src/components/classes.js`.
@@ -106,5 +98,12 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 | `fd30db0` | Escala tipográfica de 6 tamaños que crecen en mobile |
 | `a96edb0` | Gráficos: mapa de actividad legible en mobile, eje "$1,5M", donas con "Resto", paleta validada |
 | `cf8d117` | Deploy arreglado (lock con el esbuild que exige npm 10 en el runner) |
+
+## Hecho (2026-10-04)
+
+| Commit | Qué |
+| --- | --- |
+| `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) y Node 22 en el runner |
+| (mig. 0007) | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.

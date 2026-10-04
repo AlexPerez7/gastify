@@ -78,6 +78,14 @@ describe("saldo y ahorro", () => {
     expect(computeDynamicBalance(list, null)).toBeNull();
   });
 
+  it("computeDynamicBalance: fila solo con ahorro base (saldo sin ajustar) da null, no NaN", () => {
+    const list = [tx({ source: "manual", amount: -100, createdAt: "2026-08-02T00:00:00Z" })];
+    const savingsOnly = { baseBalance: null, lastSyncDate: null, savingsBase: 5000, savingsBaseDate: "2026-08-01T00:00:00Z" };
+    expect(computeDynamicBalance(list, savingsOnly)).toBeNull();
+    // así queda el estado en memoria tras guardar el ahorro sin fila previa
+    expect(computeDynamicBalance(list, { savingsBase: 5000, savingsBaseDate: "2026-08-01T00:00:00Z" })).toBeNull();
+  });
+
   it("computeTotalSavings: null sin categorías de ahorro, histórico sin ancla, ancla + posterior con ancla", () => {
     const cats = [{ id: "ahorro", isSavings: true }];
     const list = [

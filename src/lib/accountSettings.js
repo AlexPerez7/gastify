@@ -14,8 +14,10 @@ export async function getAccountSettings() {
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
+    // base_balance null = la fila existe solo por el ahorro base; el saldo
+    // sigue "sin ajustar" (Number(null) daría un 0 falso)
     return {
-      baseBalance: Number(data.base_balance),
+      baseBalance: data.base_balance != null ? Number(data.base_balance) : null,
       lastSyncDate: data.last_sync_date,
       savingsBase: data.savings_base != null ? Number(data.savings_base) : null,
       savingsBaseDate: data.savings_base_date,

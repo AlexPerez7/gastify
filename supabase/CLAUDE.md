@@ -13,7 +13,8 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
   (0001 suscripciones, 0002 credit_transactions, 0003 credit_statements,
   0004 savings_base en account_settings, 0005 created_at en movimientos y
   estados de cuenta, 0006 **opcional**: recolorea las categorías por defecto
-  no personalizadas a la paleta validada).
+  no personalizadas a la paleta validada, 0007 `base_balance`/`last_sync_date`
+  nullables en account_settings).
 
 ## Tablas
 
@@ -25,18 +26,18 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
 | `subscriptions` | PK `(id, user_id)` | `day_of_month`, `active` |
 | `credit_transactions` | PK `(id, user_id)`, `unique(user_id, key)` | CMR; `statement_month` en la clave |
 | `credit_statements` | PK `(id, user_id)`, `unique(user_id, statement_month)` | resumen del PDF CMR |
-| `account_settings` | PK `user_id` | una fila por usuario; `base_balance`, `last_sync_date`, `savings_base`, `savings_base_date` |
+| `account_settings` | PK `user_id` | una fila por usuario; `base_balance`, `last_sync_date`, `savings_base`, `savings_base_date` (todas nullables: la fila puede existir solo por el ahorro base) |
 
 Todas las tablas: `user_id uuid not null default auth.uid()` — la app **no**
 manda `user_id` en los upsert (salvo `accountSettings.js`), lo pone el default.
 
-## ⚠ Detalle conocido
+## account_settings sin saldo
 
-`account_settings.base_balance` es `not null`, pero `saveSavingsBase` (en
-`src/lib/accountSettings.js`) crea la fila sin ese campo si todavía no existe.
-Un usuario que declara su ahorro base **antes** de ajustar su saldo choca con
-esa restricción. En la práctica casi nunca pasa (la primera importación del
-.xls ya crea la fila), pero tenlo en cuenta si se toca esta tabla.
+La fila puede nacer desde `saveSavingsBase` (ahorro declarado antes de ajustar
+el saldo), con `base_balance` y `last_sync_date` en null = "saldo sin ajustar".
+Por eso `last_sync_date` **no** tiene `default now()`: con él, la primera
+importación del .xls se veía como histórica y no fijaba el saldo
+(`evaluateBalanceSync`). `computeDynamicBalance` devuelve null en ese caso.
 
 ## Checklist para un cambio de esquema
 

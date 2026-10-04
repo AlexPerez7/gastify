@@ -97,8 +97,8 @@
 /**
  * Ajustes de cuenta (una fila por usuario). Tabla `account_settings`.
  * @typedef {Object} AccountSettings
- * @property {number}  baseBalance
- * @property {string}  lastSyncDate       ISO
+ * @property {number|null}  baseBalance   null = saldo nunca ajustado (fila creada solo por el ahorro base)
+ * @property {string|null}  lastSyncDate  ISO; null junto con baseBalance
  * @property {number|null} [savingsBase]
  * @property {string|null} [savingsBaseDate]
  */
