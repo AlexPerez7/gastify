@@ -65,8 +65,6 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       lock frágil que rompió el deploy. Subir `vite` a 7 (y revisar
       `@vitejs/plugin-react`, `vite-plugin-pwa`, `@tailwindcss/vite`) para que
       vitest use el mismo.
-- [ ] Focus trap en `Modal` (hoy: Esc + autofocus, pero Tab puede salir del
-      diálogo).
 
 ## 6. Opcional en Supabase
 
@@ -96,6 +94,7 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 | --- | --- |
 | `05da7ec` | Workflow: acciones con Node 24 (checkout/setup-node v7, pages v5) y Node 22 en el runner |
 | `45ace1d` | Ahorro base antes de ajustar el saldo: migración 0007 + saldo `null` en vez de error/`NaN` (0007 ya corrida) |
-| — | Clases compartidas a `components/classes.js` (lint sin warnings) |
+| `499ebec` | Clases compartidas a `components/classes.js` (lint sin warnings) |
+| — | Focus trap en `Modal` (`useFocusTrap`) + popovers en portal por encima del modal (el selector de categoría de Filtros quedaba tapado) |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.

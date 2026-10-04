@@ -29,7 +29,8 @@ Exports con nombre (`export function X`), salvo `App` (default). Íconos de
 
 ## Shared.jsx — reutilizar antes de crear
 
-`Modal` (**todo diálogo nuevo usa este**: Esc, `dismissOnBackdrop` en false
+`Modal` (**todo diálogo nuevo usa este**: Esc, foco atrapado con
+`useFocusTrap` y devuelto al disparador al cerrar, `dismissOnBackdrop` en false
 mientras un formulario tenga datos, `sheetOnMobile` para que suba desde abajo
 en mobile, rol de diálogo), `Panel`, `StatCard`, `EmptyState`, `EmptyNote`,
 `FieldInput` (es un `<label>`), `ToggleSwitch`,
@@ -85,7 +86,9 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
 - Alturas de pantalla con `dvh`, no `vh`. Scroll interno de hojas/popovers
   con `overscroll-contain`.
 - Popovers que manejan Esc llaman `e.preventDefault()` para que el `Modal`
-  de abajo no se cierre también.
+  de abajo no se cierre también. Los que van en portal usan `z-[2100]`
+  (encima del `Modal`, `z-[2000]`): con menos quedaban tapados dentro de un
+  diálogo (pasaba con el `CategorySelect` de Filtros en mobile).
 
 - `useIsMobile()` (640px, en `src/hooks/`) para ramas de layout; en mobile hay `BottomNav`,
   swipe para editar/borrar y gestos táctiles.

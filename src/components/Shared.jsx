@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Tags, X } from "lucide-react";
 import { TOKENS, ICONS, ICON_NAMES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon, labelWithTypeIfAmbiguous } from "../lib/constants.js";
 import { BTN_PRIMARY, BTN_GHOST } from "./classes.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
   return <div className="skeleton" style={{ width, height, borderRadius: radius, background: TOKENS.surfaceAlt, ...style }} />;
@@ -68,8 +69,9 @@ export function MovimientosSkeleton() {
   );
 }
 
-// Diálogo común a toda la app: fondo + panel, Esc para cerrar y rol de
-// diálogo accesible.
+// Diálogo común a toda la app: fondo + panel, Esc para cerrar, rol de
+// diálogo accesible y foco atrapado adentro (useFocusTrap: Tab no sale al
+// resto de la página, y al cerrar vuelve al botón que lo abrió).
 // - dismissOnBackdrop: tocar fuera cierra. Los formularios lo pasan en false
 //   mientras haya algo escrito, para que un toque accidental no borre lo
 //   ingresado (Esc y la X siguen cerrando: son intencionales).
@@ -85,6 +87,9 @@ export function Modal({
   onClose, title, ariaLabel, dismissOnBackdrop = true, sheetOnMobile = false,
   panelClassName = "p-[22px] max-w-[360px]", panelStyle, children,
 }) {
+  const panelRef = useRef(null);
+  useFocusTrap(panelRef);
+
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape" && !e.defaultPrevented) onClose(); };
     window.addEventListener("keydown", onKey);
@@ -98,11 +103,13 @@ export function Modal({
       style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel ?? (typeof title === "string" ? title : undefined)}
         onClick={(e) => e.stopPropagation()}
-        className={`modal-panel bg-surface border border-border rounded-2xl w-full ${sheetOnMobile ? "sheet-mobile" : ""} ${panelClassName}`}
+        className={`modal-panel outline-none bg-surface border border-border rounded-2xl w-full ${sheetOnMobile ? "sheet-mobile" : ""} ${panelClassName}`}
         style={panelStyle}
       >
         {title && (
@@ -380,11 +387,12 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
         <ChevronDown size={13} color={TOKENS.textFaint} className="shrink-0" />
       </button>
 
+      {/* z por encima del Modal (2000): también se abre dentro de diálogos (Filtros) */}
       {open && coords && createPortal(
         <div
           ref={popRef}
           role="listbox"
-          className="fixed z-[1000] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto overscroll-contain"
+          className="fixed z-[2100] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto overscroll-contain"
           style={{
             left: coords.left, width: Math.max(coords.width, 200),
             ...(coords.top != null ? { top: coords.top } : { bottom: coords.bottom }),

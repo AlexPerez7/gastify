@@ -36,6 +36,10 @@ const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 cancela si el dedo se mueve); el `onClick` del elemento debe empezar con
 `if (consumeClick()) return;`. Lo usan las filas de Movimientos en mobile
 para entrar al modo selección.
+`useFocusTrap(ref)`: lo usa `Modal`. Tab no sale del panel (solo el diálogo de
+más arriba atrapa), foco inicial al panel si ningún hijo usa autoFocus, y al
+cerrar vuelve al elemento que tenía el foco al abrir. Intercepta solo Tab (no
+`focusin`) para no pelearle el foco a los popovers en portal.
 
 ## Convenciones
 
