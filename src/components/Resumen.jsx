@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Legend,
+  CartesianGrid, Legend, LineChart, Line,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, Shapes, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Landmark, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, Shapes, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
 import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
 import { formatCLP, formatCLPCompact, formatDateDisplay, localIsoDate } from "../lib/utils.js";
 import { Panel, EmptyState, StatCard, FieldInput, Modal } from "./Shared.jsx";
 import { SpendHeatmap } from "./Heatmap.jsx";
+import { MonthCalendar } from "./MonthCalendar.jsx";
 import { Insights } from "./Insights.jsx";
 import { ErrorBoundary } from "./ErrorBoundary.jsx";
 
@@ -44,6 +45,7 @@ function savingsRateSub(rate) {
 
 export function Resumen({
   stats, byCategory, byIncomeCategory, categories, byMonth, currentMonth, dailySpend, hasTransactions, heroStat, projection, savingsRate,
+  balanceHistory = [], monthTransactions = [], getCat,
   insights, pushToast,
   dynamicBalance, lastSyncDate, onAdjustBalance, onCategoryClick, totalSavings, onAdjustSavings,
   creditStatement, onGoToCredit,
@@ -248,6 +250,13 @@ export function Resumen({
         </Panel>
       </div>
 
+      <div className="resumen-charts-grid grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4 mb-4">
+        <Panel title={`Gasto por día${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>
+          <MonthCalendar month={currentMonth} dailySpend={dailySpend} monthTransactions={monthTransactions} getCat={getCat} />
+        </Panel>
+        <BalanceTrend history={balanceHistory} />
+      </div>
+
       {budgetedCategories.length > 0 && (
         <div className="mb-4">
         <Panel title={`Presupuestos${currentMonth ? ` · ${fmtMonth(currentMonth)}` : ""}`}>
@@ -429,6 +438,78 @@ function CategoryDonut({ data: rawData, onCategoryClick, emptyIcon, emptyTitle, 
         })}
       </div>
     </div>
+  );
+}
+
+// "Saldo de la cuenta": el saldo al cierre de cada día según las cartolas
+// (computeBalanceHistory). Una sola serie en el tiempo → línea de 2px, sin
+// leyenda (el título ya dice qué es), eje Y que NO parte en 0 (un saldo que
+// oscila entre $0,8M y $1,2M se vería plano) y tooltip con cruz al pasar.
+// El rango (3/6/12 meses) va en la misma fila del título.
+const BALANCE_RANGES = [["3M", 92], ["6M", 183], ["1A", 366]];
+
+function shortDate(iso) {
+  const [, m, d] = iso.split("-");
+  return `${parseInt(d, 10)} ${MONTH_NAMES[parseInt(m, 10) - 1]}`;
+}
+
+function BalanceTrend({ history }) {
+  const [days, setDays] = useState(183);
+  const data = history.slice(-days);
+  const last = data[data.length - 1];
+  return (
+    <Panel
+      title="Saldo de la cuenta"
+      right={
+        history.length > 0 && (
+          <div className="filter-seg-row" role="group" aria-label="Rango del gráfico de saldo">
+            {BALANCE_RANGES.map(([label, d]) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={days === d}
+                onClick={() => setDays(d)}
+                className={`filter-seg-btn !px-2.5 !py-1 text-small ${days === d ? "bg-accent text-bg" : "bg-transparent text-muted"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )
+      }
+    >
+      {data.length < 2 ? (
+        <EmptyState icon={Landmark} title="Sin saldos todavía" text="Importa la cartola del banco para ver cómo evoluciona el saldo de tu cuenta." />
+      ) : (
+        <>
+          <div className="text-small text-muted mb-2">
+            <span className="mono text-ink font-semibold">{formatCLP(last.balance)}</span> al {shortDate(last.date)}, según las cartolas importadas
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={TOKENS.border} vertical={false} />
+              <XAxis
+                dataKey="date" stroke={TOKENS.textFaint} fontSize={11} tickFormatter={shortDate}
+                minTickGap={28} tickLine={false}
+              />
+              <YAxis stroke={TOKENS.textFaint} fontSize={11} width={52} tickFormatter={formatCLPCompact} domain={["auto", "auto"]} />
+              <Tooltip
+                cursor={{ stroke: TOKENS.textFaint, strokeDasharray: "3 3" }}
+                contentStyle={{ background: TOKENS.surfaceAlt, border: `1px solid ${TOKENS.border}`, borderRadius: 8, fontSize: 12 }}
+                itemStyle={{ color: TOKENS.text }}
+                labelStyle={{ color: TOKENS.text, marginBottom: 2 }}
+                labelFormatter={shortDate}
+                formatter={(v) => [formatCLP(v), "Saldo"]}
+              />
+              <Line
+                type="linear" dataKey="balance" stroke={TOKENS.accent} strokeWidth={2} dot={false} isAnimationActive={false}
+                activeDot={{ r: 4, fill: TOKENS.accent, stroke: TOKENS.surface, strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </>
+      )}
+    </Panel>
   );
 }
 

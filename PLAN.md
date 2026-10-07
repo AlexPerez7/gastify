@@ -74,8 +74,8 @@ Hecha (ver tabla "Hecho (2026-10-06)"). Quedó fuera a propósito:
 - [ ] **Estado de conciliación con saldos**: saldo inicial + entradas − salidas
       = saldo final para un rango, "conciliado hasta acá" y filtro "desde la
       última conciliación". Ayuda a encontrar descuadres de saldo.
-- [ ] **Tendencia del saldo** en el tiempo (las filas del banco ya traen saldo).
-- [ ] **Calendario del mes**: grilla con el gasto de cada día; tocar un día
+- [x] **Tendencia del saldo** en el tiempo (las filas del banco ya traen saldo).
+- [x] **Calendario del mes**: grilla con el gasto de cada día; tocar un día
       lista sus movimientos.
 - [ ] **Ranking de categorías** en barras horizontales con % del total, como
       alternativa a la dona (se lee mejor en mobile con muchas categorías).
@@ -145,6 +145,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `322200f` | `pdfjs-dist` 6.2.108 → 6.4.299 y `supabase-js` 2.111.0 → 2.117.2. Validado con una cartola de débito y un estado de cuenta CMR reales (fuera del repo): salida idéntica a la de antes, 81 filas con la cadena de saldos cuadrando 80/80, los 9 campos de CMR; un solo vite, `npm audit` en 0, el build de producción arranca sin errores |
 | `5c0b9c7` | Tests de los parsers de PDF: lógica pura a `pdfParsing.js` (pdfjs inyectado), 6 tests con ítems/texto inventados + 3 sobre PDF reales en `test-fixtures/` (en `.gitignore`, se saltan si no están). Verificado que fallan si se rompe el parser y que la app da el mismo resultado que antes del refactor |
 | `4797f71` | PWA: `xlsx` y pdfjs (~900 KB) fuera del precache (2,4 → 1,36 MB), en chunks de nombre fijo, guardados al primer uso (caché `importadores`, incluye el worker de pdfjs, que antes nunca se guardaba y rompía el import de PDF offline); aviso de "revisa tu conexión" si no se pudo cargar el lector. Verificado en el build: importar offline tras la primera vez funciona |
+| (este) | 6.2: **Saldo de la cuenta** (línea del saldo diario según las cartolas, 3M/6M/1A; el saldo sale de la `key` de cada fila del banco, sin migración) y **Gasto por día** (calendario del mes con tonos por cuartil, contraste del texto calculado por nivel, tocar un día lista sus movimientos) en Resumen |
 
 ## Hecho (2026-10-04)
 

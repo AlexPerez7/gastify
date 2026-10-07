@@ -191,7 +191,8 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
               <Resumen
                 stats={derived.stats} byCategory={derived.byCategory} byIncomeCategory={derived.byIncomeCategory} categories={categories} byMonth={derived.byMonth} currentMonth={currentMonth}
                 dailySpend={derived.dailySpend} hasTransactions={transactions.length > 0} heroStat={derived.heroStat}
-                projection={derived.projection} savingsRate={derived.savingsRate}
+                projection={derived.projection} savingsRate={derived.savingsRate} balanceHistory={derived.balanceHistory}
+                monthTransactions={derived.resumenTx} getCat={derived.getCat}
                 insights={derived.insights} pushToast={pushToast}
                 dynamicBalance={derived.dynamicBalance} lastSyncDate={accountSettings?.lastSyncDate}
                 onAdjustBalance={adjustBaseBalance}

@@ -12,7 +12,7 @@ import {
   listMonths, listCreditMonths, filterByMonth, filterTransactions, excludedCategoryIdsOf, isRealExpense,
   computeMonthStats, sumByCategory, computeByMonth, computeDailySpend, computeHeroStat, computeTotalSavings,
   computeDynamicBalance, computeReconcileStats, computeMonthHealth, filterCreditByMonth, computeCreditStats,
-  latestCreditStatement, computeMonthProjection, computeSavingsRate,
+  latestCreditStatement, computeMonthProjection, computeSavingsRate, computeBalanceHistory,
 } from "../lib/stats.js";
 
 // elige el primer mes de la lista como valor por defecto, una sola vez — así
@@ -87,6 +87,8 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
     [transactions, categories, accountSettings]
   );
   const dynamicBalance = useMemo(() => computeDynamicBalance(transactions, accountSettings), [transactions, accountSettings]);
+  // un año de saldo diario; Resumen recorta a 3/6/12 meses
+  const balanceHistory = useMemo(() => computeBalanceHistory(transactions, { days: 366 }), [transactions]);
 
   const reconcileStats = useMemo(() => computeReconcileStats(transactions, currentMonth), [transactions, currentMonth]);
   const monthHealth = useMemo(() => computeMonthHealth(transactions, months), [transactions, months]);
@@ -114,8 +116,8 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
     getCat,
     months, monthFilter, setMonthFilter, currentMonth,
     filteredTx, duplicateIds, frequentEntries,
-    stats, byCategory, byIncomeCategory, byMonth, dailySpend, heroStat, projection, savingsRate, insights,
-    totalSavings, dynamicBalance, reconcileStats, monthHealth,
+    resumenTx, stats, byCategory, byIncomeCategory, byMonth, dailySpend, heroStat, projection, savingsRate, insights,
+    totalSavings, dynamicBalance, balanceHistory, reconcileStats, monthHealth,
     creditMonths, currentCreditMonth, setCreditMonthFilter, filteredCreditTx, creditStats,
     currentCreditStatement, latestCreditStatement: latestStatement,
   };

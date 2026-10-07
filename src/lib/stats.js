@@ -2,7 +2,7 @@
 // categoría, hero, conciliación, crédito…). Vivían como useMemo dentro de
 // App.jsx; acá son funciones puras — entra el estado, sale el dato — para
 // poder testearlas sin React. src/hooks/useDerivedData.js las memoiza.
-import { monthKey, monthKeyOf, prevMonthKey, nextMonthKey } from "./utils.js";
+import { monthKey, monthKeyOf, prevMonthKey, nextMonthKey, localIsoDate } from "./utils.js";
 
 /**
  * @typedef {import("./types.js").Transaction} Transaction
@@ -137,6 +137,82 @@ export function computeDayTotals(txs, excludedIds) {
     else if (!excludedIds.has(t.category)) d.expense += Math.abs(t.amount);
   }
   return map;
+}
+
+// Saldo del banco de un movimiento importado: va dentro de su `key`
+// ("fecha|saldo|cargo|abono", ver buildBankImport). null si no es del banco o
+// si la clave no trae un número ahí (filas antiguas con otro formato).
+/** @param {Transaction} t @returns {number|null} */
+export function bankBalanceOf(t) {
+  if (t.source !== "bank" || !t.key) return null;
+  const raw = t.key.split("|")[1];
+  return raw != null && /^-?\d+(\.\d+)?$/.test(raw) ? Number(raw) : null;
+}
+
+// Saldo de la cuenta al cierre de cada día, según las cartolas importadas
+// (no suma los manuales: es lo que el banco dice que había). Cuando un día
+// tiene varios movimientos, el de cierre es el que ningún otro del mismo día
+// tiene como "saldo previo" (saldo − monto): el orden de las filas no sirve,
+// el .xls y el PDF los listan distinto. Días sin movimientos repiten el
+// saldo del día anterior. Devuelve los últimos `days` días hasta el último
+// día con datos (y arranca con el saldo vigente a esa fecha, si lo hay).
+/**
+ * @param {Transaction[]} transactions
+ * @param {{ days?: number }} [opts]
+ * @returns {{ date: string, balance: number }[]}
+ */
+export function computeBalanceHistory(transactions, { days = 180 } = {}) {
+  /** @type {Map<string, { balance: number, prev: number }[]>} */
+  const byDay = new Map();
+  for (const t of transactions) {
+    const balance = bankBalanceOf(t);
+    if (balance == null) continue;
+    if (!byDay.has(t.date)) byDay.set(t.date, []);
+    byDay.get(t.date).push({ balance, prev: balance - t.amount });
+  }
+  if (byDay.size === 0) return [];
+
+  /** @type {Map<string, number>} */
+  const closing = new Map();
+  for (const [date, rows] of byDay) {
+    const prevs = new Set(rows.map((r) => r.prev));
+    const ends = rows.filter((r) => !prevs.has(r.balance));
+    // 0 o 2+ candidatos (cadena rota: falta una fila o hay dos movimientos
+    // que se anulan): el último en llegar, que es lo menos malo
+    closing.set(date, (ends.length === 1 ? ends[0] : rows[rows.length - 1]).balance);
+  }
+
+  const dates = [...closing.keys()].sort();
+  const last = dates[dates.length - 1];
+  const [y, m, d] = last.split("-").map(Number);
+  const start = localIsoDate(new Date(y, m - 1, d - (days - 1)));
+  // saldo vigente al empezar la ventana: el último cierre anterior a ella
+  let current = null;
+  for (const date of dates) if (date < start) current = closing.get(date);
+
+  const out = [];
+  for (let i = 0; i < days; i++) {
+    const date = localIsoDate(new Date(y, m - 1, d - (days - 1) + i));
+    if (closing.has(date)) current = closing.get(date);
+    if (current != null) out.push({ date, balance: current });
+  }
+  return out;
+}
+
+// Grilla del calendario de un mes, semanas de lunes a domingo (como en
+// Chile). null = casilla de relleno antes del día 1 o después del último.
+/** @param {string} mKey "YYYY-MM" @returns {(string|null)[][]} fechas ISO */
+export function monthCalendarWeeks(mKey) {
+  const [y, m] = mKey.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const lead = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 0 = lunes
+  /** @type {(string|null)[]} */
+  const cells = Array(lead).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(`${mKey}-${String(d).padStart(2, "0")}`);
+  while (cells.length % 7) cells.push(null);
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
 }
 
 /** Gasto real por día ISO. @param {Transaction[]} transactions @param {Set<string>} excludedIds @returns {Record<string, number>} */

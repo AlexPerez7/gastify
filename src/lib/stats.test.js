@@ -3,6 +3,7 @@ import {
   listMonths, filterTransactions, computeMonthStats, sumByCategory, computeHeroStat, computeDailySpend,
   computeTotalSavings, computeDynamicBalance, computeReconcileStats, computeMonthHealth,
   heatmapThresholds, heatLevel, computeMonthProjection, computeSavingsRate, computeDayTotals,
+  bankBalanceOf, computeBalanceHistory, monthCalendarWeeks,
 } from "./stats.js";
 
 const tx = (o) => ({ source: "bank", matchedId: null, alias: "", category: "otros", description: "", ...o });
@@ -67,6 +68,52 @@ describe("computeHeroStat", () => {
   it("mes cerrado usa el mes completo; sin datos previos typicalPace es null", () => {
     const res = computeHeroStat({ "2026-02-27": 10 }, [], "2026-02", new Date(2026, 7, 5));
     expect(res).toMatchObject({ spentSoFar: 10, typicalPace: null, dayOfMonth: 28, isRealCurrentMonth: false });
+  });
+});
+
+describe("monthCalendarWeeks", () => {
+  it("semanas de lunes a domingo, con relleno al principio y al final", () => {
+    // octubre 2026 empieza en jueves y termina en sábado
+    const weeks = monthCalendarWeeks("2026-10");
+    expect(weeks).toHaveLength(5);
+    expect(weeks[0]).toEqual([null, null, null, "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"]);
+    expect(weeks[4]).toEqual(["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", null]);
+  });
+  it("febrero de 28 días que parte en lunes: 4 semanas justas", () => {
+    const weeks = monthCalendarWeeks("2027-02");
+    expect(weeks).toHaveLength(4);
+    expect(weeks[0][0]).toBe("2027-02-01");
+    expect(weeks[3][6]).toBe("2027-02-28");
+  });
+});
+
+describe("saldo histórico", () => {
+  // movimiento del banco con su saldo en la clave, como buildBankImport
+  const b = (date, amount, saldo) => tx({ date, amount, key: `${date}|${saldo}|${amount < 0 ? -amount : 0}|${amount > 0 ? amount : 0}` });
+
+  it("bankBalanceOf lee el saldo de la clave; null en manuales o claves sin número", () => {
+    expect(bankBalanceOf(b("2026-08-01", -10, 990))).toBe(990);
+    expect(bankBalanceOf(tx({ source: "manual", key: "2026-08-01|990|10|0" }))).toBeNull();
+    expect(bankBalanceOf(tx({ key: "2026-08-01|COMPRA LIDER|10|0" }))).toBeNull();
+  });
+
+  it("cierre del día por la cadena de saldos, no por el orden de las filas", () => {
+    // 1.000 → −100 → 900 → +50 → 950: el cierre es 950 aunque venga primero
+    const list = [b("2026-08-02", 50, 950), b("2026-08-02", -100, 900), b("2026-08-01", -0.5, 1000)];
+    expect(computeBalanceHistory(list, { days: 2 })).toEqual([
+      { date: "2026-08-01", balance: 1000 },
+      { date: "2026-08-02", balance: 950 },
+    ]);
+  });
+
+  it("repite el saldo en días sin movimientos y arranca con el vigente antes de la ventana", () => {
+    const list = [b("2026-07-20", -10, 500), b("2026-08-03", -100, 400), tx({ source: "manual", date: "2026-08-02", amount: -999 })];
+    expect(computeBalanceHistory(list, { days: 3 })).toEqual([
+      { date: "2026-08-01", balance: 500 },
+      { date: "2026-08-02", balance: 500 },
+      { date: "2026-08-03", balance: 400 },
+    ]);
+    expect(computeBalanceHistory([tx({ source: "manual", key: "x" })])).toEqual([]);
   });
 });
 

@@ -18,7 +18,8 @@ Exports con nombre (`export function X`), salvo `App` (default). Íconos de
 | `AuthGate.jsx` | decide Auth / ResetPassword / App según sesión; maneja `#error=` de links vencidos |
 | `Auth.jsx`, `ResetPassword.jsx` | login/registro/recuperación |
 | `Header.jsx` | `Header`, `BottomNav` (mobile), `MonthBar` (selector de mes, badges de salud de conciliación), `ExportMenu` |
-| `Resumen.jsx` | dashboard: hero, saldo dinámico, ahorro, gráficos recharts, export PNG (html-to-image); usa `Heatmap`, `Insights` |
+| `Resumen.jsx` | dashboard: hero, saldo dinámico, ahorro, gráficos recharts (incl. `BalanceTrend`, saldo diario 3M/6M/1A), export PNG (html-to-image); usa `Heatmap`, `Insights`, `MonthCalendar` |
+| `MonthCalendar.jsx` | calendario del mes en Resumen: gasto real por día con los tonos `--heat-*` (y su texto `--heat-text-*`, elegido por contraste ≥ 4,5:1), tocar un día lista sus movimientos |
 | `Movimientos.jsx` (~1200 líneas) | lista débito agrupada por día **por tandas** (`LIST_PAGE` = 100 filas, se suman al llegar al final; vuelve a 100 al cambiar búsqueda/filtro/mes, no al editar), import modal, alta manual, edición inline/swipe (framer-motion), selección múltiple ("Seleccionar todo" toma toda la lista filtrada, montada o no); contiene la sub-vista `CreditCard` |
 | `CreditCard.jsx` | vista tarjeta CMR: movimientos por ciclo, cuotas, resumen del estado de cuenta |
 | `Conciliacion.jsx` | confirmados / sin reporte / descuadres, vínculo manual |

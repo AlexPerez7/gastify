@@ -70,6 +70,10 @@ lo suyo y puede entrar desde cualquier dispositivo.
 - Saldo actual (último saldo del banco + manuales cargados después) y
   tarjetas de ingresos, gastos (con comparación contra el mismo tramo de días
   del mes anterior), balance con tasa de ahorro y total ahorrado.
+- **Gasto por día**: calendario del mes con lo gastado cada día (más oscuro =
+  más gasto); al tocar un día se ven sus movimientos.
+- **Saldo de la cuenta**: cómo evolucionó el saldo en los últimos 3, 6 o 12
+  meses, según las cartolas importadas.
 - Proyección del gasto a fin de mes: lo gastado hasta hoy más lo que el mes
   anterior gastó desde este mismo día en adelante (así el arriendo no se
   proyecta 30 veces).
