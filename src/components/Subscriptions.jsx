@@ -1,24 +1,41 @@
 import { useState } from "react";
 import { Plus, Repeat } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
-import { formatCLP } from "../lib/utils.js";
+import { formatCLP, formatDateDisplay, localIsoDate } from "../lib/utils.js";
+import { monthlySubscriptionCost } from "../lib/transactionOps.js";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { Panel, EmptyState, StatCard, FieldInput, ToggleSwitch, CategorySelect } from "./Shared.jsx";
 import { BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 
 const DEFAULT_CATEGORY_ID = "suscripciones";
+const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+// "Cobra el 19 de cada mes" / "Cobra el 5 de agosto, cada año", más la
+// fecha de término si tiene.
+function scheduleText(sub, today) {
+  const when = sub.frequency === "yearly"
+    ? `Cobra el ${sub.dayOfMonth} de ${MONTHS[(sub.monthOfYear || 1) - 1]}, cada año`
+    : `Cobra el ${sub.dayOfMonth} de cada mes`;
+  if (!sub.endDate) return when;
+  return `${when} · ${sub.endDate < today ? "terminó" : "termina"} el ${formatDateDisplay(sub.endDate)}`;
+}
 
 export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDelete }) {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  const today = localIsoDate();
   const sorted = [...subscriptions].sort((a, b) => a.dayOfMonth - b.dayOfMonth);
-  const totalMonthly = subscriptions.filter((s) => s.active).reduce((sum, s) => sum + s.amount, 0);
+  const totalMonthly = monthlySubscriptionCost(subscriptions, today);
+  const hasYearly = subscriptions.some((s) => s.active && s.frequency === "yearly");
 
   return (
     <div className="flex flex-col gap-4">
       {subscriptions.length > 0 && (
-        <StatCard label="Total mensual (activas)" value={formatCLP(totalMonthly)} icon={Repeat} accent={TOKENS.text} />
+        <StatCard
+          label="Total mensual (activas)" value={formatCLP(totalMonthly)} icon={Repeat} accent={TOKENS.text}
+          sub={hasYearly ? "las anuales cuentan su doceava parte" : undefined}
+        />
       )}
 
       <Panel
@@ -69,7 +86,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
                 aria-expanded={open}
                 className={`w-full flex items-center gap-3 px-1 py-3 bg-transparent border-0 cursor-pointer text-left ${
                   i > 0 ? "border-t border-border" : ""
-                } ${sub.active ? "opacity-100" : "opacity-50"}`}
+                } ${sub.active && !(sub.endDate && sub.endDate < today) ? "opacity-100" : "opacity-50"}`}
               >
                 <div
                   className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
@@ -80,7 +97,7 @@ export function Subscriptions({ subscriptions, categories, onAdd, onUpdate, onDe
                 <div className="flex-1 min-w-0">
                   <div className="text-body text-ink overflow-hidden text-ellipsis whitespace-nowrap">{sub.name}</div>
                   <div className="text-caption text-faint mt-0.5">
-                    Cobra el {sub.dayOfMonth} de cada mes{!sub.active ? " · pausada" : ""}
+                    {scheduleText(sub, today)}{!sub.active ? " · pausada" : ""}
                   </div>
                 </div>
                 <div className="mono text-body font-semibold text-ink shrink-0">{formatCLP(sub.amount)}</div>
@@ -121,6 +138,9 @@ function SubscriptionForm({ categories, initial, onCancel, onSubmit, extra, dele
   const [name, setName] = useState(initial?.name || "");
   const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : "");
   const [dayOfMonth, setDayOfMonth] = useState(initial?.dayOfMonth != null ? String(initial.dayOfMonth) : "1");
+  const [frequency, setFrequency] = useState(initial?.frequency || "monthly");
+  const [monthOfYear, setMonthOfYear] = useState(String(initial?.monthOfYear || new Date().getMonth() + 1));
+  const [endDate, setEndDate] = useState(initial?.endDate || "");
   const [category, setCategory] = useState(
     initial?.category || (categories.some((c) => c.id === DEFAULT_CATEGORY_ID) ? DEFAULT_CATEGORY_ID : categories[0]?.id || "")
   );
@@ -131,7 +151,10 @@ function SubscriptionForm({ categories, initial, onCancel, onSubmit, extra, dele
 
   const submit = () => {
     if (!valid) return;
-    onSubmit({ name: name.trim(), amount: amountN, dayOfMonth: dayN, category });
+    onSubmit({
+      name: name.trim(), amount: amountN, dayOfMonth: dayN, category,
+      frequency, monthOfYear: frequency === "yearly" ? Number(monthOfYear) : null, endDate: endDate || null,
+    });
   };
 
   return (
@@ -147,6 +170,39 @@ function SubscriptionForm({ categories, initial, onCancel, onSubmit, extra, dele
         <FieldInput label="Monto (CLP)" type="number" value={amount} onChange={setAmount} placeholder="0" style={{ flex: 1 }} />
         <FieldInput label="Día del mes" type="number" min="1" max="31" value={dayOfMonth} onChange={setDayOfMonth} style={{ width: 100 }} />
       </div>
+      <div className="flex gap-2 mb-2.5 items-end flex-wrap">
+        <div className="flex-[1_1_160px]">
+          <div className="text-caption text-faint mb-1">Frecuencia</div>
+          <div className="filter-seg-row">
+            {[["monthly", "Mensual"], ["yearly", "Anual"]].map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={frequency === v}
+                className={`filter-seg-btn ${frequency === v ? "bg-accent text-bg" : "bg-transparent text-muted"}`}
+                onClick={() => setFrequency(v)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {frequency === "yearly" && (
+          <label className="flex-[1_1_140px]">
+            <span className="block text-caption text-faint mb-1">Mes del cobro</span>
+            <select
+              value={monthOfYear}
+              onChange={(e) => setMonthOfYear(e.target.value)}
+              className="w-full px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body cursor-pointer"
+            >
+              {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m[0].toUpperCase() + m.slice(1)}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
+      <FieldInput
+        label="Termina el (opcional)" type="date" value={endDate} onChange={setEndDate} style={{ marginBottom: 10 }}
+      />
       <div className="mb-3">
         <div className="text-caption text-faint mb-1">Categoría</div>
         <CategorySelect categories={categories.filter((c) => categoryMatchesType(c, "expense"))} value={category} onChange={setCategory} />

@@ -14,9 +14,9 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `types.js` | tipos | `@typedef` de Transaction, Category, MerchantRule, Subscription, CreditTransaction, CreditStatement, AccountSettings. No exporta nada en runtime |
 | `utils.js` | puro | parseo CLP/fechas, `makeKey`/`makeCreditKey`, categorización, aritmética de meses, `groupByDate`, `formatDayHeading`, `uid`, `computeInsights` |
 | `reconcile.js` | puro | `reconcileMonthTransactions`, `matchManualToBank`, `findDuplicateIds` |
-| `stats.js` | puro | derivados: listas de meses, filtros, stats del mes, por categoría/mes, `computeHeroStat`, saldo dinámico, total ahorrado, conciliación, crédito |
+| `stats.js` | puro | derivados: listas de meses, filtros (incl. rango de monto), stats del mes, por categoría/mes, `computeHeroStat`, proyección a fin de mes, tasa de ahorro, saldo dinámico, total ahorrado, conciliación, crédito |
 | `importers.js` | puro | filas parseadas → movimientos nuevos: `buildBankImport`, `evaluateBalanceSync`, `buildCreditImport`, `replaceCreditStatement` |
-| `transactionOps.js` | puro | transformaciones de arrays: alta manual, cargos de suscripción, reglas de comercio, edición con regla retroactiva, vínculo a suscripción |
+| `transactionOps.js` | puro | transformaciones de arrays: alta manual, frecuentes/duplicar, cargos de suscripción (mensual/anual, con término), reglas de comercio (guardar, aplicar a lo existente con vista previa), edición con regla retroactiva, vínculo a suscripción |
 | `constants.js` | puro | `TOKENS` (vars CSS), `DEFAULT_CATEGORIES`, íconos lucide, `MERCHANT_RULES_DEFAULT`, `NOISE_TOKENS`, helpers de tipo de categoría |
 | `storage.js` | Supabase | shim `get(key)`/`set(key, json, prevItems)` sobre tablas-lista, con mapeo camel↔snake |
 | `accountSettings.js` | Supabase | tabla de UNA fila por usuario (saldo base, ahorro base) — fuera del patrón de storage |
@@ -78,7 +78,10 @@ tabla con RLS + grant en Supabase.
 ## Categorización
 
 Orden de prioridad al importar: regla de comercio del usuario
-(`applyMerchantRules`, gana el `matchText` más largo) → `autoCategory`
+(`applyMerchantRules` → `ruleMatches`: `matchType` contains/startsWith/
+endsWith/equals/regex sobre la descripción normalizada, y rango de monto
+absoluto opcional; gana la que tiene rango y después el `matchText` más
+largo; una regla con rango no aplica si no se le pasa el monto) → `autoCategory`
 (`MERCHANT_RULES_DEFAULT` + heurísticas `TRANSF`, `ASSERTIVA`) → `"otros"`.
 `categoryType()` infiere `income`/`expense` cuando `type` es null o el legado
 `"both"`.

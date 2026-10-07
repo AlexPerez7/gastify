@@ -2,7 +2,7 @@
 // que antes estaban inline en los useCallback de App.jsx. Cada función recibe
 // el estado actual y devuelve el siguiente; persistirlo es tarea del hook
 // (src/hooks/useTransactionActions.js).
-import { makeKey, monthKey, monthKeyOf, uid, localIsoDate } from "./utils.js";
+import { makeKey, monthKey, monthKeyOf, uid, localIsoDate, ruleMatches } from "./utils.js";
 
 /**
  * @typedef {import("./types.js").Transaction} Transaction
@@ -89,10 +89,30 @@ export function frequentManualEntries(transactions, todayIso, { limit = 6, windo
     .map((g) => ({ ...g.entry, description: g.entry.description.trim(), count: g.count }));
 }
 
+// ¿la suscripción cobra en este mes? Mensual: siempre. Anual: solo en su
+// mes (monthOfYear). Y nunca después de su fecha de término.
+/** @param {Subscription} sub @param {string} mKey "YYYY-MM" */
+export function subscriptionChargesInMonth(sub, mKey) {
+  if (sub.endDate && sub.endDate.slice(0, 7) < mKey) return false;
+  if (sub.frequency === "yearly") return Number(mKey.slice(5, 7)) === sub.monthOfYear;
+  return true;
+}
+
+// costo mensual equivalente: las anuales se prorratean (/12) para que el
+// total de la pestaña Suscripciones compare peras con peras. Solo las
+// activas y no terminadas a `todayIso`.
+/** @param {Subscription[]} subscriptions @param {string} todayIso */
+export function monthlySubscriptionCost(subscriptions, todayIso) {
+  return subscriptions
+    .filter((s) => s.active && !(s.endDate && s.endDate < todayIso))
+    .reduce((sum, s) => sum + (s.frequency === "yearly" ? s.amount / 12 : s.amount), 0);
+}
+
 // el movimiento manual "pendiente" del mes en curso para cada suscripción
-// activa cuyo día de cobro ya pasó y que todavía no lo tiene. Se concilia
-// después con el cargo real del banco como cualquier otro manual. Sin
-// backfill de meses anteriores.
+// activa que cobra este mes, cuyo día de cobro ya pasó (y no después de su
+// fecha de término) y que todavía no lo tiene. Se concilia después con el
+// cargo real del banco como cualquier otro manual. Sin backfill de meses
+// anteriores.
 /**
  * @param {Subscription[]} subscriptions
  * @param {Transaction[]} transactions
@@ -109,9 +129,10 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
     // un cobro "el 31" en un mes de 30 días (o febrero) cae el último día —
     // se compara contra el día ya ajustado, si no nunca se generaba ese mes.
     const chargeDay = Math.min(sub.dayOfMonth, daysInMonth);
-    if (!sub.active || today.getDate() < chargeDay) continue;
-    if (transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey)) continue;
+    if (!sub.active || today.getDate() < chargeDay || !subscriptionChargesInMonth(sub, curMonthKey)) continue;
     const date = `${curMonthKey}-${String(chargeDay).padStart(2, "0")}`;
+    if (sub.endDate && date > sub.endDate) continue;
+    if (transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey)) continue;
     out.push({
       id: uid(),
       key: makeKey(date, sub.name, sub.amount, 0),
@@ -132,7 +153,9 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
 
 /**
  * Agrega (o reemplaza, si ya había una con el mismo texto) una regla de
- * "memoria de comercio".
+ * "memoria de comercio" simple — la que nace de "Recordar esto" al editar un
+ * movimiento. Solo reemplaza reglas igual de simples ("contiene", sin rango
+ * de monto): una regla avanzada armada a mano con el mismo texto se respeta.
  * @param {MerchantRule[]} rules
  * @param {string} matchText  ya sin espacios sobrantes
  * @param {string} categoryId
@@ -140,8 +163,42 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
  * @returns {MerchantRule[]}
  */
 export function upsertMerchantRule(rules, matchText, categoryId, alias) {
-  const others = rules.filter((r) => r.matchText.toUpperCase() !== matchText.toUpperCase());
-  return [...others, { id: uid(), matchText, categoryId, alias: alias || "" }];
+  const isSimple = (r) => (r.matchType || "contains") === "contains" && r.minAmount == null && r.maxAmount == null;
+  const others = rules.filter((r) => !(isSimple(r) && r.matchText.toUpperCase() === matchText.toUpperCase()));
+  return [...others, { id: uid(), matchText, categoryId, alias: alias || "", matchType: "contains", minAmount: null, maxAmount: null }];
+}
+
+// Guarda una regla editada desde la pantalla de reglas: reemplaza la del
+// mismo id o la agrega al final si es nueva.
+/** @param {MerchantRule[]} rules @param {MerchantRule} rule @returns {MerchantRule[]} */
+export function saveMerchantRule(rules, rule) {
+  return rules.some((r) => r.id === rule.id) ? rules.map((r) => (r.id === rule.id ? rule : r)) : [...rules, rule];
+}
+
+/**
+ * Aplica UNA regla a movimientos ya cargados ("Aplicar a lo existente").
+ * Devuelve la lista nueva y los movimientos que cambiarían (para la vista
+ * previa antes de confirmar). Cambia la categoría, y el alias solo si la
+ * regla trae uno (si no, conserva el que había). Si nada cambia, `next` es el
+ * mismo array (===).
+ * @template {{id: string, description: string, amount: number, category: string, alias: string, source?: string}} T
+ * @param {T[]} list
+ * @param {MerchantRule} rule
+ * @param {{ bankOnly?: boolean }} [opts]  débito: solo movimientos del banco (los manuales los escribió el usuario)
+ * @returns {{ next: T[], changed: T[] }}
+ */
+export function applyRuleToExisting(list, rule, { bankOnly = false } = {}) {
+  /** @type {T[]} */
+  const changed = [];
+  const next = list.map((t) => {
+    if (bankOnly && t.source !== "bank") return t;
+    if (!ruleMatches(rule, t.description, t.amount)) return t;
+    const alias = rule.alias || t.alias;
+    if (t.category === rule.categoryId && alias === t.alias) return t;
+    changed.push(t);
+    return { ...t, category: rule.categoryId, alias };
+  });
+  return { next: changed.length ? next : list, changed };
 }
 
 /**

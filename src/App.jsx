@@ -13,6 +13,7 @@ import { EMPTY_AMOUNT_RANGE } from "./lib/stats.js";
 
 import { Header, MonthBar, BottomNav, ExportMenu } from "./components/Header.jsx";
 import { CategoryManager } from "./components/CategoryManager.jsx";
+import { RulesManager } from "./components/RulesManager.jsx";
 import { Subscriptions } from "./components/Subscriptions.jsx";
 import { ToastStack } from "./components/Toast.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
@@ -166,6 +167,12 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
             categories={categories} onAdd={catalog.addCategory} onRename={catalog.renameCategory} onDelete={catalog.deleteCategory}
             onIconChange={catalog.changeCategoryIcon} onColorChange={catalog.changeCategoryColor} onToggleExpense={catalog.toggleCategoryExpense}
             onBudgetChange={catalog.changeCategoryBudget} onTypeChange={catalog.changeCategoryType} onSavingsToggle={catalog.toggleCategorySavings}
+          />
+        )}
+        {tab === "categorias" && (
+          <RulesManager
+            rules={data.merchantRules} categories={categories} pushToast={pushToast}
+            onSave={catalog.saveRule} onDelete={catalog.deleteRule} onPreview={catalog.previewRule} onApply={catalog.applyRule}
           />
         )}
 

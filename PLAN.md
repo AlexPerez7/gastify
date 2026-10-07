@@ -4,13 +4,21 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 (n.º) son los del análisis de UI/UX del 2026-10-03. Al terminar algo, se marca
 `[x]` y se mueve a "Hecho" con su commit.
 
-Última actualización: 2026-10-06 · último commit: `83cb45c`.
+Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
 
 **Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 1.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
 cartola PDF real a mano.
 
 ---
+
+## 00. Bloqueante: migración 0008
+
+- [ ] Correr `supabase/migrations/0008_rules_and_subscription_frequency.sql`
+      en el SQL Editor de Supabase. El commit de reglas/suscripciones de la
+      6.1 queda **sin publicar** hasta entonces: la app manda las columnas
+      nuevas en cada guardado de reglas y suscripciones, y sin ellas Supabase
+      rechaza el upsert. Después: `git push` y verificar el deploy.
 
 ## 0. Verificar en el teléfono (antes de seguir)
 
@@ -89,25 +97,17 @@ tocar el esquema).
 
 ### 6.1 Alto impacto, encajan directo
 
-- [ ] **Proyección de gasto a fin de mes** (su *Monthly Expense Progress*):
-      "mes transcurrido 40%", gastado, estimado al cierre y total del mes
-      pasado. Función pura en `stats.js` + tarjeta en Resumen.
-- [ ] **Tasa de ahorro** (*Savings Rate*): `(ingresos − gastos) / ingresos`
-      del mes en Resumen.
-- [ ] **Reglas de comercio más potentes.** Hoy `MerchantRule` es un substring.
-      Agregar operadores (contiene / empieza / termina / igual / regex /
-      "no contiene"), **condición por rango de monto** ("transferencia a X por
-      $500.000 = arriendo"), descripción normalizada (sin números de operación)
-      y "aplicar reglas en lote" con vista previa antes de confirmar.
-      Requiere migración (columnas nuevas en reglas).
-- [ ] **Filtro por rango de monto** (mín/máx) en Movimientos, y modo de
-      búsqueda contiene / palabra exacta.
-- [ ] **Plantillas de movimiento rápido** ("Almuerzo $5.500 · Comida" en un
-      toque) y **duplicar movimiento** desde la fila/editor.
-- [ ] **Rango "ciclo de facturación"** en la vista CMR (actual / anterior),
-      usando `periodFrom`/`periodTo` de `CreditStatement` en vez del mes.
-- [ ] **Suscripciones más flexibles**: frecuencia anual, semanal y "cada N
-      días", con fecha de inicio y de término (hoy solo "día X del mes").
+Hecha (ver tabla "Hecho (2026-10-06)"). Quedó fuera a propósito:
+
+- Suscripciones **semanales / cada N días**: generarían 4–5 manuales pendientes
+  por mes que conciliar a mano; no hay casos reales hoy. Si aparece uno,
+  `subscriptionChargesInMonth` es el punto a extender.
+- **Búsqueda por palabra exacta**: el filtro por monto cubre el caso de uso
+  real (encontrar un cargo puntual); se puede sumar si hace falta.
+- **Rango "ciclo de facturación" en la tarjeta**: ya existía — la vista CMR
+  agrupa por `statementMonth`, que *es* el ciclo, no el mes calendario. Las
+  compras no facturadas no se pueden mostrar porque el Excel de CMR solo trae
+  las facturadas.
 
 ### 6.2 Valor medio, más trabajo
 
@@ -172,6 +172,14 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `fd30db0` | Escala tipográfica de 6 tamaños que crecen en mobile |
 | `a96edb0` | Gráficos: mapa de actividad legible en mobile, eje "$1,5M", donas con "Resto", paleta validada |
 | `cf8d117` | Deploy arreglado (lock con el esbuild que exige npm 10 en el runner) |
+
+## Hecho (2026-10-06)
+
+| Commit | Qué |
+| --- | --- |
+| `2ca403e` | Sección 6 del PLAN: ideas sacadas de ezbookkeeping |
+| `0ea2acd` | 6.1: proyección a fin de mes, tasa de ahorro, filtro por rango de monto, frecuentes y "Duplicar" en el alta manual |
+| (este) | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
 
 ## Hecho (2026-10-04)
 

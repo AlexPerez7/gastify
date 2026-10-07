@@ -22,9 +22,9 @@ const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 | --- | --- |
 | `useAppData` | **Único dueño del estado de datos** (transactions, creditTransactions, creditStatements, categories, merchantRules, subscriptions, accountSettings). Carga inicial, recarga al volver a la pestaña (si no hay guardados en vuelo), aviso `beforeunload`, `runPersist` optimista con rollback, `persistX` por entidad, `lastPersistError`, cargos de suscripción una vez por sesión, ajuste de saldo/ahorro base |
 | `useTransactionActions` | alta/borrado/edición de movimientos débito y crédito (borrar es inmediato + aviso "Deshacer" que reinserta las mismas filas), acciones masivas, regla de comercio retroactiva, vincular a suscripción, conciliación (`reconcileMonth`, `editManualEntry`, `manualMatch`) |
-| `useCatalogActions` | CRUD de categorías (borrar una mueve sus movimientos y suscripciones a `"otros"`) y suscripciones |
+| `useCatalogActions` | CRUD de categorías (borrar una mueve sus movimientos, suscripciones y reglas a `"otros"`), suscripciones y reglas de comercio (`saveRule`, `deleteRule`, `previewRule`/`applyRule` sobre débito-banco + tarjeta) |
 | `useImporters` | lectura de archivos con progreso, toasts, candado contra doble importación por flujo (`useImportLock`), conciliación automática de saldo, `recentImportIds` |
-| `useDerivedData` | `getCat`, mes seleccionado de débito y crédito (por defecto el más reciente, una sola vez), y todos los derivados memoizados de `src/lib/stats.js` |
+| `useDerivedData` | `getCat`, mes seleccionado de débito y crédito (por defecto el más reciente, una sola vez), y todos los derivados memoizados de `src/lib/stats.js` (también `projection`, `savingsRate` y los `frequentEntries` del formulario de alta) |
 
 ## Hooks de UI
 

@@ -46,6 +46,11 @@ lo suyo y puede entrar desde cualquier dispositivo.
   "memoria de comercio": puedes indicar que una descripción como
   `GOOGLE PLAY...` corresponde a "Claude", y la app recuerda esa regla para
   futuras importaciones (y corrige retroactivamente las que ya coincidían).
+- Pantalla de **reglas de comercio** (pestaña Categorías): cada regla compara
+  la descripción con "contiene", "empieza con", "termina con", "es
+  exactamente" o una expresión regular, y puede exigir un rango de monto
+  (ej. "transferencia a Juan por $450.000 = Arriendo"). Al guardarla muestra
+  qué movimientos ya cargados cambiarían y deja aplicarla con un toque.
 - Cada categoría es de gasto o de ingreso, y los selectores solo sugieren las
   del tipo que corresponde según el monto.
 - Interruptor "cuenta como gasto" para transferencias entre tus propias
@@ -55,8 +60,9 @@ lo suyo y puede entrar desde cualquier dispositivo.
   traspasos a tu cuenta de ahorro), con un monto inicial ajustable.
 
 **Suscripciones**
-- Declaras cada cobro recurrente ("Netflix, $9.990, día 19") o marcas un
-  movimiento existente como suscripción; la app genera el movimiento
+- Declaras cada cobro recurrente ("Netflix, $9.990, día 19"), mensual o
+  anual (ej. un dominio que se paga cada marzo) y con fecha de término
+  opcional, o marcas un movimiento existente como suscripción; la app genera el movimiento
   pendiente el día del cobro y lo concilia con el cargo real del banco.
 
 **Resumen** (siempre de un mes concreto)
@@ -138,6 +144,8 @@ sáltalas); de la `0004` en adelante se pueden repetir sin problema:
 | `0004` | Ahorro base (`savings_base`) |
 | `0005` | `created_at` en movimientos (lo necesita "Deshacer") |
 | `0006` | *Opcional:* recolorea las categorías por defecto a la paleta nueva |
+| `0007` | `base_balance`/`last_sync_date` nullables (ahorro base sin saldo ajustado) |
+| `0008` | Reglas con tipo de coincidencia y rango de monto; suscripciones anuales y con término |
 
 Después, en **Authentication → URL Configuration**, agrega la URL donde vas
 a correr o desplegar la app (ej. `http://localhost:5173` para desarrollo y

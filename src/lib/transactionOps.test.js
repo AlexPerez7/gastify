@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   makeManualTransaction, makeSubscriptionCharges, upsertMerchantRule, applyCategoryEdit,
   editManualDateAmount, linkTransactionToSubscription, entryFromTransaction, frequentManualEntries,
+  subscriptionChargesInMonth, monthlySubscriptionCost, saveMerchantRule, applyRuleToExisting,
 } from "./transactionOps.js";
 
 const NOW = "2026-08-10T12:00:00.000Z";
@@ -130,5 +131,62 @@ describe("frequentManualEntries", () => {
     expect(frequentManualEntries(list, today)).toEqual([
       { type: "expense", description: "Pan", amount: 1200, category: "comida", count: 2 },
     ]);
+  });
+});
+
+describe("suscripciones anuales y con término", () => {
+  const base = { amount: 12000, category: "suscripciones", dayOfMonth: 5, active: true };
+  const yearly = { ...base, id: "y", name: "Dominio", frequency: "yearly", monthOfYear: 8 };
+  const ending = { ...base, id: "e", name: "Gym", endDate: "2026-08-04" };
+
+  it("la anual cobra solo en su mes; la que termina no cobra después de su fecha", () => {
+    expect(subscriptionChargesInMonth(yearly, "2026-08")).toBe(true);
+    expect(subscriptionChargesInMonth(yearly, "2026-09")).toBe(false);
+    expect(subscriptionChargesInMonth(ending, "2026-08")).toBe(true);
+    expect(subscriptionChargesInMonth(ending, "2026-09")).toBe(false);
+    // agosto: el cobro sería el 5, pero terminó el 4
+    const res = makeSubscriptionCharges([yearly, ending], [], new Date(2026, 7, 10), NOW);
+    expect(res.map((t) => t.subscriptionId)).toEqual(["y"]);
+    expect(makeSubscriptionCharges([yearly], [], new Date(2026, 8, 10), NOW)).toEqual([]);
+  });
+
+  it("costo mensual: anuales prorrateadas, sin pausadas ni terminadas", () => {
+    const subs = [
+      { ...base, id: "m", amount: 9000 },
+      yearly,
+      { ...ending, endDate: "2026-08-01" },
+      { ...base, id: "p", active: false },
+    ];
+    expect(monthlySubscriptionCost(subs, "2026-08-10")).toBe(10000);
+  });
+});
+
+describe("reglas de comercio avanzadas", () => {
+  it("upsertMerchantRule no pisa una regla avanzada con el mismo texto", () => {
+    const rules = [{ id: "r1", matchText: "TRANSF", categoryId: "hogar", alias: "", matchType: "contains", minAmount: 450000, maxAmount: 450000 }];
+    const next = upsertMerchantRule(rules, "transf", "transferencias", "");
+    expect(next).toHaveLength(2);
+    expect(next[0].id).toBe("r1");
+  });
+
+  it("saveMerchantRule reemplaza por id o agrega", () => {
+    const rules = [{ id: "a", matchText: "X", categoryId: "c", alias: "" }];
+    expect(saveMerchantRule(rules, { ...rules[0], categoryId: "d" })).toEqual([{ id: "a", matchText: "X", categoryId: "d", alias: "" }]);
+    expect(saveMerchantRule(rules, { id: "b", matchText: "Y", categoryId: "c", alias: "" })).toHaveLength(2);
+  });
+
+  it("applyRuleToExisting cambia solo lo que calza (con monto) y avisa qué cambió", () => {
+    const list = [
+      { id: "1", description: "TRANSF A JUAN", amount: -450000, category: "transferencias", alias: "", source: "bank" },
+      { id: "2", description: "TRANSF A JUAN", amount: -20000, category: "transferencias", alias: "", source: "bank" },
+      { id: "3", description: "TRANSF A JUAN", amount: -450000, category: "transferencias", alias: "", source: "manual" },
+      { id: "4", description: "TRANSF A JUAN", amount: -450000, category: "hogar", alias: "Arriendo", source: "bank" },
+    ];
+    const rule = { id: "r", matchText: "transf a juan", categoryId: "hogar", alias: "Arriendo", matchType: "startsWith", minAmount: 450000, maxAmount: 450000 };
+    const { next, changed } = applyRuleToExisting(list, rule, { bankOnly: true });
+    expect(changed.map((t) => t.id)).toEqual(["1"]);
+    expect(next[0]).toMatchObject({ category: "hogar", alias: "Arriendo" });
+    expect(next.slice(1)).toEqual(list.slice(1));
+    expect(applyRuleToExisting(next, rule, { bankOnly: true }).next).toBe(next);
   });
 });

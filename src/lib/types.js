@@ -44,9 +44,12 @@
  * Regla de "memoria de comercio". Tabla `merchant_rules`.
  * @typedef {Object} MerchantRule
  * @property {string} id
- * @property {string} matchText    substring (case-insensitive) a buscar en la descripción
+ * @property {string} matchText    texto a buscar en la descripción (sin mayúsculas ni espacios extra)
  * @property {string} categoryId
  * @property {string} alias
+ * @property {"contains"|"startsWith"|"endsWith"|"equals"|"regex"} [matchType]  default "contains"
+ * @property {number|null} [minAmount]  rango de monto ABSOLUTO (CLP); null = sin límite
+ * @property {number|null} [maxAmount]
  */
 
 /**
@@ -58,6 +61,9 @@
  * @property {string}  category     id de categoría
  * @property {number}  dayOfMonth   1..31
  * @property {boolean} active
+ * @property {"monthly"|"yearly"} [frequency]  default "monthly"
+ * @property {number|null} [monthOfYear]  1..12, solo si frequency = "yearly"
+ * @property {string|null} [endDate]      ISO "YYYY-MM-DD"; después de esa fecha no se generan más cargos
  */
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  autoCategory, suggestMatchKey, applyMerchantRules, parseClpNumber,
+  autoCategory, suggestMatchKey, applyMerchantRules, ruleMatches, compileRuleRegex, parseClpNumber,
   parseBankDate, makeKey, formatCLP, formatDateDisplay, monthKey, nextMonthKey, uid,
   formatDayHeading, groupByDate,
   formatCLPCompact,
@@ -149,6 +149,39 @@ describe("applyMerchantRules", () => {
   });
   it("devuelve null si ninguna regla coincide", () => {
     expect(applyMerchantRules("FARMACIA AHUMADA", rules)).toBeNull();
+  });
+});
+
+describe("ruleMatches", () => {
+  const r = (o) => ({ id: "x", categoryId: "c", alias: "", ...o });
+  it("tipos de coincidencia, sin mayúsculas ni espacios extra", () => {
+    expect(ruleMatches(r({ matchText: "uber", matchType: "startsWith" }), "UBER  TRIP")).toBe(true);
+    expect(ruleMatches(r({ matchText: "trip", matchType: "startsWith" }), "UBER TRIP")).toBe(false);
+    expect(ruleMatches(r({ matchText: "trip", matchType: "endsWith" }), "UBER TRIP ")).toBe(true);
+    expect(ruleMatches(r({ matchText: "uber trip", matchType: "equals" }), "Uber  Trip")).toBe(true);
+    expect(ruleMatches(r({ matchText: "uber", matchType: "equals" }), "UBER TRIP")).toBe(false);
+    expect(ruleMatches(r({ matchText: "^transf.*juan", matchType: "regex" }), "TRANSF A JUAN PEREZ")).toBe(true);
+    expect(ruleMatches(r({ matchText: "(", matchType: "regex" }), "(")).toBe(false);
+    expect(ruleMatches(r({ matchText: "" }), "ALGO")).toBe(false);
+  });
+  it("rango de monto por valor absoluto; sin monto no aplica", () => {
+    const rule = r({ matchText: "TRANSF", minAmount: 400000, maxAmount: 500000 });
+    expect(ruleMatches(rule, "TRANSF A JUAN", -450000)).toBe(true);
+    expect(ruleMatches(rule, "TRANSF A JUAN", -20000)).toBe(false);
+    expect(ruleMatches(rule, "TRANSF A JUAN")).toBe(false);
+    expect(ruleMatches(r({ matchText: "TRANSF", minAmount: 1000, maxAmount: null }), "TRANSF", 1000)).toBe(true);
+  });
+  it("applyMerchantRules prefiere la regla con rango de monto", () => {
+    const rules = [
+      r({ id: "a", matchText: "TRANSF A JUAN PEREZ", categoryId: "transferencias" }),
+      r({ id: "b", matchText: "TRANSF A JUAN", categoryId: "hogar", minAmount: 450000, maxAmount: 450000 }),
+    ];
+    expect(applyMerchantRules("TRANSF A JUAN PEREZ", rules, -450000).id).toBe("b");
+    expect(applyMerchantRules("TRANSF A JUAN PEREZ", rules, -30000).id).toBe("a");
+  });
+  it("compileRuleRegex devuelve null si el patrón no compila", () => {
+    expect(compileRuleRegex("[")).toBeNull();
+    expect(compileRuleRegex("a+")).toBeInstanceOf(RegExp);
   });
 });
 

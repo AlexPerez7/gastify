@@ -75,13 +75,27 @@ const TABLES = {
   },
   merchantRules: {
     table: "merchant_rules",
-    toRow: (m) => ({ id: m.id, match_text: m.matchText, category_id: m.categoryId, alias: m.alias }),
-    fromRow: (r) => ({ id: r.id, matchText: r.match_text, categoryId: r.category_id, alias: r.alias }),
+    toRow: (m) => ({
+      id: m.id, match_text: m.matchText, category_id: m.categoryId, alias: m.alias,
+      match_type: m.matchType || "contains", min_amount: m.minAmount ?? null, max_amount: m.maxAmount ?? null,
+    }),
+    fromRow: (r) => ({
+      id: r.id, matchText: r.match_text, categoryId: r.category_id, alias: r.alias,
+      matchType: r.match_type || "contains",
+      minAmount: r.min_amount != null ? Number(r.min_amount) : null,
+      maxAmount: r.max_amount != null ? Number(r.max_amount) : null,
+    }),
   },
   subscriptions: {
     table: "subscriptions",
-    toRow: (s) => ({ id: s.id, name: s.name, amount: s.amount, category_id: s.category, day_of_month: s.dayOfMonth, active: !!s.active }),
-    fromRow: (r) => ({ id: r.id, name: r.name, amount: Number(r.amount), category: r.category_id, dayOfMonth: r.day_of_month, active: !!r.active }),
+    toRow: (s) => ({
+      id: s.id, name: s.name, amount: s.amount, category_id: s.category, day_of_month: s.dayOfMonth, active: !!s.active,
+      frequency: s.frequency || "monthly", month_of_year: s.monthOfYear ?? null, end_date: s.endDate || null,
+    }),
+    fromRow: (r) => ({
+      id: r.id, name: r.name, amount: Number(r.amount), category: r.category_id, dayOfMonth: r.day_of_month, active: !!r.active,
+      frequency: r.frequency || "monthly", monthOfYear: r.month_of_year ?? null, endDate: r.end_date || null,
+    }),
   },
   // tarjeta de crédito (CMR) — tabla propia, separada de transactions (ver
   // src/lib/parseCreditCardXlsx.js y makeCreditKey en utils.js).

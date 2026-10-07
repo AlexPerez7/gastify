@@ -23,7 +23,8 @@ Exports con nombre (`export function X`), salvo `App` (default). Íconos de
 | `CreditCard.jsx` | vista tarjeta CMR: movimientos por ciclo, cuotas, resumen del estado de cuenta |
 | `Conciliacion.jsx` | confirmados / sin reporte / descuadres, vínculo manual |
 | `CategoryManager.jsx` | CRUD de categorías (ícono, color, tipo, presupuesto, excluir de gasto, ahorro) |
-| `Subscriptions.jsx` | suscripciones declaradas |
+| `RulesManager.jsx` | reglas de comercio (pestaña Categorías, debajo de las categorías): lista, edición con tipo de coincidencia y rango de monto, "aplicar a lo existente" con vista previa |
+| `Subscriptions.jsx` | suscripciones declaradas (mensuales/anuales, con fecha de término opcional) |
 | `Shared.jsx` | piezas reutilizables (ver abajo) |
 | `Toast.jsx`, `ConfirmDeleteButton.jsx`, `ErrorBoundary.jsx`, `Onboarding.jsx`, `HelpModal.jsx`, `Heatmap.jsx`, `Insights.jsx` | utilitarios |
 

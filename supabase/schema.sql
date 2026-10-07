@@ -50,6 +50,11 @@ create table merchant_rules (
   match_text text not null,
   category_id text not null,
   alias text,
+  -- cómo se compara match_text: contiene / empieza / termina / igual / regex
+  match_type text not null default 'contains'
+    check (match_type in ('contains', 'startsWith', 'endsWith', 'equals', 'regex')),
+  min_amount numeric, -- rango de monto ABSOLUTO (CLP); null = sin límite
+  max_amount numeric,
   user_id uuid not null default auth.uid() references auth.users (id),
   primary key (id, user_id)
 );
@@ -76,6 +81,10 @@ create table subscriptions (
   category_id text not null,
   day_of_month integer not null,
   active boolean not null default true,
+  frequency text not null default 'monthly', -- 'monthly' | 'yearly'
+  month_of_year integer, -- 1..12, solo para las anuales
+  end_date date, -- después de esta fecha no se generan más cargos
+  check (frequency in ('monthly', 'yearly') and (month_of_year is null or month_of_year between 1 and 12)),
   user_id uuid not null default auth.uid() references auth.users (id),
   primary key (id, user_id)
 );

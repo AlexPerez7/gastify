@@ -14,7 +14,8 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
   0004 savings_base en account_settings, 0005 created_at en movimientos y
   estados de cuenta, 0006 **opcional**: recolorea las categorías por defecto
   no personalizadas a la paleta validada, 0007 `base_balance`/`last_sync_date`
-  nullables en account_settings).
+  nullables en account_settings, 0008 `match_type`/`min_amount`/`max_amount`
+  en merchant_rules y `frequency`/`month_of_year`/`end_date` en subscriptions).
 
 ## Tablas
 
@@ -22,8 +23,8 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
 | --- | --- | --- |
 | `transactions` | PK `(id, user_id)`, `unique(user_id, key)` | débito; `source` `bank`/`manual`; `matched_id`, `subscription_id`; `created_at` (la app la manda explícita: "Deshacer" la conserva) |
 | `categories` | PK `(id, user_id)` | ids fijos para las por defecto; `type`, `budget`, `exclude_from_expense`, `is_savings` |
-| `merchant_rules` | PK `(id, user_id)` | `match_text`, `category_id`, `alias` |
-| `subscriptions` | PK `(id, user_id)` | `day_of_month`, `active` |
+| `merchant_rules` | PK `(id, user_id)` | `match_text`, `category_id`, `alias`, `match_type` (contains/startsWith/endsWith/equals/regex), `min_amount`/`max_amount` (rango absoluto) |
+| `subscriptions` | PK `(id, user_id)` | `day_of_month`, `active`, `frequency` (monthly/yearly), `month_of_year`, `end_date` |
 | `credit_transactions` | PK `(id, user_id)`, `unique(user_id, key)` | CMR; `statement_month` en la clave |
 | `credit_statements` | PK `(id, user_id)`, `unique(user_id, statement_month)` | resumen del PDF CMR |
 | `account_settings` | PK `user_id` | una fila por usuario; `base_balance`, `last_sync_date`, `savings_base`, `savings_base_date` (todas nullables: la fila puede existir solo por el ahorro base) |

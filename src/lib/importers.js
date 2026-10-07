@@ -67,7 +67,7 @@ export function buildBankImport(dataRows, transactions, merchantRules, importedA
     if (existingKeys.has(key)) continue;
     existingKeys.add(key);
     const cleanDesc = String(desc).trim().replace(/\s+/g, " ");
-    const rule = applyMerchantRules(cleanDesc, merchantRules);
+    const rule = applyMerchantRules(cleanDesc, merchantRules, abonoN > 0 ? abonoN : -cargoN);
     imported.push({
       id: uid(),
       key,
@@ -133,7 +133,7 @@ export function buildCreditImport(rows, creditTransactions, merchantRules, impor
     const key = makeCreditKey(statementMonth, r.date, r.description, r.montoTotal, r.cuotasPendientes, r.valorCuota);
     if (existingKeys.has(key)) continue;
     existingKeys.add(key);
-    const rule = applyMerchantRules(r.description, merchantRules);
+    const rule = applyMerchantRules(r.description, merchantRules, -r.valorCuota);
     imported.push({
       id: uid(),
       key,

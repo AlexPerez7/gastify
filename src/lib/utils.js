@@ -24,13 +24,61 @@ export function suggestMatchKey(desc) {
   return tokens.join(" ");
 }
 
-export function applyMerchantRules(desc, rules) {
-  const d = desc.toUpperCase();
+// Cómo compara una regla de comercio su texto contra la descripción. Todas
+// ignoran mayúsculas y espacios repetidos; "regex" usa el texto tal cual
+// como expresión regular (con flag i).
+export const RULE_MATCH_TYPES = ["contains", "startsWith", "endsWith", "equals", "regex"];
+
+const normalizeForRule = (s) => String(s || "").toUpperCase().trim().replace(/\s+/g, " ");
+
+// null si el patrón no compila — el formulario lo usa para avisar antes de
+// guardar, y ruleMatches para no romper una importación por una regla mala.
+export function compileRuleRegex(pattern) {
+  try {
+    return new RegExp(pattern, "i");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ¿La regla aplica a este movimiento? Texto según matchType (por defecto
+ * "contains", el de las reglas de antes) y, si la regla tiene rango de monto,
+ * el monto ABSOLUTO dentro de él (extremos incluidos). Sin `amount`, una
+ * regla con rango no aplica: mejor no categorizar que categorizar mal.
+ * @param {import("./types.js").MerchantRule} rule
+ * @param {string} desc
+ * @param {number} [amount]
+ */
+export function ruleMatches(rule, desc, amount) {
+  const text = normalizeForRule(rule.matchText);
+  if (!text) return false;
+  const d = normalizeForRule(desc);
+  let ok;
+  switch (rule.matchType || "contains") {
+    case "startsWith": ok = d.startsWith(text); break;
+    case "endsWith": ok = d.endsWith(text); break;
+    case "equals": ok = d === text; break;
+    case "regex": ok = !!compileRuleRegex(rule.matchText)?.test(String(desc || "")); break;
+    default: ok = d.includes(text);
+  }
+  if (!ok) return false;
+  const hasRange = rule.minAmount != null || rule.maxAmount != null;
+  if (!hasRange) return true;
+  if (amount == null) return false;
+  const a = Math.abs(amount);
+  return (rule.minAmount == null || a >= rule.minAmount) && (rule.maxAmount == null || a <= rule.maxAmount);
+}
+
+// Entre varias reglas que aplican gana la más específica: primero las que
+// tienen rango de monto ("TRANSF A JUAN" por $450.000 = arriendo le gana a
+// "TRANSF A JUAN" a secas), después la de texto más largo.
+const ruleSpecificity = (r) => (r.minAmount != null || r.maxAmount != null ? 10000 : 0) + (r.matchText || "").length;
+
+export function applyMerchantRules(desc, rules, amount) {
   let best = null;
   for (const r of rules) {
-    if (r.matchText && d.includes(r.matchText.toUpperCase())) {
-      if (!best || r.matchText.length > best.matchText.length) best = r;
-    }
+    if (ruleMatches(r, desc, amount) && (!best || ruleSpecificity(r) > ruleSpecificity(best))) best = r;
   }
   return best;
 }
