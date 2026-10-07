@@ -8,7 +8,7 @@ import { ModalCloseContext } from "../hooks/useModalClose.js";
 
 // debe coincidir con la duración de .modal-closing en index.css
 const MODAL_EXIT_MS = 150;
-import { formatCLP } from "../lib/utils.js";
+import { formatCLP, formatDayHeading } from "../lib/utils.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
   return <div className="skeleton" style={{ width, height, borderRadius: radius, background: TOKENS.surfaceAlt, ...style }} />;
@@ -190,6 +190,24 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
       </div>
       <div className="mono text-[17px] font-semibold" style={{ color: accent }}>{value}</div>
       {sub && <div className="text-micro text-faint mt-[3px]">{sub}</div>}
+    </div>
+  );
+}
+
+// Encabezado de un día en las listas ("HOY ········ −$45.300 +$1.800.000",
+// n.º 22). `totals` viene de computeDayTotals; sin él, solo la fecha.
+export function DayHeader({ date, totals }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 px-4 py-[9px] bg-surface-alt border-b border-border">
+      <span className="text-caption font-semibold text-faint uppercase tracking-[0.03em] min-w-0 truncate">
+        {formatDayHeading(date)}
+      </span>
+      {totals && (totals.expense > 0 || totals.income > 0) && (
+        <span className="mono text-caption shrink-0 flex gap-2">
+          {totals.expense > 0 && <span className="text-muted">{formatCLP(-totals.expense)}</span>}
+          {totals.income > 0 && <span className="text-income">+{formatCLP(totals.income)}</span>}
+        </span>
+      )}
     </div>
   );
 }

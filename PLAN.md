@@ -6,55 +6,26 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 
 Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
 
-**Para retomar:** primero la sección 0 (pruebas en el teléfono), después lo que queda de la 2 o la 3.
+**Para retomar:** queda la sección 4 (necesita una cartola PDF real), la 5 (opcional) y las ideas de la 6.2 en adelante.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
 cartola PDF real a mano.
 
 ---
 
-## 0. Verificar en el teléfono (antes de seguir)
+## 0. Verificar en el teléfono
 
-Cosas que se probaron con Playwright o leyendo el código, pero que dependen de
-hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
-
-- [ ] El header no queda debajo del notch / reloj (safe-area-inset-top).
-- [ ] Formulario "Nuevo movimiento" con el teclado abierto: el botón Guardar
-      queda alcanzable; el monto hace zoom 0 (input de 28px).
-- [ ] La barra de estado cambia de color con el tema claro/oscuro.
-- [ ] Fila de movimiento: mantener presionado entra a selección; deslizar
-      muestra editar/borrar **sin** abrir el editor.
-- [ ] Borrar → **Deshacer** → recargar: el movimiento sigue en su lugar del día
-      y el saldo actual no cambió (confirma que `created_at` se conserva).
-- [ ] Mapa de actividad: tocar un día muestra su monto.
-- [ ] Movimientos → Filtros: el selector de categoría se abre **encima** de la
-      hoja y se puede elegir (antes quedaba tapado; arreglado en `e302c9b`).
-- [ ] Ahorro base: con la 0007 ya corrida, declarar/editar "Total ahorrado"
-      guarda sin error.
-- [ ] Lo nuevo de la 6.1 y la sección 1, con datos reales: chips de
-      frecuentes y "Duplicar"; filtro por monto; una regla con rango de monto
-      y "Aplicar a lo existente"; una suscripción anual; fila de la tarjeta
-      (tocar → editar/borrar); aviso de conciliación en Movimientos.
-- [ ] Animaciones: cambiar de pestaña es instantáneo; borrar una fila la
-      encoge suave; un deslizamiento rápido y corto abre editar/borrar; los
-      modales y la hoja de Filtros salen animados (Esc, fondo, ✕, "Listo").
-- [ ] Movimientos con "Todo": la búsqueda responde al tiro y al bajar se
-      cargan solas más filas (de a 100), sin saltos.
+Hecho el 2026-10-07 (pruebas del usuario con la PWA instalada: notch,
+teclado, gestos, "Deshacer", lo nuevo de la 6.1, sección 1, lista larga y
+animaciones). Repetir esta ronda tras cambios grandes de UI.
 
 ## 2. Animaciones
 
 Auditoría del 2026-10-07 completa (ver "Hecho"). Pendiente solo probarlo en
 el teléfono (sección 0).
 
-## 3. Pulido (de a poco, al tocar cada pantalla)
+## 3. Pulido
 
-- [ ] **n.º 17** · Etiqueta "Suscripciones" de la barra inferior no cabe a
-      320–360px → acortar ("Suscrip.") o cambiar qué pestañas van ahí.
-- [ ] **n.º 22** · Total del día en los encabezados de la lista ("Hoy · −$45.300").
-- [ ] **n.º 23** · "Guardar resumen" (PNG) ocupa el primer lugar de Resumen →
-      moverlo al final o a un menú "⋮".
-- [ ] **n.º 25** · Categorías: nombre y presupuesto se guardan al salir del campo
-      sin aviso local → mostrar un ✓ junto al campo.
-- [ ] Botón "Importar Excel" también acepta PDF → "Importar cartola".
+Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 
 ## 4. Deuda técnica
 
@@ -166,6 +137,12 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `8e112ea` | n.º 19 · Lista larga por tandas de 100 filas (scroll infinito + "Mostrar más"). Medido con 2.000 filas, mobile, CPU ×4, React dev: por tecla al buscar 0,9–3,3 s → 0,25–0,47 s; volver a la lista completa 12,4 s → ~0,3 s; DOM 75k → 3,8k nodos |
 | `7e3f499` | Animaciones: tokens de curva (`--ease-out`, `--ease-in-out`, `--ease-drawer`, `--ease-overshoot`); pestañas principales sin animación y Resumen sin escalonado (n.º 26); filas sin animación de entrada al montarse; colapso al borrar con `grid-template-rows` y ease-out (antes `max-height` + `ease-in`); la regla global de botones ya no pisa `transition-colors` ni las transiciones propias (estaba fuera de `@layer`) |
 | `2bb4953` | Animaciones, resto de la auditoría: menú ⋮, `CategorySelect` y confirmar borrado entran desde su botón (`.popover`); toasts con salida interrumpible y el stack se reacomoda sin saltos (`.toast-slot`); modales y hojas con salida animada (Esc/fondo/✕ y botones propios vía `useModalClose`); deslizar filas abre/cierra con un gesto rápido (distancia ÷ duración > 0,11 px/ms) y termina con spring sin rebote |
+
+## Hecho (2026-10-07)
+
+| Commit | Qué |
+| --- | --- |
+| (este) | Pulido: barra inferior cabe a 320px ("Suscrip.", "+" de ancho fijo, etiquetas que no empujan) (n.º 17); total del día en los encabezados de Movimientos y de la tarjeta, con gasto real (`computeDayTotals`) (n.º 22); "Guardar resumen como imagen" al final de Resumen (n.º 23); ✓ "Guardado" al salir del nombre/presupuesto de una categoría (n.º 25); "Importar cartola"; `swipeShouldOpen` a `src/lib/swipe.js` con test |
 
 ## Hecho (2026-10-04)
 

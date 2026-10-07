@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Upload, Plus, Pencil, X, Copy, AlertTriangle, ChevronRight, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
-import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
-import { EMPTY_AMOUNT_RANGE, isAmountRangeActive } from "../lib/stats.js";
+import { formatCLP, suggestMatchKey, groupByDate, localIsoDate } from "../lib/utils.js";
+import { EMPTY_AMOUNT_RANGE, isAmountRangeActive, computeDayTotals, excludedCategoryIdsOf } from "../lib/stats.js";
 import { entryFromTransaction } from "../lib/transactionOps.js";
-import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, Modal } from "./Shared.jsx";
+import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, Modal, DayHeader } from "./Shared.jsx";
 import { BTN_PRIMARY, BTN_GHOST, pillClass } from "./classes.js";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
@@ -101,6 +101,9 @@ export function Movimientos({
   const limit = page.key === listKey ? page.limit : LIST_PAGE;
   const showMore = () => setPage({ key: listKey, limit: limit + LIST_PAGE });
   const renderedTx = visibleTx.length > limit ? visibleTx.slice(0, limit) : visibleTx;
+  // sobre la lista completa (no renderedTx): el último día de una tanda
+  // puede estar cortado y su total tiene que ser el del día entero
+  const dayTotals = useMemo(() => computeDayTotals(visibleTx, excludedCategoryIdsOf(categories)), [visibleTx, categories]);
 
   const toggleSelectAll = () => {
     if (allVisibleSelected) {
@@ -354,7 +357,7 @@ export function Movimientos({
                   className={`${ACTION_BTN} disabled:opacity-60 disabled:cursor-default`}
                   title={isImporting ? "Ya hay una importación en curso…" : "Importar movimientos del banco desde un .xls o una cartola .pdf"}
                 >
-                  {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar Excel
+                  {isImporting ? <Loader2 size={13} className="spin" /> : <Upload size={13} />} Importar cartola
                 </button>
                 <button onClick={() => setShowManualForm((v) => !v)} className={`new-record-btn ${ACTION_BTN}`} title="Agregar un gasto o ingreso manual">
                   <Plus size={13} /> Nuevo registro
@@ -502,9 +505,7 @@ export function Movimientos({
         ) : (
           groupByDate(renderedTx).map((group) => (
             <div key={group.date}>
-              <div className="px-4 py-[9px] text-caption font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
-                {formatDayHeading(group.date)}
-              </div>
+              <DayHeader date={group.date} totals={dayTotals[group.date]} />
               {group.items.map((t, i) => (
                 <TxRow
                   key={t.id}

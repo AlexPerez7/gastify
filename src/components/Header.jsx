@@ -10,7 +10,9 @@ import logo from "../assets/logo.png";
 const TAB_ITEMS = [
   { id: "resumen", label: "Resumen", icon: LayoutGrid },
   { id: "movimientos", label: "Movimientos", icon: ListChecks },
-  { id: "suscripciones", label: "Suscripciones", icon: Repeat },
+  // navLabel: versión corta para la barra inferior de mobile (n.º 17):
+  // "Suscripciones" no cabe a 320–360px y empujaba a Categorías fuera
+  { id: "suscripciones", label: "Suscripciones", navLabel: "Suscrip.", icon: Repeat },
   { id: "categorias", label: "Categorías", icon: Tag },
 ];
 
@@ -128,7 +130,7 @@ function BottomTabButton({ it, tab, setTab }) {
       className={`bottom-tab-btn ${active ? "text-ink" : "text-faint"}`}
     >
       <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />
-      <span>{it.label}</span>
+      <span>{it.navLabel || it.label}</span>
     </button>
   );
 }

@@ -14,9 +14,10 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `types.js` | tipos | `@typedef` de Transaction, Category, MerchantRule, Subscription, CreditTransaction, CreditStatement, AccountSettings. No exporta nada en runtime |
 | `utils.js` | puro | parseo CLP/fechas, `makeKey`/`makeCreditKey`, categorización, aritmética de meses, `groupByDate`, `formatDayHeading`, `uid`, `computeInsights` |
 | `reconcile.js` | puro | `reconcileMonthTransactions`, `matchManualToBank`, `findDuplicateIds` |
-| `stats.js` | puro | derivados: listas de meses, filtros (incl. rango de monto), stats del mes, por categoría/mes, `computeHeroStat`, proyección a fin de mes, tasa de ahorro, saldo dinámico, total ahorrado, conciliación, crédito |
+| `stats.js` | puro | derivados: listas de meses, filtros (incl. rango de monto), stats del mes, totales por día (`computeDayTotals`), por categoría/mes, `computeHeroStat`, proyección a fin de mes, tasa de ahorro, saldo dinámico, total ahorrado, conciliación, crédito |
 | `importers.js` | puro | filas parseadas → movimientos nuevos: `buildBankImport`, `evaluateBalanceSync`, `buildCreditImport`, `replaceCreditStatement` |
 | `transactionOps.js` | puro | transformaciones de arrays: alta manual, frecuentes/duplicar, cargos de suscripción (mensual/anual, con término), reglas de comercio (guardar, aplicar a lo existente con vista previa), edición con regla retroactiva, vínculo a suscripción |
+| `swipe.js` | puro | `swipeShouldOpen`: decide si una fila deslizada queda abierta (flick por distancia ÷ duración > 0,11 px/ms, o más de la mitad del ancho) |
 | `constants.js` | puro | `TOKENS` (vars CSS), `DEFAULT_CATEGORIES`, íconos lucide, `MERCHANT_RULES_DEFAULT`, `NOISE_TOKENS`, helpers de tipo de categoría |
 | `storage.js` | Supabase | shim `get(key)`/`set(key, json, prevItems)` sobre tablas-lista, con mapeo camel↔snake |
 | `accountSettings.js` | Supabase | tabla de UNA fila por usuario (saldo base, ahorro base) — fuera del patrón de storage |
@@ -106,7 +107,7 @@ largo; una regla con rango no aplica si no se le pasa el monto) → `autoCategor
   o cambio de lógica de dinero → test. Las funciones reciben `now`/`createdAt`
   por parámetro para poder testear fechas sin mocks.
 - `npm run typecheck` solo incluye los módulos puros (`types`, `utils`,
-  `reconcile`, `constants`, `storage`, `stats`, `importers`, `transactionOps`;
+  `reconcile`, `constants`, `storage`, `stats`, `importers`, `transactionOps`, `swipe`;
   ver `tsconfig.json`, `strict: false`). Parsers,
   hooks y `supabaseClient` quedan fuera a propósito. Si agregas un archivo puro,
   súmalo al `include`.

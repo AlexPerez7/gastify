@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Check } from "lucide-react";
 import { TOKENS, ICONS, ICON_NAMES, PALETTE, resolveCategoryIcon, categoryType } from "../lib/constants.js";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { ToggleSwitch, FieldInput, CategoryQuickAdd } from "./Shared.jsx";
@@ -127,6 +127,17 @@ function CategorySection({
   );
 }
 
+// ✓ "Guardado" junto a un campo que se guarda solo al salir de él. El
+// contenedor con aria-live existe siempre (vacío) para que el lector de
+// pantalla anuncie el cambio.
+function SavedMark({ show }) {
+  return (
+    <span aria-live="polite" className="inline-flex items-center gap-1 text-caption text-income font-semibold shrink-0">
+      {show && <><Check size={12} strokeWidth={3} /> Guardado</>}
+    </span>
+  );
+}
+
 // panel de edición de una categoría existente: nombre, tipo, color, ícono,
 // presupuesto (solo gasto), si cuenta como gasto (solo gasto) y si suma al
 // ahorro — se abre debajo de la grilla al tocar su tile.
@@ -136,15 +147,36 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
   const type = categoryType(cat);
   const isExpense = type === "expense";
 
+  // n.º 25: nombre y presupuesto se guardan al salir del campo, sin botón —
+  // un ✓ "Guardado" por 1,5s confirma que se guardó de verdad (si falla, el
+  // aviso de error de sincronización ya aparece arriba).
+  const [savedField, setSavedField] = useState(null); // "label" | "budget" | null
+  const savedTimer = useRef(null);
+  useEffect(() => () => clearTimeout(savedTimer.current), []);
+  const confirmSaved = async (field, savePromise) => {
+    if (!(await savePromise)) return;
+    setSavedField(field);
+    clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSavedField(null), 1500);
+  };
+  const saveBudget = () => {
+    const next = budgetInput === "" ? null : parseFloat(budgetInput);
+    // sin cambios no se guarda (ni se muestra ✓): salir del campo no es guardar
+    if ((next > 0 ? next : null) === (cat.budget ?? null)) return;
+    confirmSaved("budget", onBudgetChange(cat.id, next));
+  };
+
   return (
     <div className="mt-3.5 p-3 bg-surface-alt border border-border rounded-[10px]">
       <div className="flex items-center gap-2 mb-3">
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          onBlur={() => { if (label.trim() && label.trim() !== cat.label) onRename(cat.id, label.trim()); }}
+          onBlur={() => { if (label.trim() && label.trim() !== cat.label) confirmSaved("label", onRename(cat.id, label.trim())); }}
+          aria-label="Nombre de la categoría"
           className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body"
         />
+        <SavedMark show={savedField === "label"} />
         <ConfirmDeleteButton
           onConfirm={() => { onDelete(cat.id); onClose(); }}
           text={`Los movimientos en "${cat.label}" van a pasar a Otros. ¿Eliminar la categoría?`}
@@ -221,11 +253,11 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
         <>
           <div className="w-full h-px bg-border mt-1 mb-3" />
           <FieldInput
-            label="Presupuesto mensual (CLP, opcional)"
+            label={<>Presupuesto mensual (CLP, opcional) <SavedMark show={savedField === "budget"} /></>}
             type="number"
             value={budgetInput}
             onChange={setBudgetInput}
-            onBlur={() => onBudgetChange(cat.id, budgetInput === "" ? null : parseFloat(budgetInput))}
+            onBlur={saveBudget}
             placeholder="Sin límite"
             style={{ marginBottom: 12 }}
           />

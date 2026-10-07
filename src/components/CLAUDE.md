@@ -34,7 +34,7 @@ Exports con nombre (`export function X`), salvo `App` (default). Íconos de
 `useFocusTrap` y devuelto al disparador al cerrar, `dismissOnBackdrop` en false
 mientras un formulario tenga datos, `sheetOnMobile` para que suba desde abajo
 en mobile, rol de diálogo), `Panel`, `StatCard`, `EmptyState`, `EmptyNote`,
-`FieldInput` (es un `<label>`), `ToggleSwitch`, `ClassicRowContent` (contenido de la fila "Clásica" mobile: ícono en círculo + nombre/monto + detalle; la usan Conciliación y la tarjeta),
+`FieldInput` (es un `<label>`), `ToggleSwitch`, `DayHeader` (encabezado de día de las listas, con el total de `computeDayTotals`), `ClassicRowContent` (contenido de la fila "Clásica" mobile: ícono en círculo + nombre/monto + detalle; la usan Conciliación y la tarjeta),
 `CategorySelect` (con `allOption`), `CategoryQuickAdd`, skeletons
 (`AppShellSkeleton`, `ResumenSkeleton`, `MovimientosSkeleton`, `Skeleton`).
 Clases compartidas en **`classes.js`** (no en Shared.jsx: un archivo que

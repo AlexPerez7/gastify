@@ -28,7 +28,8 @@
     "src/lib/storage.js",
     "src/lib/stats.js",
     "src/lib/importers.js",
-    "src/lib/transactionOps.js"
+    "src/lib/transactionOps.js",
+    "src/lib/swipe.js"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.js"]
 }

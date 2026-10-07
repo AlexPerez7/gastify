@@ -89,19 +89,6 @@ export function Resumen({
 
   return (
     <div>
-      {hasTransactions && (
-        <div className="flex justify-end mb-3">
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-small disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
-          >
-            {exporting ? <Loader2 size={13} className="spin" /> : <ImageDown size={13} />}
-            {exporting ? "Generando…" : "Guardar resumen"}
-          </button>
-        </div>
-      )}
-
       <div ref={captureRef}>
       {hasTransactions && <Insights items={insights} />}
 
@@ -313,6 +300,22 @@ export function Resumen({
         </ErrorBoundary>
       </Panel>
       </div>
+
+      {/* al final y no arriba (n.º 23): es una acción ocasional y ocupaba el
+          primer lugar de la pantalla que más se mira. Fuera de captureRef,
+          para que el botón no salga en la imagen. */}
+      {hasTransactions && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-[7px] rounded-lg border border-border bg-surface text-muted text-small disabled:opacity-70 disabled:cursor-default enabled:cursor-pointer"
+          >
+            {exporting ? <Loader2 size={13} className="spin" /> : <ImageDown size={13} />}
+            {exporting ? "Generando…" : "Guardar resumen como imagen"}
+          </button>
+        </div>
+      )}
 
       {showAdjustModal && (
         <AdjustAmountModal

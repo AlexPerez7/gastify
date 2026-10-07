@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText, Trash2 } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
-import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, CategorySelect, Modal, ClassicRowContent } from "./Shared.jsx";
+import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate } from "../lib/utils.js";
+import { EmptyState, CategorySelect, Modal, ClassicRowContent, DayHeader } from "./Shared.jsx";
+import { computeDayTotals } from "../lib/stats.js";
 import { pillClass, BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
+
+// la tarjeta no tiene categorías "no cuenta como gasto": todo cargo suma
+const NO_EXCLUDED = new Set();
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function monthLabel(mk) {
@@ -27,6 +31,7 @@ export function CreditCard({
   // "pendiente" (presente) solo tiene sentido real en el ciclo más reciente
   // — en uno viejo, esas cuotas ya se siguieron pagando después.
   const isLatestCycle = months[0] === currentMonth;
+  const dayTotals = useMemo(() => computeDayTotals(tx, NO_EXCLUDED), [tx]);
   const isMobile = useIsMobile();
 
   return (
@@ -158,9 +163,8 @@ export function CreditCard({
         ) : (
           groupByDate(tx).map((group) => (
             <div key={group.date}>
-              <div className="px-4 py-[9px] text-caption font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
-                {formatDayHeading(group.date)}
-              </div>
+              {/* tarjeta: sin categorías excluidas (no hay traspasos propios acá) */}
+              <DayHeader date={group.date} totals={dayTotals[group.date]} />
               {group.items.map((t, i) => (
                 <CreditTxRow
                   key={t.id}

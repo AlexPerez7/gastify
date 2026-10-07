@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   listMonths, filterTransactions, computeMonthStats, sumByCategory, computeHeroStat, computeDailySpend,
   computeTotalSavings, computeDynamicBalance, computeReconcileStats, computeMonthHealth,
-  heatmapThresholds, heatLevel, computeMonthProjection, computeSavingsRate,
+  heatmapThresholds, heatLevel, computeMonthProjection, computeSavingsRate, computeDayTotals,
 } from "./stats.js";
 
 const tx = (o) => ({ source: "bank", matchedId: null, alias: "", category: "otros", description: "", ...o });
@@ -67,6 +67,22 @@ describe("computeHeroStat", () => {
   it("mes cerrado usa el mes completo; sin datos previos typicalPace es null", () => {
     const res = computeHeroStat({ "2026-02-27": 10 }, [], "2026-02", new Date(2026, 7, 5));
     expect(res).toMatchObject({ spentSoFar: 10, typicalPace: null, dayOfMonth: 28, isRealCurrentMonth: false });
+  });
+});
+
+describe("computeDayTotals", () => {
+  it("gasto real e ingresos por día; las categorías excluidas no suman gasto", () => {
+    const list = [
+      tx({ date: "2026-08-01", amount: -100, category: "comida" }),
+      tx({ date: "2026-08-01", amount: -50, category: "comida" }),
+      tx({ date: "2026-08-01", amount: -1000, category: "transferencias" }),
+      tx({ date: "2026-08-01", amount: 500, category: "ingreso" }),
+      tx({ date: "2026-08-02", amount: -7, category: "comida" }),
+    ];
+    expect(computeDayTotals(list, new Set(["transferencias"]))).toEqual({
+      "2026-08-01": { expense: 150, income: 500 },
+      "2026-08-02": { expense: 7, income: 0 },
+    });
   });
 });
 

@@ -395,6 +395,28 @@ input.amount-input:focus-visible {
 }
 
 /* sin rebote: se cambia de pestaña decenas de veces al día */
+/* min-width 0 + recorte: una etiqueta larga nunca ensancha su casilla ni
+   empuja a la pestaña de al lado fuera de la pantalla */
+.bottom-tab-btn {
+  min-width: 0;
+}
+
+.bottom-tab-btn span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* a 320px "Movimientos" (11px) no cabe en su cuarto de ancho */
+@media (max-width: 340px) {
+  .bottom-tab-btn {
+    font-size: 10px;
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+}
+
 .bottom-tab-btn svg {
   transition: transform 150ms var(--ease-out);
 }
@@ -405,10 +427,12 @@ input.amount-input:focus-visible {
 
 /* ---- "+" central del nav inferior (agregar movimiento) ------------------- */
 
+/* ancho fijo para el "+" (no un quinto del ancho): deja más espacio a las
+   etiquetas de las pestañas en pantallas angostas */
 .bottom-tab-center {
   position: relative;
   display: flex;
-  flex: 1;
+  flex: 0 0 52px;
   align-items: flex-start;
   justify-content: center;
 }

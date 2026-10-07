@@ -22,7 +22,8 @@ lo suyo y puede entrar desde cualquier dispositivo.
   Arriba aparecen tus "frecuentes" (lo que anotas a mano seguido, como el
   almuerzo o el Uber) para completarlos con un toque, y cualquier movimiento
   se puede **duplicar** desde su editor.
-- Lista agrupada por día ("Hoy", "Ayer", "Lunes, 3 de agosto"). En mobile:
+- Lista agrupada por día ("Hoy", "Ayer", "Lunes, 3 de agosto"), con lo gastado
+  y lo que entró ese día en cada encabezado. En mobile:
   tocar edita, deslizar muestra editar/borrar y mantener presionado entra al
   modo selección. En desktop: edición en la misma fila.
 - Selección múltiple con barra de acciones masivas para recategorizar o

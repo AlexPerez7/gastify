@@ -6,7 +6,7 @@ const SECTIONS = [
   {
     icon: Upload,
     title: "Subir movimientos del banco",
-    text: "Desde Movimientos → \"Importar Excel\", o el botón + de abajo → \"Subir archivo del banco\", puedes subir el .xls (reportCollection) o la cartola mensual en .pdf de Banco Falabella — la app detecta el formato solo, por la extensión del archivo. Si subes el .xls y el .pdf del mismo período, los movimientos que ya estén importados no se duplican.",
+    text: "Desde Movimientos → \"Importar cartola\", o el botón + de abajo → \"Subir archivo del banco\", puedes subir el .xls (reportCollection) o la cartola mensual en .pdf de Banco Falabella — la app detecta el formato solo, por la extensión del archivo. Si subes el .xls y el .pdf del mismo período, los movimientos que ya estén importados no se duplican.",
   },
   {
     icon: PenLine,

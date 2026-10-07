@@ -13,9 +13,10 @@ export function useCatalogActions(data) {
     persistCats, persistTx, persistCreditTx, persistSubs, persistRules,
   } = data;
 
-  // patch de una categoría por id
+  // patch de una categoría por id. Devuelve la promesa de persistCats
+  // (Promise<boolean>): el panel de edición la usa para mostrar el ✓.
   const patchCategory = useCallback(
-    (id, fn) => { persistCats(categories.map((c) => (c.id === id ? { ...c, ...fn(c) } : c))); },
+    (id, fn) => persistCats(categories.map((c) => (c.id === id ? { ...c, ...fn(c) } : c))),
     [categories, persistCats]
   );
 

@@ -118,6 +118,27 @@ export function computeByMonth(transactions, excludedIds) {
   return Object.values(map).sort((a, b) => (a.month > b.month ? 1 : -1)).slice(-6);
 }
 
+// Totales por día para los encabezados de la lista ("Hoy · −$45.300 ·
+// +$1.800.000"). Se calculan sobre la lista filtrada COMPLETA, no sobre lo
+// ya montado (Movimientos dibuja por tandas: el último día de una tanda
+// puede estar cortado). Gasto = gasto real (sin categorías excluidas, como
+// en el resto de la app), en valor absoluto; ingreso = abonos.
+/**
+ * @param {{date: string, amount: number, category: string}[]} txs
+ * @param {Set<string>} excludedIds
+ * @returns {Record<string, { expense: number, income: number }>}
+ */
+export function computeDayTotals(txs, excludedIds) {
+  /** @type {Record<string, { expense: number, income: number }>} */
+  const map = {};
+  for (const t of txs) {
+    const d = (map[t.date] ||= { expense: 0, income: 0 });
+    if (t.amount > 0) d.income += t.amount;
+    else if (!excludedIds.has(t.category)) d.expense += Math.abs(t.amount);
+  }
+  return map;
+}
+
 /** Gasto real por día ISO. @param {Transaction[]} transactions @param {Set<string>} excludedIds @returns {Record<string, number>} */
 export function computeDailySpend(transactions, excludedIds) {
   /** @type {Record<string, number>} */
