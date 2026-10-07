@@ -147,7 +147,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | Commit | Qué |
 | --- | --- |
 | `4d8f9bb` | Pulido: barra inferior cabe a 320px ("Suscrip.", "+" de ancho fijo, etiquetas que no empujan) (n.º 17); total del día en los encabezados de Movimientos y de la tarjeta, con gasto real (`computeDayTotals`) (n.º 22); "Guardar resumen como imagen" al final de Resumen (n.º 23); ✓ "Guardado" al salir del nombre/presupuesto de una categoría (n.º 25); "Importar cartola"; `swipeShouldOpen` a `src/lib/swipe.js` con test |
-| (este) | `pdfjs-dist` 6.2.108 → 6.4.299 y `supabase-js` 2.111.0 → 2.117.2. Validado con una cartola de débito y un estado de cuenta CMR reales (fuera del repo): salida idéntica a la de antes, 81 filas con la cadena de saldos cuadrando 80/80, los 9 campos de CMR; un solo vite, `npm audit` en 0, el build de producción arranca sin errores |
+| `322200f` | `pdfjs-dist` 6.2.108 → 6.4.299 y `supabase-js` 2.111.0 → 2.117.2. Validado con una cartola de débito y un estado de cuenta CMR reales (fuera del repo): salida idéntica a la de antes, 81 filas con la cadena de saldos cuadrando 80/80, los 9 campos de CMR; un solo vite, `npm audit` en 0, el build de producción arranca sin errores |
 
 ## Hecho (2026-10-04)
 
