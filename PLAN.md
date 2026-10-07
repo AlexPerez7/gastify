@@ -4,7 +4,7 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 (n.º) son los del análisis de UI/UX del 2026-10-03. Al terminar algo, se marca
 `[x]` y se mueve a "Hecho" con su commit.
 
-Última actualización: 2026-10-04 · último commit: `75908d4`.
+Última actualización: 2026-10-06 · último commit: `83cb45c`.
 
 **Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 1.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
@@ -79,6 +79,84 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       categorías por defecto no personalizadas a la paleta validada. Sin
       correrla, la app funciona igual (solo cambian los colores de categorías
       nuevas).
+
+## 6. Ideas sacadas de ezbookkeeping (2026-10-06)
+
+Análisis de [mayswind/ezbookkeeping](https://github.com/mayswind/ezbookkeeping)
+(app de finanzas self-hosted, Go + Vue). Ordenadas por valor para Gastify; la
+recomendación es partir por 6.1 (lógica pura en `src/lib`, con tests, casi sin
+tocar el esquema).
+
+### 6.1 Alto impacto, encajan directo
+
+- [ ] **Proyección de gasto a fin de mes** (su *Monthly Expense Progress*):
+      "mes transcurrido 40%", gastado, estimado al cierre y total del mes
+      pasado. Función pura en `stats.js` + tarjeta en Resumen.
+- [ ] **Tasa de ahorro** (*Savings Rate*): `(ingresos − gastos) / ingresos`
+      del mes en Resumen.
+- [ ] **Reglas de comercio más potentes.** Hoy `MerchantRule` es un substring.
+      Agregar operadores (contiene / empieza / termina / igual / regex /
+      "no contiene"), **condición por rango de monto** ("transferencia a X por
+      $500.000 = arriendo"), descripción normalizada (sin números de operación)
+      y "aplicar reglas en lote" con vista previa antes de confirmar.
+      Requiere migración (columnas nuevas en reglas).
+- [ ] **Filtro por rango de monto** (mín/máx) en Movimientos, y modo de
+      búsqueda contiene / palabra exacta.
+- [ ] **Plantillas de movimiento rápido** ("Almuerzo $5.500 · Comida" en un
+      toque) y **duplicar movimiento** desde la fila/editor.
+- [ ] **Rango "ciclo de facturación"** en la vista CMR (actual / anterior),
+      usando `periodFrom`/`periodTo` de `CreditStatement` en vez del mes.
+- [ ] **Suscripciones más flexibles**: frecuencia anual, semanal y "cada N
+      días", con fecha de inicio y de término (hoy solo "día X del mes").
+
+### 6.2 Valor medio, más trabajo
+
+- [ ] **IA para cargar movimientos**: foto de boleta, o pegar el SMS/correo de
+      aviso de compra del banco → JSON con las categorías del usuario como
+      opciones. Sin backend: Edge Function de Supabase con la API key. Sus
+      prompts (`templates/prompt/*.tmpl`) sirven de base.
+- [ ] **Etiquetas (tags)** transversales a la categoría ("vacaciones-2026",
+      "reembolsable"), con filtro. Migración + toRow/fromRow + tipos.
+- [ ] **Nota libre** por movimiento (una columna `comment`).
+- [ ] **Subcategorías de dos niveles** (Comida → Supermercado / Delivery), donas
+      por categoría principal o secundaria. Cambio grande de modelo: evaluar.
+- [ ] **Estado de conciliación con saldos**: saldo inicial + entradas − salidas
+      = saldo final para un rango, "conciliado hasta acá" y filtro "desde la
+      última conciliación". Ayuda a encontrar descuadres de saldo.
+- [ ] **Tendencia del saldo** en el tiempo (las filas del banco ya traen saldo).
+- [ ] **Calendario del mes**: grilla con el gasto de cada día; tocar un día
+      lista sus movimientos.
+- [ ] **Ranking de categorías** en barras horizontales con % del total, como
+      alternativa a la dona (se lee mejor en mobile con muchas categorías).
+- [ ] **Más rangos**: últimos 7/30 días, esta semana, este año, últimos 12
+      meses y personalizado.
+
+### 6.3 Pulido
+
+- [ ] **Ocultar montos** (ojo en Resumen) para abrir la app en público.
+- [ ] **Bloqueo con PIN / biometría** (WebAuthn) al abrir la PWA.
+- [ ] **Borrador automático** del formulario "Nuevo movimiento".
+- [ ] **Resumen configurable**: mostrar/ocultar (y quizá reordenar) secciones.
+- [ ] **Total del mes** en el encabezado de la lista (junto con n.º 22).
+- [ ] Ajuste de **tamaño de texto** en la app.
+- [ ] **Categorías preset elegibles** al crear la cuenta.
+- [ ] **Mover todos los movimientos** de una categoría a otra antes de borrarla.
+- [ ] **Exportar CSV de la vista filtrada** (hoy se exporta todo).
+
+### 6.4 Exploratorias
+
+- [ ] **Explorador de consultas guardadas** (condiciones arbitrarias → gráfico
+      o tabla, con edición masiva sobre el resultado).
+- [ ] **Gráfico generado por IA** a partir de una pregunta.
+- [ ] **Servidor MCP / API** para preguntarle a Claude por los propios datos.
+- [ ] **Importador CSV/Excel con mapeo de columnas** para otros bancos, sin
+      escribir un parser por banco.
+- [ ] **Adjuntar foto** (boleta/comprobante) a un movimiento (Supabase Storage).
+- [ ] Geolocalización del gasto manual + mapa.
+
+Descartado (no aplica a un usuario, CLP y bancos chilenos): multimoneda y tipos
+de cambio, zonas horarias por movimiento, multi-cuenta con transferencias,
+OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 
 ---
 
