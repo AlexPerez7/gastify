@@ -6,7 +6,7 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 
 Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
 
-**Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 1.
+**Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 2.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
 cartola PDF real a mano.
 
@@ -34,14 +34,8 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       frecuentes y "Duplicar"; filtro por monto; una regla con rango de monto
       y "Aplicar a lo existente"; una suscripción anual; fila de la tarjeta
       (tocar → editar/borrar); aviso de conciliación en Movimientos.
-
-## 1. Lista larga (n.º 19)
-
-(La parte de conciliación, n.º 18, quedó hecha: ver "Hecho (2026-10-06)".)
-
-- [ ] **n.º 19 · Lista larga.** Con "Todo" se renderizan todos los movimientos
-      (y en mobile cada fila monta un `motion.div`). Paginar por mes con
-      "Cargar más", o virtualizar. Medir antes con un fixture de ~2.000 filas.
+- [ ] Movimientos con "Todo": la búsqueda responde al tiro y al bajar se
+      cargan solas más filas (de a 100), sin saltos.
 
 ## 2. Revisión de animaciones
 
@@ -169,6 +163,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `0ea2acd` | 6.1: proyección a fin de mes, tasa de ahorro, filtro por rango de monto, frecuentes y "Duplicar" en el alta manual |
 | `3037ad4` | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
 | `5c320bd` | Sección 1 / n.º 18: aviso en Movimientos cuando hay manuales que no calzan con la cartola; sin botón "Conciliar mes" (ya concilia al entrar); textos reales en los paneles vacíos; filas "Clásica" en mobile en Conciliación y en la tarjeta (`ClassicRowContent`); nombre de categoría en tinta en la tarjeta (contraste) |
+| (este) | n.º 19 · Lista larga por tandas de 100 filas (scroll infinito + "Mostrar más"). Medido con 2.000 filas, mobile, CPU ×4, React dev: por tecla al buscar 0,9–3,3 s → 0,25–0,47 s; volver a la lista completa 12,4 s → ~0,3 s; DOM 75k → 3,8k nodos |
 
 ## Hecho (2026-10-04)
 

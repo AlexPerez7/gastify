@@ -13,6 +13,12 @@ import { useLongPress } from "../hooks/useLongPress.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 
+// Lista por tandas: con "Todo" y años de historial se montaban miles de filas
+// (cada una con motion.div en mobile). Medido con 2.000 filas en un teléfono
+// simulado: 1–3 s por tecla al buscar y 12 s al volver a la lista completa.
+// Se montan LIST_PAGE filas y se suman más al acercarse al final del scroll.
+const LIST_PAGE = 100;
+
 // botón de acción de la barra de herramientas de Movimientos
 const ACTION_BTN =
   "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-body cursor-pointer whitespace-nowrap";
@@ -75,13 +81,29 @@ export function Movimientos({
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  // "visibles" = todo lo que pasa los filtros, montado o no todavía (ver
+  // LIST_PAGE): "Seleccionar todo" sigue tomando la lista completa. Con Set:
+  // con miles de filas, includes() dentro de every() era cuadrático.
   const visibleIds = visibleTx.map((t) => t.id);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
-  const someVisibleSelected = visibleIds.some((id) => selectedIds.includes(id));
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedSet.has(id));
+  const someVisibleSelected = visibleIds.some((id) => selectedSet.has(id));
+
+  // cuántas filas montar. Vuelve a LIST_PAGE al cambiar la búsqueda, un
+  // filtro o el mes (cambia el primer movimiento de la lista), pero NO al
+  // editar o borrar una fila más abajo — si no, la lista se encogería bajo
+  // el dedo. Se compara durante el render (patrón "estado derivado de
+  // props") en vez de con un efecto, para no montar primero la lista larga.
+  const listKey = [search, catFilter, txTypeFilter, sourceFilter, amountRange.min, amountRange.max, onlyRecent, visibleTx[0]?.id].join("|");
+  const [page, setPage] = useState({ key: listKey, limit: LIST_PAGE });
+  const limit = page.key === listKey ? page.limit : LIST_PAGE;
+  const showMore = () => setPage({ key: listKey, limit: limit + LIST_PAGE });
+  const renderedTx = visibleTx.length > limit ? visibleTx.slice(0, limit) : visibleTx;
 
   const toggleSelectAll = () => {
     if (allVisibleSelected) {
-      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+      const visibleSet = new Set(visibleIds);
+      setSelectedIds((prev) => prev.filter((id) => !visibleSet.has(id)));
     } else {
       setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
     }
@@ -476,7 +498,7 @@ export function Movimientos({
             />
           )
         ) : (
-          groupByDate(visibleTx).map((group) => (
+          groupByDate(renderedTx).map((group) => (
             <div key={group.date}>
               <div className="px-4 py-[9px] text-caption font-semibold text-faint uppercase tracking-[0.03em] bg-surface-alt border-b border-border">
                 {formatDayHeading(group.date)}
@@ -491,7 +513,7 @@ export function Movimientos({
                   saveTxEdit={saveTxEdit}
                   onDelete={deleteTransaction}
                   onDuplicate={(tx) => setDuplicateFrom(entryFromTransaction(tx))}
-                  selected={selectedIds.includes(t.id)}
+                  selected={selectedSet.has(t.id)}
                   selectionMode={selectedIds.length > 0}
                   onToggleSelect={toggleSelectOne}
                   onStartSelect={(id) => setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
@@ -503,6 +525,9 @@ export function Movimientos({
               ))}
             </div>
           ))
+        )}
+        {renderedTx.length < visibleTx.length && (
+          <LoadMore onMore={showMore} remaining={visibleTx.length - renderedTx.length} />
         )}
       </div>
 
@@ -612,6 +637,27 @@ function FilterSheet({
           </button>
         </div>
     </Modal>
+  );
+}
+
+// Final de la lista por tandas: se suma la siguiente tanda sola cuando este
+// pie entra (o está por entrar) en pantalla; el botón queda por si el
+// navegador no tiene IntersectionObserver o el usuario llega con el teclado.
+function LoadMore({ onMore, remaining }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) onMore(); }, { rootMargin: "600px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onMore]);
+  return (
+    <div ref={ref} className="border-t border-border p-3 text-center">
+      <button onClick={onMore} className={BTN_GHOST}>
+        Mostrar más ({remaining} restante{remaining === 1 ? "" : "s"})
+      </button>
+    </div>
   );
 }
 
