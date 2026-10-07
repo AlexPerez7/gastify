@@ -142,7 +142,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 
 | Commit | Qué |
 | --- | --- |
-| (este) | Pulido: barra inferior cabe a 320px ("Suscrip.", "+" de ancho fijo, etiquetas que no empujan) (n.º 17); total del día en los encabezados de Movimientos y de la tarjeta, con gasto real (`computeDayTotals`) (n.º 22); "Guardar resumen como imagen" al final de Resumen (n.º 23); ✓ "Guardado" al salir del nombre/presupuesto de una categoría (n.º 25); "Importar cartola"; `swipeShouldOpen` a `src/lib/swipe.js` con test |
+| `4d8f9bb` | Pulido: barra inferior cabe a 320px ("Suscrip.", "+" de ancho fijo, etiquetas que no empujan) (n.º 17); total del día en los encabezados de Movimientos y de la tarjeta, con gasto real (`computeDayTotals`) (n.º 22); "Guardar resumen como imagen" al final de Resumen (n.º 23); ✓ "Guardado" al salir del nombre/presupuesto de una categoría (n.º 25); "Importar cartola"; `swipeShouldOpen` a `src/lib/swipe.js` con test |
 
 ## Hecho (2026-10-04)
 
