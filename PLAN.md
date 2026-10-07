@@ -39,17 +39,10 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 - [ ] Ahorro base: con la 0007 ya corrida, declarar/editar "Total ahorrado"
       guarda sin error.
 
-## 1. Conciliación y lista larga (n.º 18–19)
+## 1. Lista larga (n.º 19)
 
-- [ ] **n.º 18 · Conciliación más visible.** En mobile solo se llega por un ícono
-      chico en Movimientos. Agregar un aviso en Movimientos
-      ("3 manuales por conciliar →") cuando `reconcileStats.manuals.length > 0`.
-- [ ] Quitar el botón "Conciliar mes": ya concilia solo al entrar
-      (`useEffect` en `Conciliacion.jsx`).
-- [ ] Paneles vacíos: reemplazar el "—" por un texto real.
-- [ ] Filas de Conciliación (y de la tarjeta, `CreditCard.jsx`) con el mismo
-      layout "Clásica" que Movimientos en mobile, para que las tres listas se
-      vean iguales.
+(La parte de conciliación, n.º 18, quedó hecha: ver "Hecho (2026-10-06)".)
+
 - [ ] **n.º 19 · Lista larga.** Con "Todo" se renderizan todos los movimientos
       (y en mobile cada fila monta un `motion.div`). Paginar por mes con
       "Cargar más", o virtualizar. Medir antes con un fixture de ~2.000 filas.
@@ -72,8 +65,6 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 - [ ] **n.º 25** · Categorías: nombre y presupuesto se guardan al salir del campo
       sin aviso local → mostrar un ✓ junto al campo.
 - [ ] Botón "Importar Excel" también acepta PDF → "Importar cartola".
-- [ ] Contraste del texto en el color de la categoría (amarillo/violeta en tema
-      claro) donde todavía se use: `CreditCard.jsx`, `Conciliacion.jsx`.
 
 ## 4. Deuda técnica
 
@@ -180,6 +171,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `2ca403e` | Sección 6 del PLAN: ideas sacadas de ezbookkeeping |
 | `0ea2acd` | 6.1: proyección a fin de mes, tasa de ahorro, filtro por rango de monto, frecuentes y "Duplicar" en el alta manual |
 | `3037ad4` | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
+| (este) | Sección 1 / n.º 18: aviso en Movimientos cuando hay manuales que no calzan con la cartola; sin botón "Conciliar mes" (ya concilia al entrar); textos reales en los paneles vacíos; filas "Clásica" en mobile en Conciliación y en la tarjeta (`ClassicRowContent`); nombre de categoría en tinta en la tarjeta (contraste) |
 
 ## Hecho (2026-10-04)
 

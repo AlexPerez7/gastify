@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Copy, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
+import { Upload, Plus, Pencil, X, Copy, AlertTriangle, ChevronRight, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
 import { EMPTY_AMOUNT_RANGE, isAmountRangeActive } from "../lib/stats.js";
@@ -398,6 +398,26 @@ export function Movimientos({
             <X size={14} />
           </button>
         </div>
+      )}
+
+      {/* aviso de conciliación (n.º 18): en mobile la pestaña solo se
+          alcanzaba por un ícono chico. Sale solo cuando hay algo que hacer —
+          ya está la cartola del mes y algún manual no calzó —, no por cada
+          manual recién anotado (esos esperan la cartola y es normal). */}
+      {onOpenConciliacion && reconcileStats?.pendingMismatch?.length > 0 && (
+        <button
+          onClick={onOpenConciliacion}
+          className="w-full flex items-center gap-2.5 px-3 py-[9px] rounded-[10px] bg-surface border border-pending mb-3.5 text-left cursor-pointer"
+        >
+          <AlertTriangle size={14} color={TOKENS.pending} className="shrink-0" />
+          <span className="text-body text-ink flex-1 min-w-0">
+            {reconcileStats.pendingMismatch.length} movimiento{reconcileStats.pendingMismatch.length === 1 ? "" : "s"} manual
+            {reconcileStats.pendingMismatch.length === 1 ? " no calza" : "es no calzan"} con la cartola del banco
+          </span>
+          <span className="flex items-center gap-0.5 text-small font-semibold text-pending shrink-0">
+            Revisar <ChevronRight size={14} />
+          </span>
+        </button>
       )}
 
       {showManualForm && !duplicateFrom && (

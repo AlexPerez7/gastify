@@ -4,6 +4,7 @@ import { ChevronDown, Tags, X } from "lucide-react";
 import { TOKENS, ICONS, ICON_NAMES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon, labelWithTypeIfAmbiguous } from "../lib/constants.js";
 import { BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
+import { formatCLP } from "../lib/utils.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
   return <div className="skeleton" style={{ width, height, borderRadius: radius, background: TOKENS.surfaceAlt, ...style }} />;
@@ -167,6 +168,35 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
       <div className="mono text-[17px] font-semibold" style={{ color: accent }}>{value}</div>
       {sub && <div className="text-micro text-faint mt-[3px]">{sub}</div>}
     </div>
+  );
+}
+
+// Contenido de una fila "Clásica" de mobile (la que se eligió por prototipo
+// para Movimientos): ícono en círculo a la izquierda, nombre y monto arriba,
+// detalle abajo. Solo el contenido — el contenedor (con swipe, toque, borde)
+// lo pone cada lista, porque cada una tiene gestos distintos. Movimientos
+// tiene su propia versión inline por el modo selección.
+export function ClassicRowContent({ icon: Icon, color, title, amount, meta }) {
+  return (
+    <>
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+        // color-mix y no `${color}22`: acá también llegan tokens var(--c-…),
+        // a los que no se les puede pegar un alfa en hex. 13% ≈ 0x22.
+        style={{ background: `color-mix(in srgb, ${color} 13%, transparent)` }}
+      >
+        {Icon && <Icon size={18} color={color} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span className="flex-1 min-w-0 truncate text-body-lg font-medium text-ink">{title}</span>
+          <span className={`mono font-semibold text-body-lg shrink-0 ${amount >= 0 ? "text-income" : "text-ink"}`}>
+            {amount >= 0 ? "+" : ""}{formatCLP(amount)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5 text-small text-muted min-w-0">{meta}</div>
+      </div>
+    </>
   );
 }
 

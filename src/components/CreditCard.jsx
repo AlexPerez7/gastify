@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Upload, Pencil, Inbox, CalendarX2, Loader2, Layers, FileText, Trash2 } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay, suggestMatchKey, groupByDate, formatDayHeading } from "../lib/utils.js";
-import { EmptyState, CategorySelect, Modal } from "./Shared.jsx";
+import { EmptyState, CategorySelect, Modal, ClassicRowContent } from "./Shared.jsx";
 import { pillClass, BTN_PRIMARY, BTN_GHOST } from "./classes.js";
+import { ConfirmDeleteButton } from "./ConfirmDeleteButton.jsx";
+import { useIsMobile } from "../hooks/useIsMobile.js";
 
 const MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function monthLabel(mk) {
@@ -14,7 +16,7 @@ function monthLabel(mk) {
 // Vista de la tarjeta de crédito (CMR): un ciclo/cartola a la vez, sin
 // saldo corrido ni conciliación (no aplican acá, ver App.jsx). Deliberadamente
 // más simple que Movimientos (sin swipe, sin selección múltiple) — la lista
-// de un ciclo mensual es chica.
+// de un ciclo mensual es chica. En mobile usa la misma fila "Clásica".
 export function CreditCard({
   tx, months, currentMonth, onSetMonth, stats, categories, getCat,
   saveTxEdit, onDelete, onImportFile, isImporting,
@@ -25,6 +27,7 @@ export function CreditCard({
   // "pendiente" (presente) solo tiene sentido real en el ciclo más reciente
   // — en uno viejo, esas cuotas ya se siguieron pagando después.
   const isLatestCycle = months[0] === currentMonth;
+  const isMobile = useIsMobile();
 
   return (
     <div>
@@ -168,6 +171,7 @@ export function CreditCard({
                   saveTxEdit={saveTxEdit}
                   onDelete={onDelete}
                   isLatestCycle={isLatestCycle}
+                  isMobile={isMobile}
                 />
               ))}
             </div>
@@ -178,11 +182,60 @@ export function CreditCard({
   );
 }
 
-function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLatestCycle }) {
+function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLatestCycle, isMobile }) {
   const [editing, setEditing] = useState(false);
   const cat = getCat(t.category);
   const CatIcon = cat.icon;
   const plural = t.installmentsPending === 1 ? "" : "s";
+  const installmentsTitle = isLatestCycle
+    ? `Quedan ${t.installmentsPending} cuota${plural} después de esta`
+    : `Quedaban ${t.installmentsPending} cuota${plural} después de esta, al momento de este ciclo — puede que ya se hayan seguido pagando en ciclos más nuevos`;
+  const editPanel = editing && (
+    <CreditTxEditPanel
+      t={t}
+      categories={categories}
+      onSave={(payload) => { saveTxEdit(t.id, payload); setEditing(false); }}
+      onCancel={() => setEditing(false)}
+      // en mobile la fila no tiene botón de borrar (no hay swipe acá: la
+      // lista de un ciclo es chica), así que va dentro del editor
+      onDelete={isMobile ? () => onDelete(t.id) : undefined}
+    />
+  );
+
+  if (isMobile) {
+    // misma fila "Clásica" que Movimientos: tocar abre el editor
+    return (
+      <div className={isLast ? "" : "border-b border-border"}>
+        <button
+          onClick={() => setEditing((v) => !v)}
+          aria-expanded={editing}
+          aria-label={`${t.alias || t.description}, ${formatCLP(t.amount)}`}
+          className="w-full flex items-center gap-3 px-4 py-3 bg-surface border-0 text-left cursor-pointer"
+        >
+          <ClassicRowContent
+            icon={CatIcon} color={cat.color} title={t.alias || t.description} amount={t.amount}
+            meta={
+              <>
+                <span className="shrink-0">{cat.label}</span>
+                {t.installmentsPending > 0 && (
+                  <span title={installmentsTitle} className="inline-flex items-center gap-[3px] text-caption font-semibold text-pending shrink-0">
+                    <Layers size={10} /> {isLatestCycle ? "quedan" : "quedaban"} {t.installmentsPending}
+                  </span>
+                )}
+                {t.alias && (
+                  <>
+                    <span className="text-faint shrink-0">·</span>
+                    <span className="truncate text-faint">{t.description}</span>
+                  </>
+                )}
+              </>
+            }
+          />
+        </button>
+        {editPanel}
+      </div>
+    );
+  }
 
   return (
     <div className={isLast ? "" : "border-b border-border"}>
@@ -198,18 +251,16 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
           </span>
           {t.installmentsPending > 0 && (
             <span
-              title={
-                isLatestCycle
-                  ? `Quedan ${t.installmentsPending} cuota${plural} después de esta`
-                  : `Quedaban ${t.installmentsPending} cuota${plural} después de esta, al momento de este ciclo — puede que ya se hayan seguido pagando en ciclos más nuevos`
-              }
+              title={installmentsTitle}
               className="inline-flex items-center gap-[3px] text-micro text-pending border border-pending rounded-[4px] px-[5px] py-px font-semibold shrink-0 whitespace-nowrap"
             >
               <Layers size={9} /> {isLatestCycle ? "quedan" : "quedaban"} {t.installmentsPending}
             </span>
           )}
         </div>
-        <div className="text-small flex items-center gap-1.5 overflow-hidden" style={{ color: cat.color }}>
+        {/* el nombre va en tinta (no en el color de la categoría): en tema
+            claro el amarillo/violeta no tenía contraste suficiente */}
+        <div className="text-small flex items-center gap-1.5 overflow-hidden text-muted">
           <span
             className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
             style={{ background: `${cat.color}22` }}
@@ -230,19 +281,12 @@ function CreditTxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, isLa
           </button>
         </div>
       </div>
-      {editing && (
-        <CreditTxEditPanel
-          t={t}
-          categories={categories}
-          onSave={(payload) => { saveTxEdit(t.id, payload); setEditing(false); }}
-          onCancel={() => setEditing(false)}
-        />
-      )}
+      {editPanel}
     </div>
   );
 }
 
-function CreditTxEditPanel({ t, categories, onSave, onCancel }) {
+function CreditTxEditPanel({ t, categories, onSave, onCancel, onDelete }) {
   const [category, setCategory] = useState(t.category);
   const [alias, setAlias] = useState(t.alias || "");
   const [remember, setRemember] = useState(true);
@@ -285,6 +329,11 @@ function CreditTxEditPanel({ t, categories, onSave, onCancel }) {
         <button onClick={onCancel} className={BTN_GHOST}>
           Cancelar
         </button>
+        {onDelete && (
+          <span className="ml-auto flex items-center">
+            <ConfirmDeleteButton onConfirm={onDelete} text="¿Eliminar este movimiento de la tarjeta?" title="Eliminar movimiento" />
+          </span>
+        )}
       </div>
     </div>
   );

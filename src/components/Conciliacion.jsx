@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Check, AlertTriangle, ScanLine, Info, ChevronDown, ChevronUp, ChevronLeft, Pencil, Link2, X } from "lucide-react";
+import { Check, AlertTriangle, ScanLine, Info, ChevronDown, ChevronUp, ChevronLeft, Pencil, Link2, X, Landmark, PenLine } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay } from "../lib/utils.js";
-import { Panel, EmptyNote, EmptyState, FieldInput } from "./Shared.jsx";
+import { Panel, EmptyNote, EmptyState, FieldInput, ClassicRowContent } from "./Shared.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
 
 // ancho de los 2 botones (corregir + vincular) revelados al deslizar una
@@ -69,20 +69,15 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
   return (
     <div>
       <BackToMovimientosButton onBack={onBack} />
-      <Panel
-        title={`Conciliar ${fmtMonth(currentMonth)}`}
-        right={
-          <button onClick={() => { const n = reconcileMonth(currentMonth); setResult(n); }} className="px-3.5 py-[7px] rounded-lg border-0 bg-accent text-bg text-body font-semibold cursor-pointer flex items-center gap-1.5">
-            <ScanLine size={13} /> Conciliar mes
-          </button>
-        }
-      >
+      {/* sin botón "Conciliar mes": el useEffect de arriba ya concilia solo
+          al entrar (y al cambiar de mes), y tocarlo de nuevo no hacía nada */}
+      <Panel title={`Conciliar ${fmtMonth(currentMonth)}`}>
         <div className="text-body text-muted mb-1">
           El reporte del banco es la fuente oficial: compara tus movimientos manuales contra él (mismo monto, hasta 5 días después por la fecha contable del banco) y confirma los que calzan.
         </div>
         {result !== null && (
           <div className="text-small text-income mt-1.5">
-            {result > 0 ? `${result} movimiento${result === 1 ? "" : "s"} confirmado${result === 1 ? "" : "s"} en esta pasada.` : "No se encontraron nuevas coincidencias."}
+            {result} movimiento{result === 1 ? "" : "s"} confirmado{result === 1 ? "" : "s"} al entrar.
           </div>
         )}
         {!bankExists && (
@@ -99,16 +94,28 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
             movimiento confirmado se ensanchaba a costa de la otra columna. */}
         <div className="min-w-0">
           <Panel title={`Confirmados (${confirmed.length})`}>
-            {confirmed.length === 0 ? <EmptyNote text="Aún ninguno." /> : confirmed.map((t) => <ReconcileRow key={t.id} t={t} icon={Check} color={TOKENS.income} />)}
+            {confirmed.length === 0 ? (
+              <EmptyNote
+                text={bankExists
+                  ? "Ningún movimiento manual de este mes calzó todavía con la cartola."
+                  : "Cuando importes la cartola de este mes, acá aparecen los manuales que calcen con ella."}
+              />
+            ) : confirmed.map((t) => <ReconcileRow key={t.id} t={t} icon={Check} color={TOKENS.income} isMobile={isMobile} />)}
           </Panel>
         </div>
 
         <div className="min-w-0">
           <Panel title={`Sin reporte del banco (${pendingNoReport.length})`}>
-            {pendingNoReport.length === 0 ? <EmptyNote text="—" /> : (
+            {pendingNoReport.length === 0 ? (
+              <EmptyNote
+                text={bankExists
+                  ? "Ya importaste la cartola de este mes: nada queda esperando el reporte."
+                  : "No anotaste movimientos manuales este mes."}
+              />
+            ) : (
               <>
                 <div className="text-caption text-faint mb-2">Aún no importas el .xls de este mes, así que no se pueden comparar todavía.</div>
-                {pendingNoReport.map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
+                {pendingNoReport.map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} isMobile={isMobile} />)}
               </>
             )}
           </Panel>
@@ -145,7 +152,7 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
           </div>
           {showBankOnly && (
             <>
-              {bankOnly.slice(0, 8).map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} />)}
+              {bankOnly.slice(0, 8).map((t) => <ReconcileRow key={t.id} t={t} icon={null} color={TOKENS.textMuted} isMobile={isMobile} />)}
               {bankOnly.length > 8 && <div className="text-small text-faint mt-1.5">+ {bankOnly.length - 8} más</div>}
             </>
           )}
@@ -155,7 +162,27 @@ export function Conciliacion({ currentMonth, reconcileStats, reconcileMonth, onE
   );
 }
 
-function ReconcileRow({ t, icon: Icon, color }) {
+// detalle de la segunda línea en mobile: "06-10-2026 · Banco"
+function RowMeta({ t, extra }) {
+  return (
+    <>
+      <span className="mono text-caption shrink-0">{formatDateDisplay(t.date)}</span>
+      <span className="text-faint shrink-0">·</span>
+      <span className="truncate text-faint">{extra || (t.source === "bank" ? "Banco" : "Manual")}</span>
+    </>
+  );
+}
+
+function ReconcileRow({ t, icon: Icon, color, isMobile }) {
+  if (isMobile) {
+    // sin ícono propio (pendientes, solo banco): el del origen, en gris
+    const RowIcon = Icon || (t.source === "bank" ? Landmark : PenLine);
+    return (
+      <div className="flex items-center gap-3 py-2.5 border-b border-border last:border-b-0">
+        <ClassicRowContent icon={RowIcon} color={color} title={t.alias || t.description} amount={t.amount} meta={<RowMeta t={t} />} />
+      </div>
+    );
+  }
   return (
     <div className="flex items-center justify-between py-[7px] border-b border-border">
       <div className="flex items-center gap-2 text-body overflow-hidden flex-1 min-w-0">
@@ -232,7 +259,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           </div>
         )}
         <Row
-          className="flex items-center justify-between gap-2 py-[7px] bg-surface touch-pan-y relative"
+          className={`flex items-center justify-between bg-surface touch-pan-y relative ${isMobile ? "gap-3 py-2.5" : "gap-2 py-[7px]"}`}
           {...(isMobile ? {
             drag: "x",
             dragConstraints: { left: -MISMATCH_SWIPE_WIDTH, right: 0 },
@@ -241,14 +268,23 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
             onDragEnd: handleDragEnd,
           } : {})}
         >
-          <div className="flex items-center gap-2 text-body overflow-hidden flex-1 min-w-0">
-            <AlertTriangle size={13} color={TOKENS.pending} className="shrink-0" />
-            <span className="mono text-faint text-caption">{formatDateDisplay(t.date)}</span>
-            <span className="overflow-hidden text-ellipsis whitespace-nowrap">{t.alias || t.description}</span>
-          </div>
-          <span className={`mono text-small shrink-0 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
-            {formatCLP(t.amount)}
-          </span>
+          {isMobile ? (
+            <ClassicRowContent
+              icon={AlertTriangle} color={TOKENS.pending} title={t.alias || t.description} amount={t.amount}
+              meta={<RowMeta t={t} extra="desliza para corregir" />}
+            />
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-body overflow-hidden flex-1 min-w-0">
+                <AlertTriangle size={13} color={TOKENS.pending} className="shrink-0" />
+                <span className="mono text-faint text-caption">{formatDateDisplay(t.date)}</span>
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{t.alias || t.description}</span>
+              </div>
+              <span className={`mono text-small shrink-0 ${t.amount >= 0 ? "text-income" : "text-expense"}`}>
+                {formatCLP(t.amount)}
+              </span>
+            </>
+          )}
           <div className="tx-actions flex gap-0.5 shrink-0">
             <button
               onClick={openEdit}
