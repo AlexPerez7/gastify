@@ -494,7 +494,32 @@ input.amount-input:focus-visible {
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-  animation: modal-panel-in 160ms var(--ease-out);
+  /* cuelga del botón ⋮ de arriba a la derecha: crece desde ahí */
+  transform-origin: top right;
+  animation: popover-in 150ms var(--ease-out);
+}
+
+/* ---- popovers anclados a un botón (menú ⋮, CategorySelect, confirmar
+   borrado): entran desde su disparador, no desde el centro. Cada uno fija
+   su transform-origin; .popover-up es para los que se abren hacia arriba
+   (CategorySelect cerca del borde inferior). -------------------------------- */
+
+.popover {
+  animation: popover-in 150ms var(--ease-out);
+}
+
+.popover-up {
+  animation-name: popover-in-up;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes popover-in-up {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ---- hoja inferior (ver .modal-panel.sheet-mobile más abajo) -------------- */
@@ -502,6 +527,10 @@ input.amount-input:focus-visible {
 @keyframes filter-sheet-in {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+
+@keyframes filter-sheet-out {
+  to { transform: translateY(100%); }
 }
 
 .filter-seg-row {
@@ -535,19 +564,53 @@ input.amount-input:focus-visible {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   width: 340px;
   max-width: calc(100vw - 40px);
   pointer-events: none;
 }
 
-.toast {
-  pointer-events: auto;
-  animation: toast-in 200ms ease-out;
+/* Cada toast va en un .toast-slot (grilla de una fila) para que, al irse,
+   su espacio se cierre animado y los de abajo no salten. La separación
+   entre toasts es el padding del slot (no `gap` en el stack: el gap no se
+   puede animar). La salida es una TRANSICIÓN, no una keyframe: si un toast
+   que se está yendo se actualiza, vuelve desde donde estaba en vez de
+   reiniciarse. useToasts.js espera EXIT_MS (= 150ms) antes de sacarlo. */
+.toast-slot {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 150ms var(--ease-out);
 }
 
-.toast-leaving {
-  animation: toast-out 200ms ease-in forwards;
+.toast-slot > .toast-clip {
+  min-height: 0;
+  padding-top: 10px;
+  transition: padding-top 150ms var(--ease-out);
+}
+
+.toast-slot:first-child > .toast-clip {
+  padding-top: 0;
+}
+
+.toast-slot.toast-leaving {
+  grid-template-rows: 0fr;
+}
+
+/* solo al irse: recortar siempre se comería la sombra del toast. La
+   separación también se cierra (si no, quedaban 10px que saltaban al final) */
+.toast-slot.toast-leaving > .toast-clip {
+  overflow: hidden;
+  padding-top: 0;
+}
+
+.toast {
+  pointer-events: auto;
+  animation: toast-in 200ms var(--ease-out);
+  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+}
+
+.toast-leaving .toast {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 @keyframes toast-in {
@@ -558,17 +621,6 @@ input.amount-input:focus-visible {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes toast-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(6px);
   }
 }
 
@@ -678,6 +730,24 @@ input.amount-input:focus-visible {
   animation: modal-panel-in 200ms var(--ease-out);
 }
 
+/* salida (Modal con closing): más corta que la entrada — el sistema
+   responde rápido a "cerrar". Shared.jsx espera MODAL_EXIT_MS (= 150ms). */
+.modal-backdrop.modal-closing {
+  animation: modal-backdrop-out 150ms var(--ease-out) forwards;
+}
+
+.modal-closing .modal-panel {
+  animation: modal-panel-out 150ms var(--ease-out) forwards;
+}
+
+@keyframes modal-backdrop-out {
+  to { opacity: 0; }
+}
+
+@keyframes modal-panel-out {
+  to { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
 @keyframes modal-backdrop-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -702,6 +772,9 @@ input.amount-input:focus-visible {
     border-bottom: 0;
     animation: filter-sheet-in 220ms var(--ease-drawer);
   }
+  .modal-closing .modal-panel.sheet-mobile {
+    animation: filter-sheet-out 150ms var(--ease-out) forwards;
+  }
   .sheet-mobile .sheet-footer {
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
@@ -723,7 +796,6 @@ input.amount-input:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .toast,
-  .toast-leaving,
   .spin,
   .skeleton::after,
   .modal-backdrop,
@@ -731,12 +803,23 @@ input.amount-input:focus-visible {
   .tab-panel,
   .add-sheet,
   .modal-panel.sheet-mobile,
-  .overflow-menu {
+  .overflow-menu,
+  .popover {
     animation: none !important;
+  }
+  /* sin movimiento: el modal cierra con un fundido corto (queda claro que
+     se fue), sin bajar ni escalar */
+  .modal-closing .modal-panel,
+  .modal-closing .modal-panel.sheet-mobile {
+    animation: modal-backdrop-out 150ms ease forwards !important;
+  }
+  .toast-leaving .toast {
+    transform: none;
   }
   /* los botones conservan la transición de color (ayuda a ver el cambio
      de estado); solo se les quita el movimiento, abajo */
   .tx-row-wrap,
+  .toast-slot,
   .bottom-tab-btn svg,
   .bottom-add-btn,
   .bottom-add-btn svg {

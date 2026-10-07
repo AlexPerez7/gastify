@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Tags, X } from "lucide-react";
 import { TOKENS, ICONS, ICON_NAMES, PALETTE, DEFAULT_CATEGORY_ICON, resolveCategoryIcon, labelWithTypeIfAmbiguous } from "../lib/constants.js";
 import { BTN_PRIMARY, BTN_GHOST } from "./classes.js";
 import { useFocusTrap } from "../hooks/useFocusTrap.js";
+import { ModalCloseContext } from "../hooks/useModalClose.js";
+
+// debe coincidir con la duración de .modal-closing en index.css
+const MODAL_EXIT_MS = 150;
 import { formatCLP } from "../lib/utils.js";
 
 export function Skeleton({ width = "100%", height = 14, radius = 6, style }) {
@@ -91,16 +95,34 @@ export function Modal({
   const panelRef = useRef(null);
   useFocusTrap(panelRef);
 
+  // Salida animada: Esc, el fondo y la ✕ (o un botón del contenido vía
+  // useModalClose) reproducen .modal-closing y llaman al onClose del padre
+  // recién al terminar. Si el padre cierra por su cuenta (ej. tras guardar),
+  // el modal se desmonta sin salida — no hay forma de enterarse antes.
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const exitTimer = useRef(null);
+  useEffect(() => () => clearTimeout(exitTimer.current), []);
+  const requestClose = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    exitTimer.current = setTimeout(() => onCloseRef.current(), MODAL_EXIT_MS);
+  }, []);
+
   useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape" && !e.defaultPrevented) onClose(); };
+    const onKey = (e) => { if (e.key === "Escape" && !e.defaultPrevented) requestClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [requestClose]);
 
   return (
+    <ModalCloseContext.Provider value={requestClose}>
     <div
-      onClick={dismissOnBackdrop ? onClose : undefined}
-      className="modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5"
+      onClick={dismissOnBackdrop ? requestClose : undefined}
+      className={`modal-backdrop fixed inset-0 flex items-center justify-center z-[2000] p-5${closing ? " modal-closing pointer-events-none" : ""}`}
       style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
@@ -116,7 +138,7 @@ export function Modal({
         {title && (
           <div className="flex justify-between items-center mb-3.5">
             <div className="display text-title font-semibold">{title}</div>
-            <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1">
+            <button onClick={requestClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1">
               <X size={16} />
             </button>
           </div>
@@ -124,6 +146,7 @@ export function Modal({
         {children}
       </div>
     </div>
+    </ModalCloseContext.Provider>
   );
 }
 
@@ -422,8 +445,10 @@ export function CategorySelect({ categories, value, onChange, placeholder = "Ele
         <div
           ref={popRef}
           role="listbox"
-          className="fixed z-[2100] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto overscroll-contain"
+          className={`popover${coords.top == null ? " popover-up" : ""} fixed z-[2100] bg-surface-alt border border-border rounded-[10px] p-[5px] overflow-y-auto overscroll-contain`}
           style={{
+            // crece desde el botón: arriba-izquierda si se abre hacia abajo
+            transformOrigin: coords.top != null ? "top left" : "bottom left",
             left: coords.left, width: Math.max(coords.width, 200),
             ...(coords.top != null ? { top: coords.top } : { bottom: coords.bottom }),
             boxShadow: "0 10px 28px rgba(0,0,0,0.45)", maxHeight: POPOVER_MAX_HEIGHT,

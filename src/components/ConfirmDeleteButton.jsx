@@ -48,8 +48,9 @@ export function ConfirmDeleteButton({ onConfirm, text = "¿Eliminar?", size = 13
       {open && coords && createPortal(
         <div
           ref={popRef}
-          className="fixed z-[2100] w-[190px] bg-surface-alt border border-border rounded-[10px] p-2.5"
-          style={{ top: coords.top, right: coords.right, boxShadow: "0 10px 28px rgba(0,0,0,0.45)" }}
+          className="popover fixed z-[2100] w-[190px] bg-surface-alt border border-border rounded-[10px] p-2.5"
+          // alineado al borde derecho del botón y debajo de él: crece desde ahí
+          style={{ top: coords.top, right: coords.right, transformOrigin: "top right", boxShadow: "0 10px 28px rgba(0,0,0,0.45)" }}
         >
           <div className="text-small text-ink mb-2 leading-[1.4]">{text}</div>
           <div className="flex gap-1.5">

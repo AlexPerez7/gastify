@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Check, AlertTriangle, ScanLine, Info, ChevronDown, ChevronUp, ChevronLeft, Pencil, Link2, X, Landmark, PenLine } from "lucide-react";
 import { TOKENS } from "../lib/constants.js";
 import { formatCLP, formatDateDisplay } from "../lib/utils.js";
 import { Panel, EmptyNote, EmptyState, FieldInput, ClassicRowContent } from "./Shared.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
+import { SWIPE_SPRING, swipeShouldOpen } from "./swipe.js";
 
 // ancho de los 2 botones (corregir + vincular) revelados al deslizar una
 // fila de "posible descuadre" — mismo criterio que las filas de Movimientos.
@@ -207,7 +208,8 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const [amount, setAmount] = useState(String(Math.abs(t.amount)));
   const [bankId, setBankId] = useState("");
   const swipeControls = useAnimation();
-  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
+  const dragStartedAt = useRef(0); // para medir la rapidez del gesto (swipeShouldOpen)
+  const closeSwipe = () => swipeControls.start({ x: 0, transition: SWIPE_SPRING });
 
   const close = () => setMode(null);
 
@@ -228,7 +230,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const openLink = () => { closeSwipe(); setMode((m) => (m === "link" ? null : "link")); };
 
   const handleDragEnd = (_e, info) => {
-    if (info.offset.x < -MISMATCH_SWIPE_WIDTH / 2) swipeControls.start({ x: -MISMATCH_SWIPE_WIDTH, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
+    if (swipeShouldOpen(info, MISMATCH_SWIPE_WIDTH, performance.now() - dragStartedAt.current)) swipeControls.start({ x: -MISMATCH_SWIPE_WIDTH, transition: SWIPE_SPRING });
     else closeSwipe();
   };
 
@@ -265,6 +267,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
             dragConstraints: { left: -MISMATCH_SWIPE_WIDTH, right: 0 },
             dragElastic: 0.06,
             animate: swipeControls,
+            onDragStart: () => { dragStartedAt.current = performance.now(); },
             onDragEnd: handleDragEnd,
           } : {})}
         >

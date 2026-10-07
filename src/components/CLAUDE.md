@@ -86,6 +86,11 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
   botones (`:where(button…)`) anima transform + colores con especificidad 0:
   una clase propia que redefina `transition` debe incluir `transform` si
   quiere conservar el "hundirse" al presionar.
+- Popovers anclados a un botón: clase `.popover` (+ `.popover-up` si abren
+  hacia arriba) y `transformOrigin` en el lado del botón. `Modal` anima su
+  salida: un botón propio que cierre el modal debe usar `useModalClose()`
+  (en Movimientos, `ModalCloseButton`), si no, cierra de golpe. Deslizar
+  filas: `SWIPE_SPRING` y `swipeShouldOpen` de `components/swipe.js`.
 
 ## Mobile y UX
 

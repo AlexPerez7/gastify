@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 
 let seq = 0;
-const EXIT_MS = 200;
+// = duración de la salida de .toast / .toast-slot en index.css
+const EXIT_MS = 150;
 // los errores no se cierran solos: suelen traer el detalle real de Supabase
 // y en 6 segundos no alcanza a leerse (ni a copiarse) en un teléfono
 const LIFESPAN = { ok: 4000, warn: 5500, error: Infinity };
@@ -16,6 +17,9 @@ const LIFESPAN = { ok: 4000, warn: 5500, error: Infinity };
 export function useToasts() {
   const [toasts, setToasts] = useState([]);
   const timers = useRef({});
+  // el setTimeout que saca de la lista a un toast que se está yendo — se
+  // cancela si update() lo revive antes (si no, desaparecía igual)
+  const removals = useRef({});
 
   const clearTimer = (id) => {
     clearTimeout(timers.current[id]?.handle);
@@ -25,7 +29,11 @@ export function useToasts() {
     clearTimer(id);
     delete timers.current[id];
     setToasts((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
-    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), EXIT_MS);
+    clearTimeout(removals.current[id]);
+    removals.current[id] = setTimeout(() => {
+      delete removals.current[id];
+      setToasts((list) => list.filter((t) => t.id !== id));
+    }, EXIT_MS);
   }, []);
 
   const startTimer = useCallback((id, ms) => {
@@ -47,6 +55,8 @@ export function useToasts() {
   }, [scheduleAutoDismiss]);
 
   const update = useCallback((id, type, text, progress = null) => {
+    clearTimeout(removals.current[id]);
+    delete removals.current[id];
     setToasts((list) => list.map((t) => (t.id === id ? { ...t, type, text, progress, leaving: false } : t)));
     scheduleAutoDismiss(id, type);
   }, [scheduleAutoDismiss]);

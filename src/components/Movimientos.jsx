@@ -10,6 +10,8 @@ import { BTN_PRIMARY, BTN_GHOST, pillClass } from "./classes.js";
 import { CreditCard } from "./CreditCard.jsx";
 import { useIsMobile } from "../hooks/useIsMobile.js";
 import { useLongPress } from "../hooks/useLongPress.js";
+import { useModalClose } from "../hooks/useModalClose.js";
+import { SWIPE_SPRING, swipeShouldOpen } from "./swipe.js";
 
 const SWIPE_ACTION_WIDTH = 128; // ancho de los 2 botones (editar + borrar) revelados al deslizar
 
@@ -393,7 +395,7 @@ export function Movimientos({
       {!isMobile && showAmountModal && setAmountRange && (
         <Modal title="Filtrar por monto" onClose={() => setShowAmountModal(false)}>
           <AmountRangeFields value={amountRange} onChange={setAmountRange} />
-          <button onClick={() => setShowAmountModal(false)} className={`${BTN_PRIMARY} w-full mt-4`}>Listo</button>
+          <ModalCloseButton onClose={() => setShowAmountModal(false)} className={`${BTN_PRIMARY} w-full mt-4`}>Listo</ModalCloseButton>
         </Modal>
       )}
 
@@ -629,12 +631,12 @@ function FilterSheet({
           >
             Limpiar filtros
           </button>
-          <button
-            onClick={onClose}
+          <ModalCloseButton
+            onClose={onClose}
             className="flex-1 py-2.5 rounded-lg border-0 bg-accent text-bg font-semibold text-body cursor-pointer"
           >
             Listo
-          </button>
+          </ModalCloseButton>
         </div>
     </Modal>
   );
@@ -658,6 +660,18 @@ function LoadMore({ onMore, remaining }) {
         Mostrar más ({remaining} restante{remaining === 1 ? "" : "s"})
       </button>
     </div>
+  );
+}
+
+// Botón de cierre puesto por el contenido de un Modal (✕ propia, "Listo"):
+// cierra con la salida animada del Modal (useModalClose); fuera de un Modal
+// llama a onClose directo.
+function ModalCloseButton({ onClose, children, ...props }) {
+  const requestClose = useModalClose();
+  return (
+    <button type="button" onClick={requestClose || onClose} {...props}>
+      {children}
+    </button>
   );
 }
 
@@ -815,12 +829,12 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
   const cat = getCat(t.category);
   const CatIcon = cat.icon;
   const swipeControls = useAnimation();
-  // [0.23, 1, 0.32, 1] = --ease-out de index.css (framer-motion no lee vars CSS)
-  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
+  const closeSwipe = () => swipeControls.start({ x: 0, transition: SWIPE_SPRING });
   const longPress = useLongPress(() => { closeSwipe(); setEditing(false); onStartSelect(t.id); });
   // al soltar un arrastre el navegador dispara igual un click: sin esto,
   // deslizar para ver editar/borrar abría además el editor
   const justDragged = useRef(false);
+  const dragStartedAt = useRef(0); // para medir la rapidez del gesto (swipeShouldOpen)
 
   // espera a que termine la animación de colapso (200ms, ver .tx-row-wrap
   // en index.css) antes de sacarla del estado
@@ -831,7 +845,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
   };
 
   const handleDragEnd = (_e, info) => {
-    if (info.offset.x < -SWIPE_ACTION_WIDTH / 2) swipeControls.start({ x: -SWIPE_ACTION_WIDTH, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
+    if (swipeShouldOpen(info, SWIPE_ACTION_WIDTH, performance.now() - dragStartedAt.current)) swipeControls.start({ x: -SWIPE_ACTION_WIDTH, transition: SWIPE_SPRING });
     else closeSwipe();
   };
 
@@ -878,7 +892,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
                 drag: "x",
                 dragConstraints: { left: -SWIPE_ACTION_WIDTH, right: 0 },
                 dragElastic: 0.06,
-                onDragStart: () => { justDragged.current = true; },
+                onDragStart: () => { justDragged.current = true; dragStartedAt.current = performance.now(); },
                 onDragEnd: handleDragEnd,
               })}
               animate={swipeControls}
@@ -1164,7 +1178,7 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = nu
     >
       <div className="flex justify-between items-center pt-[18px] px-5 shrink-0">
         <div className="display text-title font-semibold">Nuevo movimiento</div>
-        <button onClick={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1"><X size={16} /></button>
+        <ModalCloseButton onClose={onClose} aria-label="Cerrar" title="Cerrar" className="tap-expand bg-transparent border-0 text-faint cursor-pointer p-1 -m-1"><X size={16} /></ModalCloseButton>
       </div>
 
       <div className="flex gap-[3px] p-[3px] mt-3.5 mx-5 rounded-full box-border bg-surface-alt border border-border shrink-0">

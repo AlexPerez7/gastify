@@ -16,12 +16,15 @@ export function ToastStack({ toasts, onDismiss, onPause, onResume }) {
         const { icon: Icon, color, spin } = KIND[t.type] || KIND.ok;
         const showProgress = t.type === "loading" && typeof t.progress === "number";
         return (
+          // slot + clip: al irse, el espacio del toast se cierra animado (ver
+          // .toast-slot en index.css) y los de abajo no saltan
+          <div key={t.id} className={`toast-slot${t.leaving ? " toast-leaving" : ""}`}>
+          <div className="toast-clip">
           <div
-            key={t.id}
             role="status"
             onPointerEnter={() => onPause?.(t.id)}
             onPointerLeave={() => onResume?.(t.id)}
-            className={`toast flex flex-col gap-1.5 px-3 py-[11px] rounded-[10px] bg-surface border border-border${t.leaving ? " toast-leaving" : ""}`}
+            className="toast flex flex-col gap-1.5 px-3 py-[11px] rounded-[10px] bg-surface border border-border"
             style={{ boxShadow: "0 10px 28px rgba(0,0,0,0.4)" }}
           >
             <div className="flex items-start gap-2.5">
@@ -53,6 +56,8 @@ export function ToastStack({ toasts, onDismiss, onPause, onResume }) {
                 />
               </div>
             )}
+          </div>
+          </div>
           </div>
         );
       })}
