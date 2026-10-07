@@ -2,7 +2,7 @@
 // que antes estaban inline en los useCallback de App.jsx. Cada función recibe
 // el estado actual y devuelve el siguiente; persistirlo es tarea del hook
 // (src/hooks/useTransactionActions.js).
-import { makeKey, monthKey, monthKeyOf, uid } from "./utils.js";
+import { makeKey, monthKey, monthKeyOf, uid, localIsoDate } from "./utils.js";
 
 /**
  * @typedef {import("./types.js").Transaction} Transaction
@@ -30,6 +30,63 @@ export function makeManualTransaction(entry, createdAt) {
     matchedId: null,
     createdAt,
   };
+}
+
+/** @typedef {{ type: "income"|"expense", description: string, amount: number, category: string }} EntryTemplate */
+
+// Datos para precargar el formulario "Nuevo movimiento" a partir de un
+// movimiento existente ("Duplicar"). Usa el nombre que ve el usuario (alias
+// si hay) y el monto sin signo, como lo espera makeManualTransaction.
+/** @param {Transaction} t @returns {EntryTemplate} */
+export function entryFromTransaction(t) {
+  return {
+    type: t.amount >= 0 ? "income" : "expense",
+    description: t.alias || t.description,
+    amount: Math.abs(t.amount),
+    category: t.category,
+  };
+}
+
+// "Frecuentes" del formulario de alta: lo que el usuario anota a mano una y
+// otra vez (almuerzo, Uber, pan), para cargarlo con un toque en vez de una
+// tabla de plantillas que habría que mantener. Cuenta los manuales de los
+// últimos `windowDays` (los del banco no: esos llegan solos; los de
+// suscripción tampoco: se generan solos) más los del banco que se fusionaron
+// con un manual y conservaron su alias. Agrupa por descripción (sin
+// mayúsculas ni espacios extra) y tipo, exige al menos 2 apariciones, y usa
+// el monto y la categoría de la vez más reciente (el almuerzo sube de precio).
+/**
+ * @param {Transaction[]} transactions
+ * @param {string} todayIso  "YYYY-MM-DD" (localIsoDate)
+ * @param {{ limit?: number, windowDays?: number }} [opts]
+ * @returns {(EntryTemplate & { count: number })[]}
+ */
+export function frequentManualEntries(transactions, todayIso, { limit = 6, windowDays = 90 } = {}) {
+  const [y, m, d] = todayIso.split("-").map(Number);
+  const since = localIsoDate(new Date(y, m - 1, d - windowDays));
+  /** @type {Map<string, { entry: EntryTemplate, count: number, lastDate: string }>} */
+  const groups = new Map();
+  for (const t of transactions) {
+    if (t.subscriptionId || t.date < since || t.date > todayIso) continue;
+    const isManual = t.source === "manual";
+    const isMergedWithAlias = t.source === "bank" && t.matchedId && t.alias;
+    if (!isManual && !isMergedWithAlias) continue;
+    const entry = entryFromTransaction(t);
+    const norm = entry.description.trim().replace(/\s+/g, " ").toLowerCase();
+    if (!norm) continue;
+    const key = `${entry.type}|${norm}`;
+    const g = groups.get(key);
+    if (!g) groups.set(key, { entry, count: 1, lastDate: t.date });
+    else {
+      g.count += 1;
+      if (t.date >= g.lastDate) { g.entry = entry; g.lastDate = t.date; }
+    }
+  }
+  return [...groups.values()]
+    .filter((g) => g.count >= 2)
+    .sort((a, b) => b.count - a.count || (a.lastDate < b.lastDate ? 1 : -1))
+    .slice(0, limit)
+    .map((g) => ({ ...g.entry, description: g.entry.description.trim(), count: g.count }));
 }
 
 // el movimiento manual "pendiente" del mes en curso para cada suscripción

@@ -19,6 +19,9 @@ lo suyo y puede entrar desde cualquier dispositivo.
   automáticamente con el del archivo más reciente.
 - Carga manual de gastos e ingresos que aún no aparecen en el banco: monto
   primero con formato CLP en vivo, categoría y fecha con atajos "Hoy"/"Ayer".
+  Arriba aparecen tus "frecuentes" (lo que anotas a mano seguido, como el
+  almuerzo o el Uber) para completarlos con un toque, y cualquier movimiento
+  se puede **duplicar** desde su editor.
 - Lista agrupada por día ("Hoy", "Ayer", "Lunes, 3 de agosto"). En mobile:
   tocar edita, deslizar muestra editar/borrar y mantener presionado entra al
   modo selección. En desktop: edición en la misma fila.
@@ -26,8 +29,8 @@ lo suyo y puede entrar desde cualquier dispositivo.
   borrar varios movimientos a la vez.
 - Borrar es inmediato y siempre se puede **deshacer** desde el aviso que
   aparece (el movimiento vuelve tal cual estaba).
-- Búsqueda y filtros por categoría, tipo (ingreso/gasto) y origen
-  (manual/banco); aviso de posibles duplicados entre un manual y uno del banco.
+- Búsqueda y filtros por categoría, tipo (ingreso/gasto), origen
+  (manual/banco) y rango de monto; aviso de posibles duplicados entre un manual y uno del banco.
 - Exportación a `.csv` y respaldo completo a `.json`.
 
 **Tarjeta de crédito (CMR)**
@@ -59,7 +62,10 @@ lo suyo y puede entrar desde cualquier dispositivo.
 **Resumen** (siempre de un mes concreto)
 - Saldo actual (último saldo del banco + manuales cargados después) y
   tarjetas de ingresos, gastos (con comparación contra el mismo tramo de días
-  del mes anterior), balance y total ahorrado.
+  del mes anterior), balance con tasa de ahorro y total ahorrado.
+- Proyección del gasto a fin de mes: lo gastado hasta hoy más lo que el mes
+  anterior gastó desde este mismo día en adelante (así el arriendo no se
+  proyecta 30 veces).
 - Insights en texto: variación del gasto vs. el mes pasado y la categoría
   que más subió.
 - Donas de gasto e ingreso por categoría (tocar una abre sus movimientos),

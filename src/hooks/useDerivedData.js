@@ -6,12 +6,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { TOKENS, DEFAULT_CATEGORY_ICON, resolveCategoryIcon } from "../lib/constants.js";
 import { findDuplicateIds } from "../lib/reconcile.js";
-import { computeInsights, monthKeyOf } from "../lib/utils.js";
+import { computeInsights, monthKeyOf, localIsoDate } from "../lib/utils.js";
+import { frequentManualEntries } from "../lib/transactionOps.js";
 import {
   listMonths, listCreditMonths, filterByMonth, filterTransactions, excludedCategoryIdsOf, isRealExpense,
   computeMonthStats, sumByCategory, computeByMonth, computeDailySpend, computeHeroStat, computeTotalSavings,
   computeDynamicBalance, computeReconcileStats, computeMonthHealth, filterCreditByMonth, computeCreditStats,
-  latestCreditStatement,
+  latestCreditStatement, computeMonthProjection, computeSavingsRate,
 } from "../lib/stats.js";
 
 // elige el primer mes de la lista como valor por defecto, una sola vez — así
@@ -29,9 +30,9 @@ function useDefaultOnce(list, setValue) {
 
 /**
  * @param {ReturnType<typeof import("./useAppData.js").useAppData>} data
- * @param {{ search: string, catFilter: string, txTypeFilter: string, sourceFilter: string }} filters
+ * @param {{ search: string, catFilter: string, txTypeFilter: string, sourceFilter: string, amountRange: import("../lib/stats.js").AmountRange }} filters
  */
-export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFilter }) {
+export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFilter, amountRange }) {
   const { transactions, creditTransactions, creditStatements, categories, accountSettings } = data;
 
   const catMap = useMemo(
@@ -51,10 +52,13 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
 
   const monthTx = useMemo(() => filterByMonth(transactions, monthFilter), [transactions, monthFilter]);
   const filteredTx = useMemo(
-    () => filterTransactions(monthTx, { catFilter, txTypeFilter, sourceFilter, search }),
-    [monthTx, catFilter, txTypeFilter, sourceFilter, search]
+    () => filterTransactions(monthTx, { catFilter, txTypeFilter, sourceFilter, search, amountRange }),
+    [monthTx, catFilter, txTypeFilter, sourceFilter, search, amountRange]
   );
   const duplicateIds = useMemo(() => findDuplicateIds(transactions), [transactions]);
+  // "hoy" se fija al cambiar los datos, no en cada render: basta para la
+  // ventana de 90 días de los frecuentes.
+  const frequentEntries = useMemo(() => frequentManualEntries(transactions, localIsoDate()), [transactions]);
 
   // Resumen siempre muestra UN mes (el seleccionado, o el más reciente si en
   // Movimientos quedó "Todo"): mezclar todo el historial en el dashboard
@@ -71,6 +75,8 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
   const byMonth = useMemo(() => computeByMonth(transactions, excludedCategoryIds), [transactions, excludedCategoryIds]);
   const dailySpend = useMemo(() => computeDailySpend(transactions, excludedCategoryIds), [transactions, excludedCategoryIds]);
   const heroStat = useMemo(() => computeHeroStat(dailySpend, transactions, currentMonth), [dailySpend, transactions, currentMonth]);
+  const projection = useMemo(() => computeMonthProjection(heroStat, dailySpend), [heroStat, dailySpend]);
+  const savingsRate = useMemo(() => computeSavingsRate(stats), [stats]);
   const insights = useMemo(() => {
     const [y, m] = (currentMonth || monthKeyOf(new Date())).split("-").map(Number);
     return computeInsights(transactions, excludedCategoryIds, (id) => getCat(id).label, new Date(y, m - 1, 1));
@@ -107,8 +113,8 @@ export function useDerivedData(data, { search, catFilter, txTypeFilter, sourceFi
   return {
     getCat,
     months, monthFilter, setMonthFilter, currentMonth,
-    filteredTx, duplicateIds,
-    stats, byCategory, byIncomeCategory, byMonth, dailySpend, heroStat, insights,
+    filteredTx, duplicateIds, frequentEntries,
+    stats, byCategory, byIncomeCategory, byMonth, dailySpend, heroStat, projection, savingsRate, insights,
     totalSavings, dynamicBalance, reconcileStats, monthHealth,
     creditMonths, currentCreditMonth, setCreditMonthFilter, filteredCreditTx, creditStats,
     currentCreditStatement, latestCreditStatement: latestStatement,

@@ -35,6 +35,15 @@ export function listCreditMonths(creditTransactions) {
   return Array.from(s).filter(Boolean).sort().reverse();
 }
 
+/** @typedef {{ min: number|null, max: number|null }} AmountRange */
+/** @type {AmountRange} */
+export const EMPTY_AMOUNT_RANGE = { min: null, max: null };
+
+/** @param {AmountRange} r */
+export function isAmountRangeActive(r) {
+  return r.min != null || r.max != null;
+}
+
 /** @param {Transaction[]} transactions @param {string} monthFilter  "all" o "YYYY-MM" */
 export function filterByMonth(transactions, monthFilter) {
   return transactions.filter((t) => monthFilter === "all" || monthKey(t.date) === monthFilter);
@@ -42,15 +51,20 @@ export function filterByMonth(transactions, monthFilter) {
 
 /**
  * Filtros de la lista de Movimientos (sobre lo ya filtrado por mes), ordenado.
+ * El rango de monto compara el valor ABSOLUTO (sin signo), en CLP, con ambos
+ * extremos incluidos: "entre 10.000 y 50.000" sirve igual para gastos e
+ * ingresos. null en un extremo = sin límite.
  * @param {Transaction[]} monthTx
- * @param {{ catFilter: string, txTypeFilter: string, sourceFilter: string, search: string }} f
+ * @param {{ catFilter: string, txTypeFilter: string, sourceFilter: string, search: string, amountRange?: AmountRange }} f
  */
-export function filterTransactions(monthTx, { catFilter, txTypeFilter, sourceFilter, search }) {
+export function filterTransactions(monthTx, { catFilter, txTypeFilter, sourceFilter, search, amountRange = EMPTY_AMOUNT_RANGE }) {
   const q = search.toLowerCase();
+  const { min, max } = amountRange;
   return monthTx
     .filter((t) => catFilter === "all" || t.category === catFilter)
     .filter((t) => txTypeFilter === "all" || (txTypeFilter === "income" ? t.amount > 0 : t.amount < 0))
     .filter((t) => sourceFilter === "all" || t.source === sourceFilter)
+    .filter((t) => (min == null || Math.abs(t.amount) >= min) && (max == null || Math.abs(t.amount) <= max))
     .filter((t) => !search || t.description.toLowerCase().includes(q) || (t.alias || "").toLowerCase().includes(q))
     .sort(byDateDesc);
 }
@@ -156,6 +170,44 @@ export function computeHeroStat(dailySpend, transactions, currentMonth, now = ne
   }
 
   return { spentSoFar, typicalPace, dayOfMonth, monthKey: thisMonthKey, isRealCurrentMonth };
+}
+
+// Proyección del gasto al cierre del mes en curso: lo gastado hasta hoy + lo
+// que el mes anterior gastó DESPUÉS de este mismo día. No es una regla de
+// tres (gastado / días × días del mes): con el arriendo pagado el día 1, la
+// regla de tres proyectaba el arriendo 30 veces. Así los pagos fijos caen
+// donde caen siempre. null si no es el mes real en curso o si no hay datos
+// del mes anterior (sin base no se inventa una cifra).
+/**
+ * @param {ReturnType<typeof computeHeroStat>} heroStat
+ * @param {Record<string, number>} dailySpend
+ * @returns {{ estimated: number, prevMonthTotal: number, elapsedPct: number, dayOfMonth: number, daysInMonth: number } | null}
+ */
+export function computeMonthProjection(heroStat, dailySpend) {
+  if (!heroStat?.isRealCurrentMonth || heroStat.typicalPace == null) return null;
+  const prevMonth = prevMonthKey(heroStat.monthKey);
+  let prevMonthTotal = 0;
+  for (const [date, amt] of Object.entries(dailySpend)) {
+    if (date.slice(0, 7) === prevMonth) prevMonthTotal += amt;
+  }
+  const [y, m] = heroStat.monthKey.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  return {
+    estimated: heroStat.spentSoFar + (prevMonthTotal - heroStat.typicalPace),
+    prevMonthTotal,
+    elapsedPct: Math.round((heroStat.dayOfMonth / daysInMonth) * 100),
+    dayOfMonth: heroStat.dayOfMonth,
+    daysInMonth,
+  };
+}
+
+// Tasa de ahorro del período: qué parte de los ingresos no se gastó
+// ((ingresos − gasto real) / ingresos). Puede ser negativa (gastaste más de
+// lo que entró). null sin ingresos: dividir por 0 no dice nada útil.
+/** @param {{ income: number, balance: number }} stats @returns {number|null} fracción, ej. 0.23 */
+export function computeSavingsRate({ income, balance }) {
+  if (!(income > 0)) return null;
+  return balance / income;
 }
 
 // Total ahorrado = histórico completo (no solo el mes elegido) de las

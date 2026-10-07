@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { Upload, Plus, Pencil, X, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
+import { Upload, Plus, Pencil, X, Copy, Inbox, SearchX, CalendarX2, Download, FileSpreadsheet, Loader2, Trash2, Sparkles, Check, ScanLine, SlidersHorizontal, Landmark, PenLine, Wallet, CreditCard as CreditCardIcon } from "lucide-react";
 import { TOKENS, resolveCategoryIcon, categoryMatchesType } from "../lib/constants.js";
 import { formatCLP, suggestMatchKey, groupByDate, formatDayHeading, localIsoDate } from "../lib/utils.js";
+import { EMPTY_AMOUNT_RANGE, isAmountRangeActive } from "../lib/stats.js";
+import { entryFromTransaction } from "../lib/transactionOps.js";
 import { EmptyState, FieldInput, CategoryQuickAdd, CategorySelect, Modal } from "./Shared.jsx";
 import { BTN_PRIMARY, BTN_GHOST, pillClass } from "./classes.js";
 import { CreditCard } from "./CreditCard.jsx";
@@ -16,9 +18,10 @@ const ACTION_BTN =
   "flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-surface text-muted text-body cursor-pointer whitespace-nowrap";
 
 export function Movimientos({
-  filteredTx, hasTransactions, categories, getCat, search, setSearch, catFilter, setCatFilter,
+  filteredTx, frequentEntries = [], hasTransactions, categories, getCat, search, setSearch, catFilter, setCatFilter,
   txTypeFilter = "all", setTxTypeFilter,
   sourceFilter = "all", setSourceFilter,
+  amountRange = EMPTY_AMOUNT_RANGE, setAmountRange,
   saveTxEdit, deleteTransaction, showManualForm, setShowManualForm, showImportModal, setShowImportModal,
   addManual, onAddCategory, handleFile, isImporting, pushToast, onBulkDelete, onBulkChangeCategory,
   recentImportIds = [], onClearRecentImports, duplicateIds, onOpenConciliacion, reconcileStats, onToggleSubscription,
@@ -36,8 +39,13 @@ export function Movimientos({
   // un solo botón de filtro (en vez de 3 selects apilados) — patrón típico
   // de apps mobile para no competir por ancho con la búsqueda.
   const [showFilterSheet, setShowFilterSheet] = useState(false);
-  const activeFilterCount = (catFilter !== "all" ? 1 : 0) + (txTypeFilter !== "all" ? 1 : 0) + (sourceFilter !== "all" ? 1 : 0);
-  const clearFilters = () => { setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); };
+  const amountActive = isAmountRangeActive(amountRange);
+  const [showAmountModal, setShowAmountModal] = useState(false);
+  const activeFilterCount =
+    (catFilter !== "all" ? 1 : 0) + (txTypeFilter !== "all" ? 1 : 0) + (sourceFilter !== "all" ? 1 : 0) + (amountActive ? 1 : 0);
+  const clearFilters = () => {
+    setCatFilter("all"); setTxTypeFilter?.("all"); setSourceFilter?.("all"); setAmountRange?.(EMPTY_AMOUNT_RANGE);
+  };
   // se calcula una sola vez acá arriba y se pasa a cada TxRow — antes cada
   // fila llamaba useIsMobile() por su cuenta, lo que con una lista larga
   // significaba un listener de matchMedia por fila en vez de uno solo.
@@ -58,6 +66,9 @@ export function Movimientos({
   // futuras acciones masivas — categorizar/borrar en lote, etc.), sin
   // ninguna acción real todavía.
   const [selectedIds, setSelectedIds] = useState([]);
+  // "Duplicar" desde el editor de una fila: abre el formulario de alta
+  // precargado (con fecha de hoy), aparte del showManualForm de App.
+  const [duplicateFrom, setDuplicateFrom] = useState(null);
   const selectAllRef = useRef(null);
 
   const toggleSelectOne = (id) => {
@@ -279,6 +290,27 @@ export function Movimientos({
                 </select>
               </div>
             )}
+            {setAmountRange && (
+              <div className="flex">
+                <button
+                  onClick={() => setShowAmountModal(true)}
+                  title="Filtrar por rango de monto"
+                  className={`${ACTION_BTN} ${amountActive ? "!border-accent !text-accent rounded-r-none" : ""}`}
+                >
+                  {amountActive ? formatAmountRange(amountRange) : "Monto"}
+                </button>
+                {amountActive && (
+                  <button
+                    onClick={() => setAmountRange(EMPTY_AMOUNT_RANGE)}
+                    aria-label="Quitar filtro de monto"
+                    title="Quitar filtro de monto"
+                    className={`${ACTION_BTN} !px-2 !border-accent !text-accent rounded-l-none border-l-0`}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            )}
             {txTypeFilter !== "all" && (
               <button
                 onClick={() => setTxTypeFilter?.("all")}
@@ -328,10 +360,19 @@ export function Movimientos({
           setTxTypeFilter={setTxTypeFilter}
           sourceFilter={sourceFilter}
           setSourceFilter={setSourceFilter}
+          amountRange={amountRange}
+          setAmountRange={setAmountRange}
           activeFilterCount={activeFilterCount}
           onClear={clearFilters}
           onClose={() => setShowFilterSheet(false)}
         />
+      )}
+
+      {!isMobile && showAmountModal && setAmountRange && (
+        <Modal title="Filtrar por monto" onClose={() => setShowAmountModal(false)}>
+          <AmountRangeFields value={amountRange} onChange={setAmountRange} />
+          <button onClick={() => setShowAmountModal(false)} className={`${BTN_PRIMARY} w-full mt-4`}>Listo</button>
+        </Modal>
       )}
 
       {recentImportIds.length > 0 && (
@@ -359,7 +400,19 @@ export function Movimientos({
         </div>
       )}
 
-      {showManualForm && <ManualForm categories={categories} onClose={() => setShowManualForm(false)} onSubmit={addManual} onAddCategory={onAddCategory} />}
+      {showManualForm && !duplicateFrom && (
+        <ManualForm
+          categories={categories} frequent={frequentEntries} onAddCategory={onAddCategory}
+          onClose={() => setShowManualForm(false)} onSubmit={addManual}
+        />
+      )}
+      {duplicateFrom && (
+        <ManualForm
+          categories={categories} initial={duplicateFrom} onAddCategory={onAddCategory}
+          onClose={() => setDuplicateFrom(null)}
+          onSubmit={async (entry) => { await addManual(entry); setDuplicateFrom(null); }}
+        />
+      )}
 
       {showImportModal && (
         <ImportModal onClose={() => setShowImportModal(false)} onFile={(f) => { handleFile(f); setShowImportModal(false); }} />
@@ -384,7 +437,7 @@ export function Movimientos({
                 </button>
               }
             />
-          ) : search || catFilter !== "all" || txTypeFilter !== "all" || sourceFilter !== "all" ? (
+          ) : search || activeFilterCount > 0 ? (
             <EmptyState
               icon={SearchX}
               title="Sin resultados"
@@ -417,6 +470,7 @@ export function Movimientos({
                   getCat={getCat}
                   saveTxEdit={saveTxEdit}
                   onDelete={deleteTransaction}
+                  onDuplicate={(tx) => setDuplicateFrom(entryFromTransaction(tx))}
                   selected={selectedIds.includes(t.id)}
                   selectionMode={selectedIds.length > 0}
                   onToggleSelect={toggleSelectOne}
@@ -452,7 +506,7 @@ export function Movimientos({
 // la búsqueda — mismo patrón que ya usa el "+" del nav inferior.
 function FilterSheet({
   categories, catFilter, setCatFilter, txTypeFilter, setTxTypeFilter,
-  sourceFilter, setSourceFilter, activeFilterCount, onClear, onClose,
+  sourceFilter, setSourceFilter, amountRange, setAmountRange, activeFilterCount, onClear, onClose,
 }) {
   const typeOptions = [
     { v: "all", label: "Todos" },
@@ -513,6 +567,15 @@ function FilterSheet({
           </>
         )}
 
+        {setAmountRange && (
+          <>
+            <div className="text-caption text-faint mb-1.5">Monto</div>
+            <div className="mb-5">
+              <AmountRangeFields value={amountRange} onChange={setAmountRange} />
+            </div>
+          </>
+        )}
+
         <div className="flex gap-2">
           <button
             onClick={onClear}
@@ -529,6 +592,33 @@ function FilterSheet({
           </button>
         </div>
     </Modal>
+  );
+}
+
+// "$10.000 – $50.000", "≥ $10.000" o "≤ $50.000" para el botón del filtro.
+function formatAmountRange({ min, max }) {
+  if (min != null && max != null) return `${formatCLP(min)} – ${formatCLP(max)}`;
+  return min != null ? `≥ ${formatCLP(min)}` : `≤ ${formatCLP(max)}`;
+}
+
+// Desde/Hasta del filtro de monto (valor absoluto, sin signo). Solo dígitos:
+// el usuario escribe "10000" o "10.000" y queda 10000; vacío = sin límite.
+function AmountRangeFields({ value, onChange }) {
+  const parse = (v) => {
+    const digits = v.replace(/\D/g, "");
+    return digits === "" ? null : Number(digits);
+  };
+  return (
+    <div className="flex gap-2">
+      <FieldInput
+        label="Desde ($)" inputMode="numeric" placeholder="Sin mínimo" style={{ flex: 1 }}
+        value={value.min ?? ""} onChange={(v) => onChange({ ...value, min: parse(v) })}
+      />
+      <FieldInput
+        label="Hasta ($)" inputMode="numeric" placeholder="Sin máximo" style={{ flex: 1 }}
+        value={value.max ?? ""} onChange={(v) => onChange({ ...value, max: parse(v) })}
+      />
+    </div>
   );
 }
 
@@ -653,7 +743,7 @@ function TxAmount({ amount, className = "" }) {
   );
 }
 
-function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, selectionMode, onToggleSelect, onStartSelect, isRecent, isDuplicate, isMobile, onToggleSubscription }) {
+function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicate, selected, selectionMode, onToggleSelect, onStartSelect, isRecent, isDuplicate, isMobile, onToggleSubscription }) {
   const [editing, setEditing] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const cat = getCat(t.category);
@@ -683,6 +773,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
       categories={categories}
       onSave={(payload) => { saveTxEdit(t.id, payload); setEditing(false); }}
       onCancel={() => setEditing(false)}
+      onDuplicate={onDuplicate ? () => { setEditing(false); onDuplicate(t); } : undefined}
       onToggleSubscription={onToggleSubscription ? (checked) => onToggleSubscription(t.id, checked) : undefined}
     />
   );
@@ -859,7 +950,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, selected, 
   );
 }
 
-function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) {
+function TxEditPanel({ t, categories, onSave, onCancel, onDuplicate, onToggleSubscription }) {
   // solo se ofrecen categorías del mismo tipo que el monto (ingreso/gasto),
   // para no mezclar "Comida" con "Sueldo" en el mismo selector — incluida
   // la que ya tenía asignada, si esa categoría cambió de tipo después (o si
@@ -929,6 +1020,15 @@ function TxEditPanel({ t, categories, onSave, onCancel, onToggleSubscription }) 
         <button onClick={onCancel} className={BTN_GHOST}>
           Cancelar
         </button>
+        {onDuplicate && (
+          <button
+            onClick={onDuplicate}
+            title="Crear un movimiento manual igual, con fecha de hoy"
+            className={`${BTN_GHOST} ml-auto flex items-center gap-1.5`}
+          >
+            <Copy size={12} /> Duplicar
+          </button>
+        )}
       </div>
     </div>
   );
@@ -941,12 +1041,20 @@ const formatThousands = (digits) => (digits ? Number(digits).toLocaleString("es-
 // primero (es lo que uno tiene en la cabeza), grande y con teclado numérico;
 // después descripción, categoría y fecha (casi siempre "Hoy"). En mobile sube
 // desde abajo como hoja.
-function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
-  const [type, setType] = useState("expense");
+// `initial` precarga todo (Duplicar); `frequent` son atajos de un toque que
+// llenan el formulario sin guardar (ver frequentManualEntries).
+function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = null, frequent = [] }) {
+  const [type, setType] = useState(initial?.type || "expense");
   const [date, setDate] = useState(() => localIsoDate());
-  const [description, setDescription] = useState("");
-  const [amountDigits, setAmountDigits] = useState("");
-  const [category, setCategory] = useState("otros");
+  const [description, setDescription] = useState(initial?.description || "");
+  const [amountDigits, setAmountDigits] = useState(initial ? String(initial.amount) : "");
+  const [category, setCategory] = useState(initial?.category || "otros");
+  const applyEntry = (e) => {
+    setType(e.type);
+    setAmountDigits(String(e.amount));
+    setDescription(e.description);
+    setCategory(e.category);
+  };
   const [addingCategory, setAddingCategory] = useState(false);
 
   // solo se ofrecen categorías del tipo elegido (gasto/ingreso), para no
@@ -1008,6 +1116,24 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory }) {
       </div>
 
       <div className="px-5 pt-4 pb-2 overflow-y-auto overscroll-contain flex-[1_1_auto]">
+        {frequent.length > 0 && (
+          <div className="mb-3.5">
+            <div className="text-caption text-faint mb-1.5">Frecuentes</div>
+            <div className="flex gap-1.5 overflow-x-auto overscroll-contain pb-1 -mx-5 px-5">
+              {frequent.map((e) => (
+                <button
+                  key={`${e.type}|${e.description}`}
+                  onClick={() => applyEntry(e)}
+                  title={`Completar con "${e.description}" (lo anotaste ${e.count} veces)`}
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-border bg-surface text-small text-ink cursor-pointer whitespace-nowrap"
+                >
+                  {e.description}
+                  <span className={`mono ${e.type === "expense" ? "text-expense" : "text-income"}`}>{formatCLP(e.amount)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <label className="block mb-3.5">
           <span className="block text-caption text-faint mb-1">Monto (CLP)</span>
           <span className="flex items-baseline gap-1 border-b-2 pb-1" style={{ borderColor: accent }}>

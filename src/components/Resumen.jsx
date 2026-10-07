@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Legend,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, Shapes, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, PieChart as PieChartIcon, BarChart3, ImageDown, Loader2, Pencil, PiggyBank, Shapes, CreditCard as CreditCardIcon, ArrowRight } from "lucide-react";
 import { TOKENS, resolveCategoryIcon } from "../lib/constants.js";
 import { formatCLP, formatCLPCompact, formatDateDisplay, localIsoDate } from "../lib/utils.js";
 import { Panel, EmptyState, StatCard, FieldInput, Modal } from "./Shared.jsx";
@@ -35,8 +35,16 @@ function spendPaceSub(heroStat) {
   return "en línea con tu ritmo habitual";
 }
 
+// tasa de ahorro como texto bajo "Balance del período"
+function savingsRateSub(rate) {
+  if (rate == null) return undefined;
+  const pct = Math.round(Math.abs(rate) * 100);
+  return rate >= 0 ? `ahorraste el ${pct}% de tus ingresos` : `gastaste ${pct}% más de lo que entró`;
+}
+
 export function Resumen({
-  stats, byCategory, byIncomeCategory, categories, byMonth, currentMonth, dailySpend, hasTransactions, heroStat, insights, pushToast,
+  stats, byCategory, byIncomeCategory, categories, byMonth, currentMonth, dailySpend, hasTransactions, heroStat, projection, savingsRate,
+  insights, pushToast,
   dynamicBalance, lastSyncDate, onAdjustBalance, onCategoryClick, totalSavings, onAdjustSavings,
   creditStatement, onGoToCredit,
 }) {
@@ -128,7 +136,22 @@ export function Resumen({
           icon={ArrowDownRight}
           accent={TOKENS.expense}
         />
-        <StatCard label="Balance del período" value={formatCLP(stats.balance)} accent={stats.balance >= 0 ? TOKENS.income : TOKENS.expense} />
+        <StatCard
+          label="Balance del período" value={formatCLP(stats.balance)} sub={savingsRateSub(savingsRate)}
+          accent={stats.balance >= 0 ? TOKENS.income : TOKENS.expense}
+        />
+        {/* solo en el mes real en curso y con datos del mes anterior (ver
+            computeMonthProjection): gastado + lo que el mes pasado gastó
+            del día de hoy en adelante */}
+        {projection && (
+          <StatCard
+            label="Proyección a fin de mes"
+            value={formatCLP(-projection.estimated)}
+            sub={`mes pasado ${formatCLP(projection.prevMonthTotal)} · día ${projection.dayOfMonth} de ${projection.daysInMonth}`}
+            icon={TrendingUp}
+            accent={TOKENS.text}
+          />
+        )}
         {totalSavings != null && (
           <StatCard
             label="Total ahorrado"

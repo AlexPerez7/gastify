@@ -9,6 +9,7 @@ import { useToasts } from "./hooks/useToasts.js";
 import { useIsMobile } from "./hooks/useIsMobile.js";
 import { exportBackup } from "./lib/exportBackup.js";
 import { exportCsv } from "./lib/exportCsv.js";
+import { EMPTY_AMOUNT_RANGE } from "./lib/stats.js";
 
 import { Header, MonthBar, BottomNav, ExportMenu } from "./components/Header.jsx";
 import { CategoryManager } from "./components/CategoryManager.jsx";
@@ -43,6 +44,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const [catFilter, setCatFilter] = useState("all");
   const [txTypeFilter, setTxTypeFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [amountRange, setAmountRange] = useState(EMPTY_AMOUNT_RANGE);
   const [showManualForm, setShowManualForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -61,7 +63,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   const txActions = useTransactionActions(data, { onManualAdded: closeManualForm, pushToast });
   const catalog = useCatalogActions(data);
   const importers = useImporters(data, { pushToast, updateToast });
-  const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFilter });
+  const derived = useDerivedData(data, { search, catFilter, txTypeFilter, sourceFilter, amountRange });
   const { months, monthFilter, setMonthFilter, currentMonth } = derived;
 
   const dismissOnboarding = useCallback(() => {
@@ -113,10 +115,12 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   }, []);
   // desde los gráficos por categoría de Resumen: Movimientos filtrado por esa
   // categoría y por el tipo del gráfico (mismo mes), sin mezclar ingresos y
-  // gastos.
+  // gastos. El rango de monto se limpia: si no, la lista podría no sumar lo
+  // que mostraba la porción del gráfico.
   const goToCategoryMovements = useCallback((categoryId, txType = "all") => {
     setCatFilter(categoryId);
     setTxTypeFilter(txType);
+    setAmountRange(EMPTY_AMOUNT_RANGE);
     setTab("movimientos");
   }, []);
 
@@ -178,6 +182,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
               <Resumen
                 stats={derived.stats} byCategory={derived.byCategory} byIncomeCategory={derived.byIncomeCategory} categories={categories} byMonth={derived.byMonth} currentMonth={currentMonth}
                 dailySpend={derived.dailySpend} hasTransactions={transactions.length > 0} heroStat={derived.heroStat}
+                projection={derived.projection} savingsRate={derived.savingsRate}
                 insights={derived.insights} pushToast={pushToast}
                 dynamicBalance={derived.dynamicBalance} lastSyncDate={accountSettings?.lastSyncDate}
                 onAdjustBalance={adjustBaseBalance}
@@ -196,6 +201,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
             <Suspense fallback={<MovimientosSkeleton />}>
               <Movimientos
                 filteredTx={derived.filteredTx}
+                frequentEntries={derived.frequentEntries}
                 hasTransactions={transactions.length > 0}
                 categories={categories}
                 getCat={derived.getCat}
@@ -203,6 +209,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
                 catFilter={catFilter} setCatFilter={setCatFilter}
                 txTypeFilter={txTypeFilter} setTxTypeFilter={setTxTypeFilter}
                 sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+                amountRange={amountRange} setAmountRange={setAmountRange}
                 saveTxEdit={txActions.saveTxEdit}
                 deleteTransaction={txActions.deleteTransaction}
                 showManualForm={showManualForm} setShowManualForm={setShowManualForm}

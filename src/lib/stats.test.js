@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   listMonths, filterTransactions, computeMonthStats, sumByCategory, computeHeroStat, computeDailySpend,
   computeTotalSavings, computeDynamicBalance, computeReconcileStats, computeMonthHealth,
-  heatmapThresholds, heatLevel,
+  heatmapThresholds, heatLevel, computeMonthProjection, computeSavingsRate,
 } from "./stats.js";
 
 const tx = (o) => ({ source: "bank", matchedId: null, alias: "", category: "otros", description: "", ...o });
@@ -29,6 +29,11 @@ describe("filterTransactions", () => {
     expect(filterTransactions(list, { ...base, txTypeFilter: "income" }).map((t) => t.id)).toEqual(["b"]);
     expect(filterTransactions(list, { ...base, sourceFilter: "bank" }).map((t) => t.id)).toEqual(["c", "a"]);
     expect(filterTransactions(list, { ...base, search: "CAFECI" }).map((t) => t.id)).toEqual(["c"]);
+  });
+  it("rango de monto por valor absoluto, extremos incluidos", () => {
+    expect(filterTransactions(list, { ...base, amountRange: { min: 10, max: null } }).map((t) => t.id)).toEqual(["b", "a"]);
+    expect(filterTransactions(list, { ...base, amountRange: { min: 5, max: 10 } }).map((t) => t.id)).toEqual(["c", "a"]);
+    expect(filterTransactions(list, { ...base, amountRange: { min: null, max: 4 } })).toEqual([]);
   });
 });
 
@@ -62,6 +67,32 @@ describe("computeHeroStat", () => {
   it("mes cerrado usa el mes completo; sin datos previos typicalPace es null", () => {
     const res = computeHeroStat({ "2026-02-27": 10 }, [], "2026-02", new Date(2026, 7, 5));
     expect(res).toMatchObject({ spentSoFar: 10, typicalPace: null, dayOfMonth: 28, isRealCurrentMonth: false });
+  });
+});
+
+describe("computeMonthProjection", () => {
+  it("gastado hasta hoy + lo que el mes anterior gastó después de este día", () => {
+    // julio: 40 hasta el día 5, 300 después (arriendo el 28)
+    const daily = { "2026-08-01": 500, "2026-07-02": 40, "2026-07-28": 300 };
+    const list = [tx({ date: "2026-07-02", amount: -40 })];
+    const hero = computeHeroStat(daily, list, "2026-08", new Date(2026, 7, 5));
+    expect(computeMonthProjection(hero, daily)).toEqual({
+      estimated: 800, prevMonthTotal: 340, elapsedPct: 16, dayOfMonth: 5, daysInMonth: 31,
+    });
+  });
+  it("null en un mes cerrado o sin datos del mes anterior", () => {
+    const daily = { "2026-08-01": 500 };
+    expect(computeMonthProjection(computeHeroStat(daily, [], "2026-08", new Date(2026, 7, 5)), daily)).toBeNull();
+    const list = [tx({ date: "2026-06-02", amount: -40 })];
+    expect(computeMonthProjection(computeHeroStat(daily, list, "2026-07", new Date(2026, 7, 5)), daily)).toBeNull();
+  });
+});
+
+describe("computeSavingsRate", () => {
+  it("fracción del ingreso que no se gastó; null sin ingresos", () => {
+    expect(computeSavingsRate({ income: 1000, balance: 250 })).toBe(0.25);
+    expect(computeSavingsRate({ income: 1000, balance: -500 })).toBe(-0.5);
+    expect(computeSavingsRate({ income: 0, balance: -100 })).toBeNull();
   });
 });
 
