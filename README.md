@@ -209,6 +209,11 @@ plata:
   archivo y protección contra archivos antiguos.
 - `stats.js` — stats del mes, gasto por categoría, comparación con el mes
   anterior, saldo actual, total ahorrado, conciliación, mapa de actividad.
+- `pdfParsing.js` — lectura de la cartola PDF de débito y del estado de
+  cuenta CMR. Además de los tests con datos inventados, si pones PDF reales
+  en `test-fixtures/` (`cartola-debito.pdf`, `estado-cuenta-cmr.pdf`) los
+  verifica también contra ellos; esa carpeta está en `.gitignore` y nunca
+  se sube al repo.
 - `transactionOps.js` — alta manual, cargos de suscripción, reglas
   retroactivas, edición desde conciliación.
 

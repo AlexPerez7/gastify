@@ -22,9 +22,10 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `storage.js` | Supabase | shim `get(key)`/`set(key, json, prevItems)` sobre tablas-lista, con mapeo camel↔snake |
 | `accountSettings.js` | Supabase | tabla de UNA fila por usuario (saldo base, ahorro base) — fuera del patrón de storage |
 | `supabaseClient.js` | Supabase | `createClient`; lanza si faltan las env vars |
-| `parsePdfCartola.js` | parser | cartola débito PDF → filas `[fecha, desc, cargo, abono, saldo]` (igual que el xls) |
+| `pdfParsing.js` | puro | parseo de los PDF, **con test**: `extractPdfPages(pdfjsLib, buf)` (pdfjs inyectado: el del navegador en la app, el `legacy` de Node en los tests) → ítems `{x, y, str}` por página; `cartolaRowsFromPages`, `pagesToText`, `creditStatementFromText` |
+| `parsePdfCartola.js` | parser | cartola débito PDF → filas `[fecha, desc, cargo, abono, saldo]` (igual que el xls); solo lee el PDF y llama a `pdfParsing.js` |
 | `parseCreditCardXlsx.js` | parser | Excel CMR, hoja "Movimientos Facturados", columnas por **nombre** |
-| `parseCreditStatementPdf.js` | parser | PDF Estado de Cuenta CMR → solo resumen (cupo, fechas, totales), no movimientos |
+| `parseCreditStatementPdf.js` | parser | PDF Estado de Cuenta CMR → solo resumen (cupo, fechas, totales), no movimientos; solo lee el PDF y llama a `pdfParsing.js` |
 | `exportBackup.js` / `exportCsv.js` | export | leen de Supabase (no del estado React) y descargan archivo |
 | `readFile.js` | util | `readFileWithProgress` con progreso real |
 
@@ -106,8 +107,16 @@ largo; una regla con rango no aplica si no se le pasa el monto) → `autoCategor
   `tx()`/`bank()`/`manual()` para armar transacciones. Toda función pura nueva
   o cambio de lógica de dinero → test. Las funciones reciben `now`/`createdAt`
   por parámetro para poder testear fechas sin mocks.
+- **PDF reales**: `pdfParsing.test.js` tiene tests con ítems inventados
+  (corren siempre) y tests sobre `test-fixtures/cartola-debito.pdf` y
+  `test-fixtures/estado-cuenta-cmr.pdf`, que se **saltan si no están**.
+  `test-fixtures/` está en `.gitignore`: son cartolas reales del usuario y el
+  repo es **público** — nunca versionarlas ni escribir sus montos o
+  descripciones en un test; esos tests solo verifican invariantes (la cadena
+  de saldos cuadra, un solo monto por fila, los 9 campos del CMR coherentes).
+  En CI se saltan. Correrlos a mano antes de tocar los parsers o subir pdfjs.
 - `npm run typecheck` solo incluye los módulos puros (`types`, `utils`,
-  `reconcile`, `constants`, `storage`, `stats`, `importers`, `transactionOps`, `swipe`;
+  `reconcile`, `constants`, `storage`, `stats`, `importers`, `transactionOps`, `swipe`, `pdfParsing`;
   ver `tsconfig.json`, `strict: false`). Parsers,
   hooks y `supabaseClient` quedan fuera a propósito. Si agregas un archivo puro,
   súmalo al `include`.

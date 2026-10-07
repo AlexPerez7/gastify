@@ -6,3 +6,6 @@ dev-dist
 .DS_Store
 *.docx
 *.txt
+# cartolas/estados de cuenta REALES para los tests de los parsers de PDF
+# (src/lib/pdfParsing.test.js) — datos bancarios personales: nunca al repo
+test-fixtures/

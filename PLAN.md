@@ -6,7 +6,7 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 
 Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
 
-**Para retomar:** quedan los tests de los parsers (sección 4), la 5 (opcional) y las ideas de la 6.2 en adelante.
+**Para retomar:** queda el worker duplicado (sección 4), la 5 (opcional) y las ideas de la 6.2 en adelante.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
 cartola PDF real a mano.
 
@@ -29,11 +29,6 @@ Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 
 ## 4. Deuda técnica
 
-- [ ] **Tests de los parsers de PDF.** Hoy no tienen: la subida de pdfjs se
-      validó a mano con cartolas reales (que NO pueden ir al repo: es
-      público). Idea: separar en `parsePdfCartola.js` la parte pura (ítems de
-      texto con x/y → filas) de la lectura con pdfjs, y testearla con ítems
-      sintéticos; lo mismo con el texto del estado de cuenta CMR.
 - [ ] El build genera dos `pdf.worker.min` (`.mjs` 1,26 MB vía `?url` y un
       `.js` de 430 KB). Ya pasaba con pdfjs 6.2; averiguar si el `.js` sobra.
 
@@ -148,6 +143,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | --- | --- |
 | `4d8f9bb` | Pulido: barra inferior cabe a 320px ("Suscrip.", "+" de ancho fijo, etiquetas que no empujan) (n.º 17); total del día en los encabezados de Movimientos y de la tarjeta, con gasto real (`computeDayTotals`) (n.º 22); "Guardar resumen como imagen" al final de Resumen (n.º 23); ✓ "Guardado" al salir del nombre/presupuesto de una categoría (n.º 25); "Importar cartola"; `swipeShouldOpen` a `src/lib/swipe.js` con test |
 | `322200f` | `pdfjs-dist` 6.2.108 → 6.4.299 y `supabase-js` 2.111.0 → 2.117.2. Validado con una cartola de débito y un estado de cuenta CMR reales (fuera del repo): salida idéntica a la de antes, 81 filas con la cadena de saldos cuadrando 80/80, los 9 campos de CMR; un solo vite, `npm audit` en 0, el build de producción arranca sin errores |
+| (este) | Tests de los parsers de PDF: lógica pura a `pdfParsing.js` (pdfjs inyectado), 6 tests con ítems/texto inventados + 3 sobre PDF reales en `test-fixtures/` (en `.gitignore`, se saltan si no están). Verificado que fallan si se rompe el parser y que la app da el mismo resultado que antes del refactor |
 
 ## Hecho (2026-10-04)
 
