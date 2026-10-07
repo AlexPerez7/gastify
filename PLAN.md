@@ -163,7 +163,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `0ea2acd` | 6.1: proyección a fin de mes, tasa de ahorro, filtro por rango de monto, frecuentes y "Duplicar" en el alta manual |
 | `3037ad4` | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
 | `5c320bd` | Sección 1 / n.º 18: aviso en Movimientos cuando hay manuales que no calzan con la cartola; sin botón "Conciliar mes" (ya concilia al entrar); textos reales en los paneles vacíos; filas "Clásica" en mobile en Conciliación y en la tarjeta (`ClassicRowContent`); nombre de categoría en tinta en la tarjeta (contraste) |
-| (este) | n.º 19 · Lista larga por tandas de 100 filas (scroll infinito + "Mostrar más"). Medido con 2.000 filas, mobile, CPU ×4, React dev: por tecla al buscar 0,9–3,3 s → 0,25–0,47 s; volver a la lista completa 12,4 s → ~0,3 s; DOM 75k → 3,8k nodos |
+| `8e112ea` | n.º 19 · Lista larga por tandas de 100 filas (scroll infinito + "Mostrar más"). Medido con 2.000 filas, mobile, CPU ×4, React dev: por tecla al buscar 0,9–3,3 s → 0,25–0,47 s; volver a la lista completa 12,4 s → ~0,3 s; DOM 75k → 3,8k nodos |
 
 ## Hecho (2026-10-04)
 
