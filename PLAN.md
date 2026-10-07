@@ -12,14 +12,6 @@ cartola PDF real a mano.
 
 ---
 
-## 00. Bloqueante: migración 0008
-
-- [ ] Correr `supabase/migrations/0008_rules_and_subscription_frequency.sql`
-      en el SQL Editor de Supabase. El commit de reglas/suscripciones de la
-      6.1 queda **sin publicar** hasta entonces: la app manda las columnas
-      nuevas en cada guardado de reglas y suscripciones, y sin ellas Supabase
-      rechaza el upsert. Después: `git push` y verificar el deploy.
-
 ## 0. Verificar en el teléfono (antes de seguir)
 
 Cosas que se probaron con Playwright o leyendo el código, pero que dependen de
@@ -38,6 +30,10 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
       hoja y se puede elegir (antes quedaba tapado; arreglado en `e302c9b`).
 - [ ] Ahorro base: con la 0007 ya corrida, declarar/editar "Total ahorrado"
       guarda sin error.
+- [ ] Lo nuevo de la 6.1 y la sección 1, con datos reales: chips de
+      frecuentes y "Duplicar"; filtro por monto; una regla con rango de monto
+      y "Aplicar a lo existente"; una suscripción anual; fila de la tarjeta
+      (tocar → editar/borrar); aviso de conciliación en Movimientos.
 
 ## 1. Lista larga (n.º 19)
 
@@ -169,6 +165,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | Commit | Qué |
 | --- | --- |
 | `2ca403e` | Sección 6 del PLAN: ideas sacadas de ezbookkeeping |
+| — | Migración **0008** corrida en Supabase (verificado vía PostgREST); publicado todo lo de abajo |
 | `0ea2acd` | 6.1: proyección a fin de mes, tasa de ahorro, filtro por rango de monto, frecuentes y "Duplicar" en el alta manual |
 | `3037ad4` | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
 | `5c320bd` | Sección 1 / n.º 18: aviso en Movimientos cuando hay manuales que no calzan con la cartola; sin botón "Conciliar mes" (ya concilia al entrar); textos reales en los paneles vacíos; filas "Clásica" en mobile en Conciliación y en la tarjeta (`ClassicRowContent`); nombre de categoría en tinta en la tarjeta (contraste) |
