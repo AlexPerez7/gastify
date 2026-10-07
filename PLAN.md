@@ -6,7 +6,7 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 
 Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
 
-**Para retomar:** primero la sección 0 (pruebas en el teléfono), después la 2.
+**Para retomar:** primero la sección 0 (pruebas en el teléfono), después lo que queda de la 2 o la 3.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
 cartola PDF real a mano.
 
@@ -37,13 +37,23 @@ hardware real. Con la app **instalada** (PWA) en el iPhone/Android:
 - [ ] Movimientos con "Todo": la búsqueda responde al tiro y al bajar se
       cargan solas más filas (de a 100), sin saltos.
 
-## 2. Revisión de animaciones
+## 2. Animaciones (auditoría del 2026-10-07)
 
-- [ ] Correr la skill `improve-animations` (solo lectura → plan priorizado).
-      Ya identificado: la transición de cada cambio de pestaña desplaza el
-      contenido (acción frecuente → dejar solo fundido o nada, n.º 26);
-      `.tx-row-wrap` anima `max-height` con `ease-in`; varios popovers sin
-      `transform-origin` en su disparador.
+Hechos los n.º 1–4 y 8 de la auditoría (ver "Hecho"). Quedan, por impacto:
+
+- [ ] **Menú Exportar** (`.overflow-menu`, `index.css`): usa la entrada de
+      modal (sube 10px, escala desde el centro) aunque cuelga de un botón
+      arriba a la derecha. Keyframe propia: `translateY(-4px) scale(0.97)` →
+      0, `transform-origin: top right`, 150ms `var(--ease-out)`.
+- [ ] **Toasts**: la salida usa `ease-in` 200ms → 150ms `var(--ease-out)`.
+      Y si un toast que se está yendo se actualiza (`useToasts.js`, `update`
+      pone `leaving: false`), la keyframe de entrada se reinicia desde cero.
+- [ ] **Deslizar filas** (Movimientos y Conciliación, `handleDragEnd`): decide
+      solo por distancia; abrir también si `info.velocity.x < -500`, y
+      terminar con spring `{ type: "spring", duration: 0.5, bounce: 0.2 }`.
+- [ ] Oportunidades: entrada corta para `CategorySelect` y
+      `ConfirmDeleteButton` (hoy aparecen de golpe, origen en su botón); los
+      toasts de abajo saltan cuando uno se va; modales y hojas sin salida.
 
 ## 3. Pulido (de a poco, al tocar cada pantalla)
 
@@ -164,6 +174,7 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `3037ad4` | 6.1: reglas de comercio con tipo de coincidencia, rango de monto y "aplicar a lo existente" (pantalla nueva en Categorías); suscripciones anuales y con fecha de término. Requiere la migración **0008** |
 | `5c320bd` | Sección 1 / n.º 18: aviso en Movimientos cuando hay manuales que no calzan con la cartola; sin botón "Conciliar mes" (ya concilia al entrar); textos reales en los paneles vacíos; filas "Clásica" en mobile en Conciliación y en la tarjeta (`ClassicRowContent`); nombre de categoría en tinta en la tarjeta (contraste) |
 | `8e112ea` | n.º 19 · Lista larga por tandas de 100 filas (scroll infinito + "Mostrar más"). Medido con 2.000 filas, mobile, CPU ×4, React dev: por tecla al buscar 0,9–3,3 s → 0,25–0,47 s; volver a la lista completa 12,4 s → ~0,3 s; DOM 75k → 3,8k nodos |
+| (este) | Animaciones: tokens de curva (`--ease-out`, `--ease-in-out`, `--ease-drawer`, `--ease-overshoot`); pestañas principales sin animación y Resumen sin escalonado (n.º 26); filas sin animación de entrada al montarse; colapso al borrar con `grid-template-rows` y ease-out (antes `max-height` + `ease-in`); la regla global de botones ya no pisa `transition-colors` ni las transiciones propias (estaba fuera de `@layer`) |
 
 ## Hecho (2026-10-04)
 

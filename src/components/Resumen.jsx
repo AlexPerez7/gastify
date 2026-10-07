@@ -125,7 +125,7 @@ export function Resumen({
         </button>
       </div>
 
-      <div className="stagger-fade grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 mb-6">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 mb-6">
         <StatCard label="Ingresos" value={formatCLP(stats.income)} icon={ArrowUpRight} accent={TOKENS.income} />
         {/* antes había además una tarjeta "Gastado en <mes>" con el mismo
             número que esta — ahora es una sola, con el ritmo habitual abajo */}

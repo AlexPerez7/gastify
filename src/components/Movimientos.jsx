@@ -815,17 +815,19 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
   const cat = getCat(t.category);
   const CatIcon = cat.icon;
   const swipeControls = useAnimation();
+  // [0.23, 1, 0.32, 1] = --ease-out de index.css (framer-motion no lee vars CSS)
   const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
   const longPress = useLongPress(() => { closeSwipe(); setEditing(false); onStartSelect(t.id); });
   // al soltar un arrastre el navegador dispara igual un click: sin esto,
   // deslizar para ver editar/borrar abría además el editor
   const justDragged = useRef(false);
 
-  // espera a que termine la animación de colapso antes de sacarla del estado
+  // espera a que termine la animación de colapso (200ms, ver .tx-row-wrap
+  // en index.css) antes de sacarla del estado
   const handleDelete = () => {
     closeSwipe();
     setLeaving(true);
-    setTimeout(() => onDelete(t.id), 220);
+    setTimeout(() => onDelete(t.id), 200);
   };
 
   const handleDragEnd = (_e, info) => {
@@ -853,7 +855,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
     const detail = t.alias ? t.description : t.source === "bank" ? "Banco" : "Manual";
     return (
       <div className={isLast ? "" : "border-b border-border"}>
-        <div className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}>
+        <div className={`tx-row-wrap${leaving ? " tx-row-leaving" : ""}`}>
           <div className="tx-swipe-clip">
             {/* en modo selección no hay swipe: la bandeja ni se monta */}
             {!selectionMode && (
@@ -943,7 +945,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
 
   return (
     <div className={isLast ? "" : "border-b border-border"}>
-      <div className={`tx-row-wrap tx-row-enter${leaving ? " tx-row-leaving" : ""}`}>
+      <div className={`tx-row-wrap${leaving ? " tx-row-leaving" : ""}`}>
         <div
           className="grid grid-cols-[20px_1fr_170px_130px_auto] items-center gap-2.5 px-4 py-[11px] bg-surface relative"
           style={{ boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none" }}

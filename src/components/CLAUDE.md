@@ -77,6 +77,15 @@ existentes: `ACTION_BTN` (Movimientos), `HEADER_ICON_BTN` (Header).
   (Heatmap, swipe), `box-shadow`/`rgba` puntuales.
 - Clases globales en `index.css` (`.tab-panel`, `.app-main`, animaciones,
   media queries) — revisarlas antes de duplicar.
+- **Movimiento**: curvas solo vía tokens de `:root` en `index.css`
+  (`--ease-out` para entrar/salir, `--ease-in-out` para desplazamientos,
+  `--ease-drawer` para hojas, `--ease-overshoot` solo para el "+" del nav);
+  nada de `ease-in` ni `cubic-bezier` sueltos. En framer-motion,
+  `[0.23, 1, 0.32, 1]` (= `--ease-out`). Acciones frecuentes (cambiar de
+  pestaña, montar filas de una lista) **no** se animan. La regla global de
+  botones (`:where(button…)`) anima transform + colores con especificidad 0:
+  una clase propia que redefina `transition` debe incluir `transform` si
+  quiere conservar el "hundirse" al presionar.
 
 ## Mobile y UX
 

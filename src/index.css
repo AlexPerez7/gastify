@@ -67,6 +67,17 @@
    listas, botones · body-lg: nombres destacados · title: títulos de panel y
    modal. Los números grandes (saldo, montos destacados) usan tamaños propios. */
 :root {
+  /* ---- movimiento: curvas compartidas (no escribir cubic-bezier sueltos) ----
+     ease-out fuerte para todo lo que entra/sale; in-out para lo que se
+     desplaza en pantalla; drawer para hojas que suben desde abajo (curva
+     tipo iOS); overshoot SOLO para el "+" del nav (acción principal, poco
+     frecuente: el rebote ahí es intencional). framer-motion no lee vars:
+     en JS se usa el mismo valor de --ease-out escrito como arreglo. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   --fs-micro: 10.5px;
   --fs-caption: 11px;
   --fs-small: 12px;
@@ -222,10 +233,20 @@ button,
    presionarlo, sin depender de que cada uno defina su propio :active —
    selectores más específicos (ej. .bottom-add-btn) lo pisan si necesitan
    algo más marcado. */
-button:not(:disabled) {
-  transition: transform 110ms ease;
+/* :where() deja la especificidad en 0, así las clases propias
+   (.filter-seg-btn, .bottom-add-btn…) pueden redefinir su transición. Antes
+   `button:not(:disabled)` le ganaba a todo: al estar fuera de @layer también
+   pisaba las utilidades de Tailwind, y `transition-colors` en un botón
+   quedaba muerto (cambio de color instantáneo). Por eso acá van también los
+   colores: cubre a los botones que usan transition-colors de Tailwind. */
+:where(button:not(:disabled)) {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
-button:not(:disabled):active {
+:where(button:not(:disabled)):active {
   transform: scale(0.96);
 }
 
@@ -370,11 +391,12 @@ input.amount-input:focus-visible {
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 150ms ease;
+  transition: transform 140ms var(--ease-out), color 150ms ease;
 }
 
+/* sin rebote: se cambia de pestaña decenas de veces al día */
 .bottom-tab-btn svg {
-  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 150ms var(--ease-out);
 }
 
 .bottom-tab-btn[aria-current="page"] svg {
@@ -404,7 +426,7 @@ input.amount-input:focus-visible {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 160ms var(--ease-overshoot);
 }
 
 .bottom-add-btn:active {
@@ -412,7 +434,7 @@ input.amount-input:focus-visible {
 }
 
 .bottom-add-btn svg {
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 220ms var(--ease-overshoot);
 }
 
 /* al abrir el menú, el "+" gira y pasa a leerse como una "×" para cerrar */
@@ -426,7 +448,7 @@ input.amount-input:focus-visible {
   left: 50%;
   transform: translateX(-50%);
   transform-origin: bottom center;
-  animation: sheet-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheet-in 160ms var(--ease-out);
   width: 230px;
   display: flex;
   flex-direction: column;
@@ -472,7 +494,7 @@ input.amount-input:focus-visible {
   border-radius: 12px;
   padding: 6px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-  animation: modal-panel-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-panel-in 160ms var(--ease-out);
 }
 
 /* ---- hoja inferior (ver .modal-panel.sheet-mobile más abajo) -------------- */
@@ -501,7 +523,7 @@ input.amount-input:focus-visible {
   font-size: var(--fs-body);
   font-weight: 600;
   text-align: center;
-  transition: background 150ms ease, color 150ms ease;
+  transition: transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease;
 }
 
 /* ---- toasts --------------------------------------------------------------- */
@@ -560,22 +582,29 @@ input.amount-input:focus-visible {
   }
 }
 
-/* ---- filas de movimientos: entrada al aparecer, colapso al borrar -------- */
+/* ---- filas de movimientos: colapso al borrar ---------------------------- */
 
+/* Colapso con grid-template-rows 1fr → 0fr: anima el alto REAL de la fila.
+   Antes era max-height 220px → 0 con ease-in, y como la fila mide ~64px, la
+   mayor parte de la animación no se veía nada y al final se cerraba de
+   golpe. (Sin animación de entrada: se aplicaba a CADA fila al montarse —
+   al entrar a la pestaña, cambiar de mes, buscar o cargar otra tanda.)
+   El setTimeout de handleDelete (Movimientos.jsx) espera estos 200ms. */
 .tx-row-wrap {
-  overflow: hidden;
-  max-height: 220px;
+  display: grid;
+  grid-template-rows: 1fr;
   opacity: 1;
-  transition: max-height 220ms ease-in, opacity 180ms ease-in;
+  transition: grid-template-rows 200ms var(--ease-out), opacity 150ms var(--ease-out);
+}
+
+.tx-row-wrap > * {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tx-row-wrap.tx-row-leaving {
-  max-height: 0;
+  grid-template-rows: 0fr;
   opacity: 0;
-}
-
-.tx-row-wrap.tx-row-enter {
-  animation: row-in 220ms ease-out;
 }
 
 /* ---- swipe-to-action (mobile): editar/borrar detrás de la fila ---------- */
@@ -634,17 +663,6 @@ input.amount-input:focus-visible {
   background: var(--c-pending);
 }
 
-@keyframes row-in {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes sheet-in {
   from { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.92); }
   to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
@@ -657,7 +675,7 @@ input.amount-input:focus-visible {
 }
 
 .modal-panel {
-  animation: modal-panel-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modal-panel-in 200ms var(--ease-out);
 }
 
 @keyframes modal-backdrop-in {
@@ -682,15 +700,18 @@ input.amount-input:focus-visible {
     max-height: 92dvh !important;
     border-radius: 18px 18px 0 0;
     border-bottom: 0;
-    animation: filter-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: filter-sheet-in 220ms var(--ease-drawer);
   }
   .sheet-mobile .sheet-footer {
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
 }
 
-/* ---- transición al cambiar de pestaña ------------------------------------ */
+/* ---- fundido de paneles que aparecen (Categorías, Onboarding) ------------- */
 
+/* Ya NO se usa al cambiar de pestaña principal: eso pasa decenas de veces al
+   día y el contenido debe estar ahí al instante (sin desplazamiento ni
+   fundido). Queda para paneles que se abren de vez en cuando. */
 .tab-panel {
   animation: tab-fade-in 200ms ease-out;
 }
@@ -700,35 +721,22 @@ input.amount-input:focus-visible {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ---- entrada escalonada para grillas de tarjetas -------------------------- */
-
-.stagger-fade > * {
-  animation: tab-fade-in 260ms ease-out both;
-}
-.stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-fade > *:nth-child(2) { animation-delay: 40ms; }
-.stagger-fade > *:nth-child(3) { animation-delay: 80ms; }
-.stagger-fade > *:nth-child(4) { animation-delay: 120ms; }
-.stagger-fade > *:nth-child(5) { animation-delay: 160ms; }
-
 @media (prefers-reduced-motion: reduce) {
   .toast,
   .toast-leaving,
-  .tx-row-wrap.tx-row-enter,
   .spin,
   .skeleton::after,
   .modal-backdrop,
   .modal-panel,
   .tab-panel,
-  .stagger-fade > *,
   .add-sheet,
   .modal-panel.sheet-mobile,
   .overflow-menu {
     animation: none !important;
   }
+  /* los botones conservan la transición de color (ayuda a ver el cambio
+     de estado); solo se les quita el movimiento, abajo */
   .tx-row-wrap,
-  button,
-  .bottom-tab-btn,
   .bottom-tab-btn svg,
   .bottom-add-btn,
   .bottom-add-btn svg {

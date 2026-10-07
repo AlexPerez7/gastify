@@ -161,7 +161,9 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
           />
         )}
 
-        <div key={tab} className="tab-panel">
+        {/* sin animación al cambiar de pestaña: se hace decenas de veces al día
+            y el contenido tiene que estar ahí al instante (ver .tab-panel) */}
+        <div>
         {tab === "categorias" && (
           <CategoryManager
             categories={categories} onAdd={catalog.addCategory} onRename={catalog.renameCategory} onDelete={catalog.deleteCategory}

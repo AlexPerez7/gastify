@@ -207,7 +207,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const [amount, setAmount] = useState(String(Math.abs(t.amount)));
   const [bankId, setBankId] = useState("");
   const swipeControls = useAnimation();
-  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18 } });
+  const closeSwipe = () => swipeControls.start({ x: 0, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
 
   const close = () => setMode(null);
 
@@ -228,7 +228,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const openLink = () => { closeSwipe(); setMode((m) => (m === "link" ? null : "link")); };
 
   const handleDragEnd = (_e, info) => {
-    if (info.offset.x < -MISMATCH_SWIPE_WIDTH / 2) swipeControls.start({ x: -MISMATCH_SWIPE_WIDTH, transition: { duration: 0.18 } });
+    if (info.offset.x < -MISMATCH_SWIPE_WIDTH / 2) swipeControls.start({ x: -MISMATCH_SWIPE_WIDTH, transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] } });
     else closeSwipe();
   };
 
