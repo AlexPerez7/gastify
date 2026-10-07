@@ -77,6 +77,10 @@ Tabs (`tab` en App): `resumen` | `movimientos` (sub-vista `debito`/`credito`) |
 `conciliacion` | `categorias` | `suscripciones`. Resumen, Movimientos y
 Conciliacion se cargan con `lazy()` para no meter recharts/framer-motion en el
 bundle inicial; `xlsx` y `pdfjs-dist` se importan dinámicamente solo al importar.
+Además van en chunks de nombre fijo (`xlsx-*`, `pdfjs-*`, en `vite.config.js`)
+**fuera del precache** de la PWA (~900 KB menos por instalación); el service
+worker los guarda la primera vez que se usan (caché `importadores`), así que
+después también se importa offline.
 
 ## Reglas que no se rompen
 

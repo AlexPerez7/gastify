@@ -171,3 +171,24 @@ export function replaceCreditStatement(creditStatements, parsed, createdAt) {
     { id: uid(), statementMonth, ...parsed, createdAt },
   ];
 }
+
+// Mensaje cuando falla una importación. xlsx y pdfjs se descargan recién al
+// importar (no van en el precache de la PWA, ver vite.config.js): sin
+// conexión, el import() dinámico falla y el aviso genérico ("¿Es el .xls de
+// movimientos?") culpaba al archivo. Los navegadores escriben ese error
+// distinto (Chrome: "Failed to fetch dynamically imported module", Safari:
+// "Importing a module script failed", Firefox: "error loading dynamically
+// imported module").
+const CHUNK_LOAD_ERROR = /dynamically imported module|importing a module script failed/i;
+export const OFFLINE_IMPORT_MESSAGE =
+  "No se pudo cargar el lector de archivos. Revisa tu conexión e inténtalo de nuevo (la primera importación necesita internet).";
+
+/**
+ * @param {unknown} error
+ * @param {string} fallback  el aviso de "archivo no reconocido" de cada importador
+ * @param {boolean} online   navigator.onLine
+ */
+export function importFailureMessage(error, fallback, online) {
+  const msg = error instanceof Error ? error.message : String(error);
+  return !online || CHUNK_LOAD_ERROR.test(msg) ? OFFLINE_IMPORT_MESSAGE : fallback;
+}

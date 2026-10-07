@@ -8,6 +8,7 @@ import { saveAccountSettings } from "../lib/accountSettings.js";
 import { formatCLP } from "../lib/utils.js";
 import {
   bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement,
+  importFailureMessage,
 } from "../lib/importers.js";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -119,7 +120,7 @@ export function useImporters(data, { pushToast, updateToast }) {
         }
       } catch (e) {
         console.error(e);
-        updateToast(toastId, "error", "No se pudo leer el archivo. ¿Es el .xls de movimientos del banco?");
+        updateToast(toastId, "error", importFailureMessage(e, "No se pudo leer el archivo. ¿Es el .xls de movimientos del banco?", navigator.onLine));
       } finally {
         bankLock.release();
       }
@@ -158,7 +159,7 @@ export function useImporters(data, { pushToast, updateToast }) {
         updateToast(toastId, "ok", `${plural(imported.length, "movimiento")} ${imported.length === 1 ? "importado" : "importados"}.`);
       } catch (e) {
         console.error(e);
-        updateToast(toastId, "error", 'No se pudo leer el archivo. ¿Es el Excel de "Movimientos Facturados" de CMR?');
+        updateToast(toastId, "error", importFailureMessage(e, 'No se pudo leer el archivo. ¿Es el Excel de "Movimientos Facturados" de CMR?', navigator.onLine));
       } finally {
         creditLock.release();
       }
@@ -196,7 +197,7 @@ export function useImporters(data, { pushToast, updateToast }) {
         );
       } catch (e) {
         console.error(e);
-        updateToast(toastId, "error", "No se pudo leer el archivo. ¿Es el Estado de Cuenta CMR en PDF?");
+        updateToast(toastId, "error", importFailureMessage(e, "No se pudo leer el archivo. ¿Es el Estado de Cuenta CMR en PDF?", navigator.onLine));
       } finally {
         statementLock.release();
       }

@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement } from "./importers.js";
+import {
+  bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement,
+  importFailureMessage, OFFLINE_IMPORT_MESSAGE,
+} from "./importers.js";
 import { makeKey } from "./utils.js";
 
 const NOW = "2026-08-10T12:00:00.000Z";
@@ -86,5 +89,18 @@ describe("replaceCreditStatement", () => {
     const second = replaceCreditStatement(first, { statementDate: "2026-08-21", cupoTotal: 2 }, NOW);
     expect(second).toHaveLength(1);
     expect(second[0]).toMatchObject({ statementMonth: "2026-08", cupoTotal: 2 });
+  });
+});
+
+describe("importFailureMessage", () => {
+  const FALLBACK = "¿Es el .xls de movimientos del banco?";
+  it("sin conexión, o si no se pudo descargar el lector, culpa a la conexión y no al archivo", () => {
+    expect(importFailureMessage(new Error("cualquier cosa"), FALLBACK, false)).toBe(OFFLINE_IMPORT_MESSAGE);
+    expect(importFailureMessage(new TypeError("Failed to fetch dynamically imported module: /assets/xlsx-x.js"), FALLBACK, true)).toBe(OFFLINE_IMPORT_MESSAGE);
+    expect(importFailureMessage(new TypeError("Importing a module script failed."), FALLBACK, true)).toBe(OFFLINE_IMPORT_MESSAGE);
+  });
+  it("con conexión y otro error, el aviso de archivo no reconocido", () => {
+    expect(importFailureMessage(new Error("Invalid PDF structure"), FALLBACK, true)).toBe(FALLBACK);
+    expect(importFailureMessage("raro", FALLBACK, true)).toBe(FALLBACK);
   });
 });
