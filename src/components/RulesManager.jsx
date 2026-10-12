@@ -65,9 +65,29 @@ export function RulesManager({ rules, categories, onSave, onDelete, onPreview, o
         Al importar, cada movimiento toma la categoría (y el nombre) de la regla que le calce. Si varias calzan, gana la que
         tiene rango de monto y después la de texto más largo.
       </div>
+      {editingId !== "own" && (
+        <div className="text-small text-muted mb-3 leading-[1.4]">
+          Las transferencias cuentan como gasto o ingreso, salvo las de tus propias cuentas.{" "}
+          <button
+            onClick={() => { setApplyFor(null); setEditingId("own"); }}
+            className="p-0 border-0 bg-transparent text-accent font-semibold cursor-pointer text-small"
+          >
+            Agrega tu nombre
+          </button>{" "}
+          como lo escribe el banco (ej. "JUAN PEREZ") para dejarlas fuera.
+        </div>
+      )}
 
       {editingId === "new" && (
         <RuleForm categories={categories} onCancel={() => setEditingId(null)} onSubmit={save} />
+      )}
+      {editingId === "own" && (
+        <RuleForm
+          categories={categories}
+          initial={{ matchType: "contains", categoryId: "transferencias" }}
+          onCancel={() => setEditingId(null)}
+          onSubmit={save}
+        />
       )}
 
       {applyFor && (

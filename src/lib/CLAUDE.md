@@ -15,7 +15,7 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `utils.js` | puro | parseo CLP/fechas, `makeKey`/`makeCreditKey`, categorización, aritmética de meses, `groupByDate`, `formatDayHeading`, `uid`, `computeInsights` |
 | `reconcile.js` | puro | `reconcileMonthTransactions`, `matchManualToBank`, `findDuplicateIds` |
 | `stats.js` | puro | derivados: listas de meses, filtros (incl. rango de monto), stats del mes, totales por día (`computeDayTotals`), saldo diario según las cartolas (`bankBalanceOf` lee el saldo de la `key` del banco; `computeBalanceHistory`), grilla del calendario (`monthCalendarWeeks`), por categoría/mes, `computeHeroStat`, proyección a fin de mes, tasa de ahorro, saldo dinámico, total ahorrado, conciliación, crédito |
-| `importers.js` | puro | filas parseadas → movimientos nuevos: `buildBankImport`, `evaluateBalanceSync`, `buildCreditImport`, `replaceCreditStatement` |
+| `importers.js` | puro | filas parseadas → movimientos nuevos: `buildBankImport`, `evaluateBalanceSync`, `latestBankDate`, `missingDefaultCategories`, `buildCreditImport`, `replaceCreditStatement` |
 | `transactionOps.js` | puro | transformaciones de arrays: alta manual, frecuentes/duplicar, cargos de suscripción (mensual/anual, con término), reglas de comercio (guardar, aplicar a lo existente con vista previa), edición con regla retroactiva, vínculo a suscripción |
 | `swipe.js` | puro | `swipeShouldOpen`: decide si una fila deslizada queda abierta (flick por distancia ÷ duración > 0,11 px/ms, o más de la mitad del ancho) |
 | `constants.js` | puro | `TOKENS` (vars CSS), `DEFAULT_CATEGORIES`, íconos lucide, `MERCHANT_RULES_DEFAULT`, `NOISE_TOKENS`, helpers de tipo de categoría |
@@ -73,6 +73,23 @@ tabla con RLS + grant en Supabase.
   Para saber si un manual "ya existe", comparar fecha+descripción+monto, no la key.
 - Ids nuevos siempre con `uid()` (UUID). Las categorías por defecto usan ids
   fijos (`comida`, `ingreso`…), por eso la PK en DB es `(id, user_id)`.
+
+## Saldo y categorías al importar (importers.js)
+
+- `evaluateBalanceSync`: la fecha de sync es el fin del día de la fila más
+  reciente, **con tope en la hora de importación** — el banco fecha con
+  "fecha contable" (puede ser mañana), y sin el tope los manuales anotados
+  después de importar no bajaban el saldo dinámico. "Histórico" (no pisa el
+  saldo) = el día terminó antes de `lastSyncDate` (también la fija "Ajustar
+  saldo") o es anterior a `latestBankDate`. `unchanged` = mismo día y nada
+  nuevo: no se re-sincroniza (moverla dejaría fuera manuales ya anotados).
+- `autoCategory`: transferencia saliente → `terceros` (gasto), entrante →
+  `ingreso`, "PAGO TARJETA" → `tarjeta`. Las propias se marcan con una regla
+  de comercio → `transferencias` (excluida). Las reglas por defecto
+  (`MERCHANT_RULES_DEFAULT`) se evalúan antes.
+- Categorías por defecto agregadas después del sembrado inicial (`terceros`,
+  `tarjeta`) se suman a la cuenta al importar, con `missingDefaultCategories`
+  (`useImporters`), antes de guardar los movimientos que las usan.
 
 ## Conciliación (reconcile.js)
 

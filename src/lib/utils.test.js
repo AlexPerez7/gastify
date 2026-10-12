@@ -111,8 +111,24 @@ describe("autoCategory", () => {
   it("reconoce ingresos por Assertiva sin importar el resto del texto", () => {
     expect(autoCategory("ASSERTIVA SPA PAGO NOMINA")).toBe("ingreso");
   });
-  it("reconoce transferencias por prefijo", () => {
-    expect(autoCategory("TRANSF A JUAN PEREZ")).toBe("transferencias");
+  it("transferencias salientes son a terceros (cuentan como gasto)", () => {
+    expect(autoCategory("TRANSF A JUAN PEREZ")).toBe("terceros");
+    expect(autoCategory("Transf. para Juan Perez")).toBe("terceros");
+  });
+  it("transferencias entrantes son ingreso", () => {
+    expect(autoCategory("Transf. de JUAN PEREZ")).toBe("ingreso");
+    expect(autoCategory("TRANSFERENCIA DE JUAN PEREZ")).toBe("ingreso");
+  });
+  it("el pago de la tarjeta es 'tarjeta', no una transferencia propia", () => {
+    expect(autoCategory("Transf para Pago Tarjeta CMR")).toBe("tarjeta");
+  });
+  it("una regla de comercio gana sobre la de transferencias", () => {
+    expect(autoCategory("Transf. para Gimnasio Cult")).toBe("salud");
+  });
+  it("comercios frecuentes de la cartola", () => {
+    expect(autoCategory("PedidosYa La Piccola I CL CHL")).toBe("comida");
+    expect(autoCategory("MERPAGO CRUZVERDEPAGO Las Condes CHL")).toBe("salud");
+    expect(autoCategory("CASA IDEAS PLAZA EGANA SANTIAGO CHL")).toBe("compras");
   });
   it("cae en 'otros' si no coincide nada", () => {
     expect(autoCategory("COMERCIO DESCONOCIDO XYZ")).toBe("otros");

@@ -2,6 +2,7 @@
 // xls/PDF, Excel CMR, PDF de estado de cuenta). Lógica pura: dedupe por
 // clave, categorización y convenciones de signo. La lectura de archivos, los
 // toasts y el guardado viven en src/hooks/useImporters.js.
+import { DEFAULT_CATEGORIES } from "./constants.js";
 import { autoCategory, applyMerchantRules, parseClpNumber, parseBankDate, makeKey, makeCreditKey, monthKey, uid } from "./utils.js";
 
 /**
@@ -10,6 +11,7 @@ import { autoCategory, applyMerchantRules, parseClpNumber, parseBankDate, makeKe
  * @typedef {import("./types.js").CreditTransaction} CreditTransaction
  * @typedef {import("./types.js").CreditStatement} CreditStatement
  * @typedef {import("./types.js").AccountSettings} AccountSettings
+ * @typedef {import("./types.js").Category} Category
  */
 
 /**
@@ -88,24 +90,67 @@ export function buildBankImport(dataRows, transactions, merchantRules, importedA
 }
 
 /**
- * Decide si el Saldo de un archivo puede pisar la última conciliación. El
- * Saldo del banco es el saldo AL CIERRE del día de su fila más reciente, así
- * que la fecha de sync es el fin de ese día (un manual cargado ese mismo día
- * ya debería estar reflejado). Un archivo más viejo que la última
- * conciliación es "histórico" y no debe pisar un saldo ya actualizado.
+ * Decide si el Saldo de un archivo puede pisar la última conciliación.
+ *
+ * La fecha de sync es el fin del día de la fila más reciente (un manual
+ * cargado ese día ya debería estar reflejado), pero nunca después de `now`:
+ * el banco anota con "fecha contable" y puede fechar movimientos en el día
+ * hábil siguiente (ej. el martes, tras un lunes feriado). Sin ese tope, un
+ * gasto manual anotado después de importar quedaba fuera del saldo dinámico.
+ *
+ * "Histórico" (no pisa el saldo): su día terminó antes de lastSyncDate, o es
+ * anterior al último movimiento del banco ya cargado — esto último hace falta
+ * porque lastSyncDate ahora puede ser una hora de importación, anterior al
+ * fin del día de un archivo más viejo.
+ * `unchanged`: mismo día que lo ya cargado y nada nuevo — no hay información
+ * nueva, y adelantar la fecha de sync dejaría fuera del saldo a los manuales
+ * anotados desde la importación anterior.
  * @param {string} latestDate  ISO "YYYY-MM-DD"
  * @param {AccountSettings|null} accountSettings
- * @returns {{ fileLastSyncDate: string, isHistoric: boolean }}
+ * @param {{ now?: Date, prevLatestBankDate?: string|null, importedCount?: number }} [opts]
+ * @returns {{ fileLastSyncDate: string, isHistoric: boolean, unchanged: boolean }}
  */
-export function evaluateBalanceSync(latestDate, accountSettings) {
+export function evaluateBalanceSync(latestDate, accountSettings, { now = new Date(), prevLatestBankDate = null, importedCount = 0 } = {}) {
   const [y, m, d] = latestDate.split("-").map(Number);
-  const fileLastSyncDate = new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+  const endOfDay = new Date(y, m - 1, d, 23, 59, 59, 999);
+  const fileLastSyncDate = (endOfDay < now ? endOfDay : now).toISOString();
   // sin settings (o sin last_sync_date) es la primera sincronización: nunca
   // puede ser histórica. Se compara como Date para no depender del formato
   // exacto en que Supabase devuelve el timestamptz.
   const isFirstSync = !accountSettings || !accountSettings.lastSyncDate;
-  const isHistoric = !isFirstSync && new Date(fileLastSyncDate) < new Date(accountSettings.lastSyncDate);
-  return { fileLastSyncDate, isHistoric };
+  if (isFirstSync) return { fileLastSyncDate, isHistoric: false, unchanged: false };
+  // lastSyncDate también la fija "Ajustar saldo" a mano: un archivo cuyo día
+  // terminó antes de eso no la pisa.
+  const isHistoric = endOfDay < new Date(accountSettings.lastSyncDate) || (!!prevLatestBankDate && latestDate < prevLatestBankDate);
+  const unchanged = !isHistoric && latestDate === prevLatestBankDate && importedCount === 0;
+  return { fileLastSyncDate, isHistoric, unchanged };
+}
+
+/**
+ * Fecha del movimiento del banco más reciente ya cargado, o null.
+ * @param {Transaction[]} transactions
+ * @returns {string|null}
+ */
+export function latestBankDate(transactions) {
+  let max = null;
+  for (const t of transactions) if (t.source === "bank" && (!max || t.date > max)) max = t.date;
+  return max;
+}
+
+/**
+ * Categorías por defecto que usan los movimientos importados pero la cuenta
+ * no tiene: las que se agregaron a DEFAULT_CATEGORIES después de que la cuenta
+ * se sembró (ej. `terceros`, `tarjeta`), o una por defecto que se borró.
+ * @param {Array<{ category: string }>} imported
+ * @param {Category[]} categories
+ * @returns {Category[]}
+ */
+export function missingDefaultCategories(imported, categories) {
+  const have = new Set(categories.map((c) => c.id));
+  const used = new Set(imported.map((t) => t.category));
+  return DEFAULT_CATEGORIES
+    .filter((c) => used.has(c.id) && !have.has(c.id))
+    .map((c) => ({ ...c, budget: null, type: c.type === "income" ? "income" : "expense" }));
 }
 
 /**

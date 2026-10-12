@@ -8,7 +8,7 @@ import { saveAccountSettings } from "../lib/accountSettings.js";
 import { formatCLP } from "../lib/utils.js";
 import {
   bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement,
-  importFailureMessage,
+  importFailureMessage, latestBankDate, missingDefaultCategories,
 } from "../lib/importers.js";
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -54,8 +54,16 @@ function useImportLock() {
 export function useImporters(data, { pushToast, updateToast }) {
   const {
     transactions, creditTransactions, creditStatements, merchantRules, accountSettings, setAccountSettings,
-    persistTx, persistCreditTx, persistCreditStatements, lastPersistError,
+    persistTx, persistCreditTx, persistCreditStatements, lastPersistError, categories, persistCats,
   } = data;
+
+  // si lo importado usa una categoría por defecto que la cuenta no tiene
+  // (agregada a DEFAULT_CATEGORIES después de sembrarla), se suma antes de
+  // guardar los movimientos para que no queden apuntando a una inexistente.
+  const ensureCategories = useCallback(async (imported) => {
+    const missing = missingDefaultCategories(imported, categories);
+    if (missing.length > 0) await persistCats([...categories, ...missing]);
+  }, [categories, persistCats]);
 
   // ids agregados por la ÚLTIMA importación de débito — para revisarlos sin
   // buscarlos a mano (banner + filtro "Ver solo estos" en Movimientos).
@@ -87,6 +95,7 @@ export function useImporters(data, { pushToast, updateToast }) {
 
         // aunque todo ya estuviera importado, el archivo igual puede traer un
         // Saldo útil para conciliar — por eso no se corta acá.
+        await ensureCategories(imported);
         const persisted = imported.length > 0 ? await persistTx([...transactions, ...imported]) : true;
         if (imported.length > 0 && !persisted) {
           updateToast(toastId, "error", `No se pudieron guardar los movimientos importados. Intenta de nuevo.${persistErrorDetail()}`);
@@ -96,10 +105,16 @@ export function useImporters(data, { pushToast, updateToast }) {
         // aviso de la anterior también debe desaparecer.
         setRecentImportIds(imported.map((t) => t.id));
 
-        const { fileLastSyncDate, isHistoric } = evaluateBalanceSync(latestRow.date, accountSettings);
+        const { fileLastSyncDate, isHistoric, unchanged } = evaluateBalanceSync(latestRow.date, accountSettings, {
+          now: new Date(), prevLatestBankDate: latestBankDate(transactions), importedCount: imported.length,
+        });
         if (isHistoric) {
           const importedMsg = imported.length > 0 ? importedSummary(imported.length) : "Sin movimientos nuevos (ya estaban todos importados).";
           updateToast(toastId, "warn", `${importedMsg} Saldo sin cambios — este archivo es más antiguo que tu última conciliación.`);
+          return;
+        }
+        if (unchanged) {
+          updateToast(toastId, "ok", "Sin movimientos nuevos (ya estaban todos importados). Saldo sin cambios.");
           return;
         }
 
@@ -126,7 +141,7 @@ export function useImporters(data, { pushToast, updateToast }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bankLock/lastPersistError son estables (ref + callbacks memoizados)
-    [transactions, merchantRules, persistTx, pushToast, updateToast, accountSettings, setAccountSettings]
+    [transactions, merchantRules, persistTx, pushToast, updateToast, accountSettings, setAccountSettings, ensureCategories]
   );
 
   // ---- Excel "Movimientos Facturados" de la tarjeta CMR --------------------
@@ -151,6 +166,7 @@ export function useImporters(data, { pushToast, updateToast }) {
           return;
         }
 
+        await ensureCategories(imported);
         const persisted = await persistCreditTx([...creditTransactions, ...imported]);
         if (!persisted) {
           updateToast(toastId, "error", `No se pudieron guardar los movimientos importados. Intenta de nuevo.${persistErrorDetail()}`);
@@ -165,7 +181,7 @@ export function useImporters(data, { pushToast, updateToast }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- creditLock/lastPersistError son estables
-    [creditTransactions, merchantRules, persistCreditTx, pushToast, updateToast]
+    [creditTransactions, merchantRules, persistCreditTx, pushToast, updateToast, ensureCategories]
   );
 
   // ---- PDF Estado de Cuenta CMR (cupo, fechas, totales) --------------------

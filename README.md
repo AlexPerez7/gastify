@@ -54,6 +54,11 @@ lo suyo y puede entrar desde cualquier dispositivo.
   qué movimientos ya cargados cambiarían y deja aplicarla con un toque.
 - Cada categoría es de gasto o de ingreso, y los selectores solo sugieren las
   del tipo que corresponde según el monto.
+- Al importar, las transferencias que salen van a "Transferencias a
+  terceros" (cuentan como gasto), las que entran a "Ingresos", y el pago de la
+  tarjeta a "Pago de tarjeta" (ahí se cuenta lo gastado con ella). Las de tus
+  propias cuentas se marcan con una regla con tu nombre ("Agrega tu nombre" en
+  la pantalla de reglas) y van a "Transferencias personales".
 - Interruptor "cuenta como gasto" para transferencias entre tus propias
   cuentas: salen de la cuenta corriente pero no son consumo real, así que se
   excluyen de todos los cálculos sin dejar de aparecer en la lista.

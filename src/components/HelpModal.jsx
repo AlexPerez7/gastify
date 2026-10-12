@@ -16,7 +16,7 @@ const SECTIONS = [
   {
     icon: Tags,
     title: "Categorías",
-    text: "Cada movimiento se categoriza solo cuando reconoce el comercio. Toca el lápiz en un movimiento para cambiar su categoría o nombre, y \"recordarlo\" para la próxima vez. En la pestaña Categorías puedes agregar, renombrar, cambiar el ícono, o marcar si una categoría cuenta como gasto en los resúmenes (por ejemplo, transferencias entre tus propias cuentas).",
+    text: "Cada movimiento se categoriza solo cuando reconoce el comercio. Toca el lápiz en un movimiento para cambiar su categoría o nombre, y \"recordarlo\" para la próxima vez. En la pestaña Categorías puedes agregar, renombrar, cambiar el ícono, o marcar si una categoría cuenta como gasto en los resúmenes. Las transferencias a otras personas cuentan como gasto; para dejar fuera las de tus propias cuentas, usa \"Agrega tu nombre\" en las reglas de comercio.",
   },
   {
     icon: ScanLine,

@@ -35,6 +35,9 @@ export const TOKENS = {
 // separadas (una de gasto, una de ingreso).
 // Colores de categoría: tonos de PALETTE (validada, ver abajo) asignados por
 // significado. Ingresos conserva su verde; Transferencias y Otros, gris.
+// Las agregadas después del primer sembrado (`terceros`, `tarjeta`) se suman
+// a la cuenta recién cuando una importación las usa (ver
+// missingDefaultCategories en importers.js).
 export const DEFAULT_CATEGORIES = [
   { id: "ingreso", label: "Ingresos", color: "#3FBF8F", icon: "TrendingUp", type: "income", excludeFromExpense: false, isSavings: false },
   { id: "comida", label: "Comida y delivery", color: "#D95926", icon: "Utensils", type: "expense", excludeFromExpense: false, isSavings: false },
@@ -44,6 +47,8 @@ export const DEFAULT_CATEGORIES = [
   { id: "servicios", label: "Servicios y cuentas", color: "#D55181", icon: "Receipt", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "salud", label: "Salud y cuidado personal", color: "#199E70", icon: "HeartPulse", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "transferencias", label: "Transferencias personales", color: "#7C8B9C", icon: "ArrowLeftRight", type: "expense", excludeFromExpense: true, isSavings: false },
+  { id: "terceros", label: "Transferencias a terceros", color: "#7C8B9C", icon: "Users", type: "expense", excludeFromExpense: false, isSavings: false },
+  { id: "tarjeta", label: "Pago de tarjeta", color: "#E66767", icon: "CreditCard", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "efectivo", label: "Retiro de efectivo", color: "#008300", icon: "Banknote", type: "expense", excludeFromExpense: false, isSavings: false },
   { id: "otros", label: "Otros", color: "#57646F", icon: "Shapes", type: "expense", excludeFromExpense: false, isSavings: false },
 ];
@@ -92,6 +97,8 @@ export const CATEGORY_ICONS = {
   servicios: Receipt,
   salud: HeartPulse,
   transferencias: ArrowLeftRight,
+  terceros: Users,
+  tarjeta: CreditCard,
   efectivo: Banknote,
   otros: DEFAULT_CATEGORY_ICON,
 };
@@ -128,12 +135,13 @@ export const PALETTE = [
 export const MERCHANT_RULES_DEFAULT = [
   [["UBER EATS", "RAPPI", "MCDONALD", "SANTA ISABEL", "STA ISABEL", "SUBWAY", "RYOMA",
     "ASUSHI", "TITO MONJE", "MERCADOPAGO MYM", "DUNKIN", "MONARCH", "MP  NATURA", "MP NATURA",
-    "MINIMARKET", "COMERCIAL MANGOS", "SUMUP", "DON JULIO", "VENTI TC", "CCU", "BK SUECIA"], "comida"],
+    "MINIMARKET", "COMERCIAL MANGOS", "SUMUP", "DON JULIO", "VENTI TC", "CCU", "BK SUECIA",
+    "PEDIDOSYA", "CONVENIENCE", "POPCORN"], "comida"],
   [["UBER TRIP", "PAYU *UBER", "RED MOVILIDAD"], "transporte"],
   [["NETFLIX", "SPOTIFY", "YOUTUBE", "STEAM", "GOG", "FORTNITE", "EPC ", "GOOGLE PLAY"], "suscripciones"],
-  [["WEBPAY", "FALABELLA", "MALL PLAZA", "COMERCIAL LIDA", "UNICASA"], "compras"],
+  [["WEBPAY", "FALABELLA", "MALL PLAZA", "COMERCIAL LIDA", "UNICASA", "CASA IDEAS", "PLAZA EGANA"], "compras"],
   [["ENTEL", "BANCO DEL ESTADO", "COMISION", "MONTO POR COMISIONES"], "servicios"],
-  [["GIMNASIO", "BARBER", "PELUQUERIA"], "salud"],
+  [["GIMNASIO", "BARBER", "PELUQUERIA", "CRUZVERDE", "CRUZ VERDE", "SALCOBRAND"], "salud"],
   [["GIRO CAJERO", "REDBANC"], "efectivo"],
 ];
 

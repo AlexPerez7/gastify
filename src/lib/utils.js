@@ -6,7 +6,15 @@ export function autoCategory(desc) {
   for (const [keys, cat] of MERCHANT_RULES_DEFAULT) {
     if (keys.some((k) => d.includes(k))) return cat;
   }
-  if (d.startsWith("TRANSF") || d.includes("TRANSF.") || d.includes("TRANSF ")) return "transferencias";
+  // el pago de la tarjeta es donde se cuenta lo gastado con ella (la tarjeta
+  // no entra en los gastos del débito), así que no es una transferencia propia
+  if (d.includes("PAGO TARJETA")) return "tarjeta";
+  if (d.startsWith("TRANSF") || d.includes("TRANSF.") || d.includes("TRANSF ")) {
+    // las transferencias a/de tus propias cuentas se marcan con una regla de
+    // comercio con tu nombre (→ "transferencias", excluida de gastos); sin
+    // regla, una transferencia es plata que entra o sale de verdad.
+    return /TRANSF\S*\s+DE\s/.test(d) ? "ingreso" : "terceros";
+  }
   return "otros";
 }
 

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement,
-  importFailureMessage, OFFLINE_IMPORT_MESSAGE,
+  importFailureMessage, OFFLINE_IMPORT_MESSAGE, latestBankDate, missingDefaultCategories,
 } from "./importers.js";
+import { DEFAULT_CATEGORIES } from "./constants.js";
 import { makeKey } from "./utils.js";
 
 const NOW = "2026-08-10T12:00:00.000Z";
@@ -60,6 +61,50 @@ describe("evaluateBalanceSync", () => {
     const settings = { baseBalance: 0, lastSyncDate: new Date(2026, 7, 5, 23, 59).toISOString() };
     expect(evaluateBalanceSync("2026-08-01", settings).isHistoric).toBe(true);
     expect(evaluateBalanceSync("2026-08-05", settings).isHistoric).toBe(false);
+  });
+
+  // el banco fecha con "fecha contable": tras un lunes feriado, lo del fin de
+  // semana llega con fecha del martes aunque se importe el lunes.
+  const monday6pm = new Date(2026, 9, 12, 18, 0);
+  it("archivo con fecha futura: la fecha de sync es la hora de importación", () => {
+    const { fileLastSyncDate } = evaluateBalanceSync("2026-10-13", null, { now: monday6pm });
+    expect(fileLastSyncDate).toBe(monday6pm.toISOString());
+  });
+  it("archivo de un día ya pasado: fin de ese día", () => {
+    const { fileLastSyncDate } = evaluateBalanceSync("2026-10-09", null, { now: monday6pm });
+    expect(fileLastSyncDate).toBe(new Date(2026, 9, 9, 23, 59, 59, 999).toISOString());
+  });
+  it("tras sincronizar a la hora de importación, un archivo más viejo sigue siendo histórico", () => {
+    const settings = { baseBalance: 0, lastSyncDate: monday6pm.toISOString() };
+    const opts = { now: new Date(2026, 9, 14, 9, 0), prevLatestBankDate: "2026-10-13", importedCount: 3 };
+    expect(evaluateBalanceSync("2026-10-12", settings, opts).isHistoric).toBe(true);
+    expect(evaluateBalanceSync("2026-10-13", settings, opts)).toMatchObject({ isHistoric: false, unchanged: false });
+    expect(evaluateBalanceSync("2026-10-14", settings, opts).isHistoric).toBe(false);
+  });
+  it("reimportar el mismo archivo sin nada nuevo no mueve la fecha de sync", () => {
+    const settings = { baseBalance: 0, lastSyncDate: monday6pm.toISOString() };
+    const opts = { now: new Date(2026, 9, 12, 22, 0), prevLatestBankDate: "2026-10-13", importedCount: 0 };
+    expect(evaluateBalanceSync("2026-10-13", settings, opts)).toMatchObject({ isHistoric: false, unchanged: true });
+  });
+  it("un ajuste manual del saldo posterior al día del archivo no se pisa", () => {
+    const settings = { baseBalance: 0, lastSyncDate: new Date(2026, 9, 12, 20, 0).toISOString() };
+    const opts = { now: new Date(2026, 9, 12, 21, 0), prevLatestBankDate: "2026-10-09", importedCount: 2 };
+    expect(evaluateBalanceSync("2026-10-11", settings, opts).isHistoric).toBe(true);
+  });
+});
+
+describe("latestBankDate / missingDefaultCategories", () => {
+  it("latestBankDate ignora los manuales", () => {
+    expect(latestBankDate([
+      { source: "bank", date: "2026-10-09" }, { source: "manual", date: "2026-10-20" }, { source: "bank", date: "2026-10-13" },
+    ])).toBe("2026-10-13");
+    expect(latestBankDate([])).toBeNull();
+  });
+  it("agrega solo las categorías por defecto que se usan y faltan", () => {
+    const have = DEFAULT_CATEGORIES.filter((c) => c.id !== "terceros" && c.id !== "tarjeta");
+    const missing = missingDefaultCategories([{ category: "terceros" }, { category: "comida" }, { category: "custom-x" }], have);
+    expect(missing.map((c) => c.id)).toEqual(["terceros"]);
+    expect(missing[0]).toMatchObject({ budget: null, type: "expense", excludeFromExpense: false });
   });
 });
 
