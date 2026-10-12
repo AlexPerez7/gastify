@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   autoCategory, suggestMatchKey, applyMerchantRules, ruleMatches, compileRuleRegex, parseClpNumber,
-  parseBankDate, makeKey, formatCLP, formatDateDisplay, monthKey, nextMonthKey, uid,
+  parseBankDate, makeKey, manualKey, findDuplicateKey, formatCLP, formatDateDisplay, monthKey, nextMonthKey, uid,
   formatDayHeading, groupByDate,
   formatCLPCompact,
 } from "./utils.js";
@@ -251,5 +251,15 @@ describe("formatCLPCompact", () => {
     expect(formatCLPCompact(1500000)).toBe("$1,5M");
     expect(formatCLPCompact(2000000)).toBe("$2M");
     expect(formatCLPCompact(-12000)).toBe("-$12k");
+  });
+});
+
+describe("manualKey / findDuplicateKey", () => {
+  it("manualKey no tiene forma de key bancaria", () => {
+    expect(manualKey("abc")).toBe("manual|abc");
+  });
+  it("findDuplicateKey devuelve la primera repetida o null", () => {
+    expect(findDuplicateKey([{ key: "a" }, { key: "b" }])).toBeNull();
+    expect(findDuplicateKey([{ key: "a" }, { key: "b" }, { key: "a" }])).toBe("a");
   });
 });

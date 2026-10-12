@@ -38,8 +38,12 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 - `set(key, value, prevItems)` diffea contra `prevItems` (el estado previo en
   memoria): upsert solo de lo nuevo/cambiado (`shallowEqual`), delete de los ids
   que desaparecieron. No vuelve a leer la tabla.
-- En error devuelve `{ key, error }` con `message — details` de Postgres (ahí
-  viene la fila exacta en un choque UNIQUE).
+- Para `transactions`/`creditTransactions` (`uniqueKey: true`) rechaza antes
+  de enviar si hay dos items con la misma `key` (`findDuplicateKey`).
+- En error devuelve `{ key, error, duplicate }` con `message — details` de
+  Postgres (ahí viene la fila exacta en un choque UNIQUE); `duplicate` es true
+  en un choque de key (local o código `23505`) y `runPersist` muestra un
+  mensaje propio en vez de "Revisa tu conexión".
 - En `src/hooks/useAppData.js`, `runPersist` aplica el cambio local, llama a
   `set`, y si falla **revierte** a `prev` y muestra `syncError`. Todos los
   `persistX` usan eso.
@@ -62,7 +66,11 @@ tabla con RLS + grant en Supabase.
 - **Crédito**: `makeCreditKey(statementMonth, date, desc, montoTotal, cuotasPendientes, valorCuota)`.
   `statementMonth` es obligatorio: una compra en cuotas reaparece cada mes con
   la misma fecha/desc/monto y sin él se perdería la cuota 2+.
-- Movimientos manuales y de suscripción usan `makeKey(date, name, amount, 0)`.
+- Movimientos manuales y de suscripción usan `manualKey(id)` (`manual|<id>`):
+  no se deduplican por contenido (dos cafés iguales el mismo día son válidos)
+  y así nunca chocan con `unique(user_id, key)`. Filas viejas pueden tener la
+  key `fecha|desc|monto|0`; editarlas desde Conciliación la pasa a `manualKey`.
+  Para saber si un manual "ya existe", comparar fecha+descripción+monto, no la key.
 - Ids nuevos siempre con `uid()` (UUID). Las categorías por defecto usan ids
   fijos (`comida`, `ingreso`…), por eso la PK en DB es `(id, user_id)`.
 

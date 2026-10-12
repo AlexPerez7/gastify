@@ -114,6 +114,28 @@ export function makeKey(date, desc, cargo, abono) {
   return [date, desc.trim().toUpperCase().replace(/\s+/g, " "), cargo, abono].join("|");
 }
 
+// Los manuales no se deduplican por contenido (dos cafés iguales el mismo día
+// son legítimos), pero la DB exige unique(user_id, key): la key se deriva del
+// id para que nunca choque.
+/** @param {string} id */
+export function manualKey(id) {
+  return `manual|${id}`;
+}
+
+/**
+ * Primera key repetida dentro de una lista, o null.
+ * @param {Array<{ key: string }>} items
+ * @returns {string | null}
+ */
+export function findDuplicateKey(items) {
+  const seen = new Set();
+  for (const { key } of items) {
+    if (seen.has(key)) return key;
+    seen.add(key);
+  }
+  return null;
+}
+
 // A diferencia de makeKey (débito, que tiene saldo corrido y cada movimiento
 // es único), una compra en cuotas de la tarjeta de crédito aparece en CADA
 // cartola mensual siguiente con la MISMA fecha/descripción/monto original —

@@ -3,6 +3,7 @@
 // realidad una tabla completa, y get/set sincronizan el array JSON contra
 // las filas de esa tabla para el usuario autenticado.
 import { supabase } from "./supabaseClient.js";
+import { findDuplicateKey } from "./utils.js";
 
 /**
  * @typedef {import("./types.js").Transaction} Transaction
@@ -18,10 +19,11 @@ import { supabase } from "./supabaseClient.js";
 // 6 funciones (no invocable con una sola firma) — se ensancha a (any)=>any a
 // propósito: el chequeo útil acá es el de utils/reconcile, no el de este
 // diccionario de adaptadores.
-/** @type {Record<string, { table: string, toRow: (x: any) => any, fromRow: (r: any) => any }>} */
+/** @type {Record<string, { table: string, toRow: (x: any) => any, fromRow: (r: any) => any, uniqueKey?: boolean }>} */
 const TABLES = {
   transactions: {
     table: "transactions",
+    uniqueKey: true,
     toRow: (t) => ({
       id: t.id,
       key: t.key,
@@ -101,6 +103,7 @@ const TABLES = {
   // src/lib/parseCreditCardXlsx.js y makeCreditKey en utils.js).
   creditTransactions: {
     table: "credit_transactions",
+    uniqueKey: true,
     toRow: (t) => ({
       id: t.id, key: t.key, statement_month: t.statementMonth, date: t.date,
       description: t.description, alias: t.alias, amount: t.amount, total_amount: t.totalAmount,
@@ -195,13 +198,18 @@ export const storage = {
    * @param {keyof typeof TABLES} key
    * @param {string} value       JSON.stringify del array en forma de app
    * @param {Array<{id: string}>} prevItems
-   * @returns {Promise<{ key: string, value: string } | { key: string, error: string } | null>}
+   * @returns {Promise<{ key: string, value: string } | { key: string, error: string, duplicate?: boolean } | null>}
    */
   async set(key, value, prevItems = []) {
     const spec = TABLES[key];
     if (!spec) return null;
     try {
       const items = JSON.parse(value);
+      // mismo chequeo que unique(user_id, key), pero antes de mandar nada: si
+      // algún código arma una key repetida, falla acá con la key exacta en
+      // vez de rebotar en Postgres.
+      const dupKey = spec.uniqueKey ? findDuplicateKey(items) : null;
+      if (dupKey) return { key, error: `key repetida: ${dupKey}`, duplicate: true };
       const existingById = new Map(prevItems.map((item) => [item.id, item]));
 
       // solo mandamos a upsert lo que es nuevo o realmente cambió — en vez
@@ -229,7 +237,7 @@ export const storage = {
       // already exists.") — sin esto solo se veía el mensaje genérico, sin
       // ninguna pista de CUÁL fila específica ya existía.
       const detail = [e.message, e.details].filter(Boolean).join(" — ");
-      return { key, error: detail || String(e) };
+      return { key, error: detail || String(e), duplicate: e.code === "23505" };
     }
   },
 };

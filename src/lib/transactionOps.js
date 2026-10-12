@@ -2,7 +2,7 @@
 // que antes estaban inline en los useCallback de App.jsx. Cada función recibe
 // el estado actual y devuelve el siguiente; persistirlo es tarea del hook
 // (src/hooks/useTransactionActions.js).
-import { makeKey, monthKey, monthKeyOf, uid, localIsoDate, ruleMatches } from "./utils.js";
+import { manualKey, monthKey, monthKeyOf, uid, localIsoDate, ruleMatches } from "./utils.js";
 
 /**
  * @typedef {import("./types.js").Transaction} Transaction
@@ -17,9 +17,10 @@ import { makeKey, monthKey, monthKeyOf, uid, localIsoDate, ruleMatches } from ".
  */
 export function makeManualTransaction(entry, createdAt) {
   const isExpense = entry.type === "expense";
+  const id = uid();
   return {
-    id: uid(),
-    key: makeKey(entry.date, entry.description, isExpense ? entry.amount : 0, isExpense ? 0 : entry.amount),
+    id,
+    key: manualKey(id),
     date: entry.date,
     description: entry.description,
     alias: "",
@@ -125,7 +126,7 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   /** @type {Transaction[]} */
   const out = [];
-  const existingKeys = new Set(transactions.map((t) => t.key));
+  const norm = (/** @type {string} */ s) => s.trim().toUpperCase().replace(/\s+/g, " ");
   for (const sub of subscriptions) {
     // un cobro "el 31" en un mes de 30 días (o febrero) cae el último día —
     // se compara contra el día ya ajustado, si no nunca se generaba ese mes.
@@ -134,18 +135,18 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
     const date = `${curMonthKey}-${String(chargeDay).padStart(2, "0")}`;
     if (sub.endDate && date > sub.endDate) continue;
     if (transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey)) continue;
-    // si ese pago ya se cargó a mano sin vincularlo a la suscripción, su key
-    // es la misma — insertarlo chocaría con unique(user_id, key) al entrar.
-    const key = makeKey(date, sub.name, sub.amount, 0);
-    if (existingKeys.has(key)) continue;
-    existingKeys.add(key);
+    // ese pago ya se cargó a mano sin vincularlo a la suscripción
+    const name = norm(sub.name);
+    const amount = -Math.abs(sub.amount);
+    if (transactions.some((t) => t.source === "manual" && t.date === date && t.amount === amount && norm(t.description) === name)) continue;
+    const id = uid();
     out.push({
-      id: uid(),
-      key,
+      id,
+      key: manualKey(id),
       date,
       description: sub.name,
       alias: "",
-      amount: -Math.abs(sub.amount),
+      amount,
       category: sub.category,
       source: "manual",
       reconciled: false,
@@ -230,7 +231,8 @@ export function applyCategoryEdit(list, txId, { category, alias }, matchText, { 
 }
 
 // corrige fecha/monto de un manual desde Conciliación (casi siempre un typo
-// en un "posible descuadre"). Mantiene el signo original y recalcula `key`.
+// en un "posible descuadre"). Mantiene el signo original; la `key` pasa a
+// `manualKey(id)` (una key vieja fecha|desc|monto podría chocar con otra).
 // Devuelve el mismo array si el id no existe.
 /**
  * @param {Transaction[]} transactions
@@ -246,7 +248,7 @@ export function editManualDateAmount(transactions, txId, { date, amount }) {
   return transactions.map((t) =>
     t.id !== txId
       ? t
-      : { ...t, date, amount: isExpense ? -abs : abs, key: makeKey(date, t.description, isExpense ? abs : 0, isExpense ? 0 : abs) }
+      : { ...t, date, amount: isExpense ? -abs : abs, key: manualKey(t.id) }
   );
 }
 

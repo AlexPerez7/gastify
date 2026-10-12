@@ -14,7 +14,7 @@
  * Movimiento de la cuenta corriente (débito). Tabla `transactions`.
  * @typedef {Object} Transaction
  * @property {string}  id           id único (crypto.randomUUID); PK junto a user_id
- * @property {string}  key          clave determinística fecha|saldo|cargo|abono (dedupe)
+ * @property {string}  key          banco: fecha|saldo|cargo|abono (dedupe); manual: manualKey(id)
  * @property {string}  date         ISO "YYYY-MM-DD"
  * @property {string}  description  descripción normalizada del banco / texto manual
  * @property {string}  alias        nombre amigable puesto por el usuario o una regla ("" si no hay)

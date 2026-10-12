@@ -14,6 +14,7 @@
 -- contra reimportar el mismo movimiento dos veces (ej. si el usuario suelta
 -- el mismo archivo dos veces seguidas): si la app llega a fallar en
 -- detectarlo, Postgres rechaza el insert en vez de guardar el duplicado.
+-- Los manuales usan key = 'manual|<id>' (ver manualKey), así que nunca chocan.
 create table transactions (
   id text not null,
   key text not null,

@@ -4,6 +4,7 @@ import {
   editManualDateAmount, linkTransactionToSubscription, entryFromTransaction, frequentManualEntries,
   subscriptionChargesInMonth, monthlySubscriptionCost, saveMerchantRule, applyRuleToExisting,
 } from "./transactionOps.js";
+import { findDuplicateKey, makeKey } from "./utils.js";
 
 const NOW = "2026-08-10T12:00:00.000Z";
 
@@ -12,6 +13,13 @@ describe("makeManualTransaction", () => {
     const base = { date: "2026-08-01", description: "Pan", amount: 1500, category: "comida" };
     expect(makeManualTransaction({ ...base, type: "expense" }, NOW)).toMatchObject({ amount: -1500, source: "manual", createdAt: NOW });
     expect(makeManualTransaction({ ...base, type: "income" }, NOW).amount).toBe(1500);
+  });
+
+  it("dos manuales idénticos el mismo día no repiten key", () => {
+    const entry = { date: "2026-08-01", description: "Café", amount: 2500, category: "comida", type: "expense" };
+    const a = makeManualTransaction(entry, NOW);
+    const b = makeManualTransaction(entry, NOW);
+    expect(a.key).not.toBe(b.key);
   });
 });
 
@@ -35,10 +43,13 @@ describe("makeSubscriptionCharges", () => {
     expect(res[0].date).toBe("2026-02-28");
   });
 
-  it("no genera el cargo si ya se cargó a mano con la misma key (sin vincular)", () => {
+  it("no genera el cargo si ya se cargó a mano (sin vincular)", () => {
     const manual = makeManualTransaction(
-      { date: "2026-08-05", description: "Netflix", amount: 9000, category: "suscripciones", type: "expense" }, NOW);
+      { date: "2026-08-05", description: " netflix ", amount: 9000, category: "suscripciones", type: "expense" }, NOW);
     expect(makeSubscriptionCharges(subs, [manual], new Date(2026, 7, 10), NOW)).toEqual([]);
+    // un manual con la key vieja (fecha|desc|monto) tampoco se duplica
+    const legacy = { ...manual, description: "Netflix", key: makeKey("2026-08-05", "Netflix", 9000, 0) };
+    expect(makeSubscriptionCharges(subs, [legacy], new Date(2026, 7, 10), NOW)).toEqual([]);
   });
 });
 
@@ -71,10 +82,14 @@ describe("reglas y edición", () => {
 describe("editManualDateAmount", () => {
   const list = [{ id: "m", date: "2026-08-01", description: "Pan", amount: -100, key: "k", source: "manual" }];
 
-  it("mantiene el signo y recalcula la clave", () => {
+  it("mantiene el signo y pasa a una clave derivada del id", () => {
     const [t] = editManualDateAmount(list, "m", { date: "2026-08-02", amount: 150 });
     expect(t).toMatchObject({ date: "2026-08-02", amount: -150 });
-    expect(t.key).not.toBe("k");
+    expect(t.key).toBe("manual|m");
+  });
+  it("no choca con otro manual que quede igual tras la edición", () => {
+    const other = { id: "o", date: "2026-08-02", description: "Pan", amount: -150, key: makeKey("2026-08-02", "Pan", 150, 0), source: "manual" };
+    expect(findDuplicateKey(editManualDateAmount([...list, other], "m", { date: "2026-08-02", amount: 150 }))).toBeNull();
   });
   it("id inexistente devuelve el mismo array", () => {
     expect(editManualDateAmount(list, "nope", { date: "2026-08-02", amount: 1 })).toBe(list);
@@ -194,5 +209,21 @@ describe("reglas de comercio avanzadas", () => {
     expect(next[0]).toMatchObject({ category: "hogar", alias: "Arriendo" });
     expect(next.slice(1)).toEqual(list.slice(1));
     expect(applyRuleToExisting(next, rule, { bankOnly: true }).next).toBe(next);
+  });
+});
+
+// invariante de unique(user_id, key): ninguna operación que crea o edita
+// movimientos puede dejar dos con la misma key, ni aplicada dos veces.
+describe("keys únicas", () => {
+  const entry = { date: "2026-08-05", description: "Netflix", amount: 9000, category: "suscripciones", type: "expense" };
+  const subs = [{ id: "s1", name: "Netflix", amount: 9000, category: "suscripciones", dayOfMonth: 5, active: true }];
+
+  it("manuales repetidos + cargo de suscripción + edición", () => {
+    let list = [makeManualTransaction(entry, NOW), makeManualTransaction(entry, NOW)];
+    list = [...list, ...makeSubscriptionCharges(subs, list, new Date(2026, 7, 10), NOW)];
+    list = [...list, ...makeSubscriptionCharges(subs, list, new Date(2026, 7, 10), NOW)];
+    list = editManualDateAmount(list, list[0].id, { date: "2026-08-06", amount: 9000 });
+    list = editManualDateAmount(list, list[1].id, { date: "2026-08-06", amount: 9000 });
+    expect(findDuplicateKey(list)).toBeNull();
   });
 });

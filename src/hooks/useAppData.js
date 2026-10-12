@@ -55,7 +55,11 @@ export function useAppData() {
     if (!res || res.error) {
       setLocal(prev);
       const detail = res?.error ? ` (${res.error})` : "";
-      setSyncError(`No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`);
+      setSyncError(
+        res && "duplicate" in res && res.duplicate
+          ? `No se pudo guardar: ya existe un movimiento con la misma clave — se revirtió el cambio.${detail}`
+          : `No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`
+      );
       return false;
     }
     setSyncError(null);

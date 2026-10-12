@@ -146,6 +146,8 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `5c0b9c7` | Tests de los parsers de PDF: lógica pura a `pdfParsing.js` (pdfjs inyectado), 6 tests con ítems/texto inventados + 3 sobre PDF reales en `test-fixtures/` (en `.gitignore`, se saltan si no están). Verificado que fallan si se rompe el parser y que la app da el mismo resultado que antes del refactor |
 | `4797f71` | PWA: `xlsx` y pdfjs (~900 KB) fuera del precache (2,4 → 1,36 MB), en chunks de nombre fijo, guardados al primer uso (caché `importadores`, incluye el worker de pdfjs, que antes nunca se guardaba y rompía el import de PDF offline); aviso de "revisa tu conexión" si no se pudo cargar el lector. Verificado en el build: importar offline tras la primera vez funciona |
 | `bb9e925` | 6.2: **Saldo de la cuenta** (línea del saldo diario según las cartolas, 3M/6M/1A; el saldo sale de la `key` de cada fila del banco, sin migración) y **Gasto por día** (calendario del mes con tonos por cuartil, contraste del texto calculado por nivel, tocar un día lista sus movimientos) en Resumen |
+| `13e6ad8` | El cargo automático de una suscripción ya no choca con `unique(user_id, key)` si ese pago se había cargado a mano sin vincular (el error salía al entrar a la app) |
+| (este) | Keys de manuales a prueba de choques: `manualKey(id)` en vez de fecha+desc+monto (dos movimientos iguales el mismo día, "Frecuentes", "Duplicar" o una corrección en Conciliación ya no fallan), chequeo de keys repetidas en `storage.set` antes de enviar, mensaje propio para choques de key en vez de "Revisa tu conexión", y test de la invariante |
 
 ## Hecho (2026-10-04)
 
