@@ -279,15 +279,23 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
     const curMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
+    const existingKeys = new Set(transactions.map((t) => t.key));
     const toGenerate = [];
     for (const sub of subscriptions) {
       if (!sub.active || today.getDate() < sub.dayOfMonth) continue;
       const alreadyExists = transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey);
       if (alreadyExists) continue;
       const date = `${curMonthKey}-${String(Math.min(sub.dayOfMonth, daysInMonth)).padStart(2, "0")}`;
+      const key = makeKey(date, sub.name, sub.amount, 0);
+      // si el usuario ya cargó este pago a mano (sin pasar por el flujo de
+      // suscripciones), su key coincide igual con la que generaríamos acá —
+      // sin este chequeo, el insert choca con el unique(user_id, key) de la
+      // base apenas se entra a la app.
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
       toGenerate.push({
         id: uid(),
-        key: makeKey(date, sub.name, sub.amount, 0),
+        key,
         date,
         description: sub.name,
         alias: "",
