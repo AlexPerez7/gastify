@@ -125,6 +125,7 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   /** @type {Transaction[]} */
   const out = [];
+  const existingKeys = new Set(transactions.map((t) => t.key));
   for (const sub of subscriptions) {
     // un cobro "el 31" en un mes de 30 días (o febrero) cae el último día —
     // se compara contra el día ya ajustado, si no nunca se generaba ese mes.
@@ -133,9 +134,14 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
     const date = `${curMonthKey}-${String(chargeDay).padStart(2, "0")}`;
     if (sub.endDate && date > sub.endDate) continue;
     if (transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey)) continue;
+    // si ese pago ya se cargó a mano sin vincularlo a la suscripción, su key
+    // es la misma — insertarlo chocaría con unique(user_id, key) al entrar.
+    const key = makeKey(date, sub.name, sub.amount, 0);
+    if (existingKeys.has(key)) continue;
+    existingKeys.add(key);
     out.push({
       id: uid(),
-      key: makeKey(date, sub.name, sub.amount, 0),
+      key,
       date,
       description: sub.name,
       alias: "",

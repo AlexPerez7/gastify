@@ -34,6 +34,12 @@ describe("makeSubscriptionCharges", () => {
     const res = makeSubscriptionCharges([subs[1]], [], new Date(2026, 1, 28), NOW);
     expect(res[0].date).toBe("2026-02-28");
   });
+
+  it("no genera el cargo si ya se cargó a mano con la misma key (sin vincular)", () => {
+    const manual = makeManualTransaction(
+      { date: "2026-08-05", description: "Netflix", amount: 9000, category: "suscripciones", type: "expense" }, NOW);
+    expect(makeSubscriptionCharges(subs, [manual], new Date(2026, 7, 10), NOW)).toEqual([]);
+  });
 });
 
 describe("reglas y edición", () => {
