@@ -52,7 +52,7 @@ importación del .xls se veía como histórica y no fijaba el saldo
    sin el grant PostgREST responde 403 `permission denied` (42501) aunque la
    policy esté bien.
 4. PK compuesta `(id, user_id)` e `id text` (los ids los genera el cliente).
-5. Actualizar `TABLES` en `storage.js`, `types.js` y, si aplica, el README
-   ("Puesta en marcha").
+5. Actualizar `TABLES` en `storage.js`, `types.js` y, si aplica, la tabla de
+   migraciones de `docs/instalacion.md`.
 6. Numéricos como `numeric` → en `fromRow` convertir con `Number(...)`
    (PostgREST los devuelve como string), respetando `null`.

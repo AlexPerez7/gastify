@@ -119,8 +119,10 @@ después también se importa offline.
 - Probar UI sin login: una página temporal en `prototypes/` (Vite la sirve en
   dev, no entra al build) que monte los componentes reales con datos de
   ejemplo, y Playwright para capturas. Borrarla al terminar; no se versiona.
-- El `README.md` es la documentación para personas (features, setup); estos
-  CLAUDE.md, la de trabajo. Si cambia una feature visible, actualizar ambos.
+- La documentación para personas es el `README.md` (portada + índice) y
+  `docs/` (`funciones.md`, `instalacion.md`, `desarrollo.md`); estos CLAUDE.md,
+  la de trabajo. Si cambia una feature visible, actualizar `docs/funciones.md`
+  (y el resumen del README si corresponde).
 - Si un `.md` pasa de ~200 líneas, dividirlo por tema en archivos más chicos
   y dejar el original como índice que enlaza a cada uno (como este archivo con
   los CLAUDE.md por carpeta). En `PLAN.md`, las secciones "Hecho" viejas van a

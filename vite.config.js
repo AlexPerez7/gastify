@@ -48,6 +48,13 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // sin esto el SW nuevo queda "esperando" hasta que se cierren todas las
+        // ventanas de la app (solo se activa con un mensaje SKIP_WAITING que el
+        // modo autoUpdate no manda) — en la PWA instalada del teléfono, que casi
+        // nunca se cierra del todo, las actualizaciones no llegaban. Al tomar
+        // control, registerSW (main.jsx) recarga la página con la versión nueva.
+        skipWaiting: true,
+        clientsClaim: true,
         // precachea el app shell completo para que abra offline…
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         // …menos xlsx y pdfjs (~900 KB): solo sirven para importar, y
