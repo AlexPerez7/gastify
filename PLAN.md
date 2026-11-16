@@ -29,7 +29,10 @@ Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 
 ## 4. Deuda técnica
 
-Al día. (El "worker duplicado" no lo era: el `.js` de 430 KB era la librería
+- [ ] Hacer atómico el upsert/delete de `storage.set` en Supabase: hoy son
+      requests independientes y pueden dejar un guardado parcial si falla el segundo.
+
+(El "worker duplicado" no lo era: el `.js` de 430 KB era la librería
 de pdfjs con un nombre de chunk engañoso.)
 
 ## 5. Opcional en Supabase
@@ -110,6 +113,19 @@ de cambio, zonas horarias por movimiento, multi-cuenta con transferencias,
 OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 
 ---
+
+## Hecho (2026-11-16)
+
+- [x] Proteger guardados simultáneos en una sesión: cola por tabla,
+      rollback por intención y descarte de lecturas antiguas. Incluido en el commit
+      de actualizaciones PWA de esta sesión;
+      12 tests nuevos de concurrencia en `persistenceQueue.test.js`,
+      158 tests aprobados, 3 omitidos; lint, typecheck y build correctos.
+- [x] Agregar búsqueda manual de actualizaciones desde el encabezado y popup
+      con Actualizar ahora / Más tarde. SW en modo prompt; no activa mientras
+      hay guardados pendientes. Probado con dos builds en Chromium: búsqueda,
+      aviso automático, posponer, activar/recargar, offline y ambos temas en
+      móvil/escritorio. Incluido en el mismo commit de esta sesión.
 
 ## Hecho (2026-10-03)
 

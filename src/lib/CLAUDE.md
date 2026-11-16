@@ -20,6 +20,7 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `swipe.js` | puro | `swipeShouldOpen`: decide si una fila deslizada queda abierta (flick por distancia ÷ duración > 0,11 px/ms, o más de la mitad del ancho) |
 | `constants.js` | puro | `TOKENS` (vars CSS), `DEFAULT_CATEGORIES`, íconos lucide, `MERCHANT_RULES_DEFAULT`, `NOISE_TOKENS`, helpers de tipo de categoría |
 | `storage.js` | Supabase | shim `get(key)`/`set(key, json, prevItems)` sobre tablas-lista, con mapeo camel↔snake |
+| `persistenceQueue.js` | coordinación sin React | cola por tabla, cambios por fila/campo sobre el último estado confirmado, rollback por operación y versiones para descartar lecturas antiguas; con tests de concurrencia |
 | `accountSettings.js` | Supabase | tabla de UNA fila por usuario (saldo base, ahorro base) — fuera del patrón de storage |
 | `supabaseClient.js` | Supabase | `createClient`; lanza si faltan las env vars |
 | `pdfParsing.js` | puro | parseo de los PDF, **con test**: `extractPdfPages(pdfjsLib, buf)` (pdfjs inyectado: el del navegador en la app, el `legacy` de Node en los tests) → ítems `{x, y, str}` por página; `cartolaRowsFromPages`, `pagesToText`, `creditStatementFromText` |
@@ -28,6 +29,7 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
 | `parseCreditStatementPdf.js` | parser | PDF Estado de Cuenta CMR → solo resumen (cupo, fechas, totales), no movimientos; solo lee el PDF y llama a `pdfParsing.js` |
 | `exportBackup.js` / `exportCsv.js` | export | leen de Supabase (no del estado React) y descargan archivo |
 | `readFile.js` | util | `readFileWithProgress` con progreso real |
+| `pwaUpdates.js` / `pwaClient.js` | actualizaciones | controlador testeable + registro único del SW; buscar manual/automáticamente, avisar, posponer y activar al confirmar |
 
 ## storage.js — cómo funciona la persistencia
 
@@ -44,9 +46,12 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
   Postgres (ahí viene la fila exacta en un choque UNIQUE); `duplicate` es true
   en un choque de key (local o código `23505`) y `runPersist` muestra un
   mensaje propio en vez de "Revisa tu conexión".
-- En `src/hooks/useAppData.js`, `runPersist` aplica el cambio local, llama a
-  `set`, y si falla **revierte** a `prev` y muestra `syncError`. Todos los
-  `persistX` usan eso.
+- En `src/hooks/useAppData.js`, `runPersist` delega en `persistenceQueue`:
+  aplica las intenciones pendientes sobre lo confirmado y llama a `set` en
+  orden por tabla. Si falla una, la retira y reconstruye el estado optimista
+  conservando las posteriores. No restaurar fotos completas de React.
+- La cola protege concurrencia dentro de esta sesión; `storage.set` sigue
+  haciendo upsert/delete por separado, sin transacción entre requests.
 
 **Agregar un campo** a una entidad: `types.js` → `toRow` + `fromRow` en
 `TABLES` → columna en `supabase/schema.sql` + migración nueva. Ojo:

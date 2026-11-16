@@ -7,6 +7,7 @@ import { DEFAULT_CATEGORIES } from "../lib/constants.js";
 import { storage } from "../lib/storage.js";
 import { getAccountSettings, saveAccountSettings, saveSavingsBase } from "../lib/accountSettings.js";
 import { makeSubscriptionCharges } from "../lib/transactionOps.js";
+import { createPersistenceQueue } from "../lib/persistenceQueue.js";
 
 export function useAppData() {
   const [transactions, setTransactions] = useState([]);
@@ -24,6 +25,17 @@ export function useAppData() {
   const [loaded, setLoaded] = useState(false);
   const [syncError, setSyncError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [persistence] = useState(() => {
+    const setters = {
+      transactions: setTransactions, creditTransactions: setCreditTransactions,
+      creditStatements: setCreditStatements, categories: setCategories,
+      merchantRules: setMerchantRules, subscriptions: setSubscriptions,
+    };
+    return createPersistenceQueue({
+      write: (key, value, prev) => storage.set(key, value, prev),
+      onChange: (key, rows) => setters[key](rows),
+    });
+  });
 
   // guardados a Supabase todavía en vuelo — se usa para (1) no dejar que el
   // refetch automático de loadAllData pise con datos viejos un cambio
@@ -42,18 +54,14 @@ export function useAppData() {
     if (pendingSaves.current === 0) setSaving(false);
   }, []);
 
-  // Núcleo optimista compartido por todos los persist*: aplica el cambio ya,
-  // y si Supabase lo rechaza revierte el estado local (con `prev`, la foto
-  // anterior) en vez de dejarlo "aplicado" solo de mentira. `trackError`
-  // guarda el error en lastPersistError para quien lo lee tras un await.
-  const runPersist = useCallback(async (storageKey, prev, next, setLocal, { trackError = false } = {}) => {
-    setLocal(next);
+  // La cola publica el estado optimista y serializa por tabla. En error
+  // descarta esa intención y conserva las ediciones posteriores.
+  const runPersist = useCallback(async (storageKey, prev, next, { trackError = false } = {}) => {
     beginSave();
-    const res = await storage.set(storageKey, JSON.stringify(next), prev);
+    const res = await persistence.persist(storageKey, prev, next);
     endSave();
     if (trackError) lastPersistError.current = res?.error || null;
     if (!res || res.error) {
-      setLocal(prev);
       const detail = res?.error ? ` (${res.error})` : "";
       setSyncError(
         res && "duplicate" in res && res.duplicate
@@ -64,56 +72,58 @@ export function useAppData() {
     }
     setSyncError(null);
     return true;
-  }, [beginSave, endSave]);
+  }, [beginSave, endSave, persistence]);
 
   const persistTx = useCallback(
-    (next) => runPersist("transactions", transactions, next, setTransactions, { trackError: true }),
+    (next) => runPersist("transactions", transactions, next, { trackError: true }),
     [transactions, runPersist]
   );
   const persistCreditTx = useCallback(
-    (next) => runPersist("creditTransactions", creditTransactions, next, setCreditTransactions, { trackError: true }),
+    (next) => runPersist("creditTransactions", creditTransactions, next, { trackError: true }),
     [creditTransactions, runPersist]
   );
   const persistCreditStatements = useCallback(
-    (next) => runPersist("creditStatements", creditStatements, next, setCreditStatements, { trackError: true }),
+    (next) => runPersist("creditStatements", creditStatements, next, { trackError: true }),
     [creditStatements, runPersist]
   );
   const persistCats = useCallback(
-    (next) => runPersist("categories", categories, next, setCategories),
+    (next) => runPersist("categories", categories, next),
     [categories, runPersist]
   );
   const persistRules = useCallback(
-    (next) => runPersist("merchantRules", merchantRules, next, setMerchantRules),
+    (next) => runPersist("merchantRules", merchantRules, next),
     [merchantRules, runPersist]
   );
   const persistSubs = useCallback(
-    (next) => runPersist("subscriptions", subscriptions, next, setSubscriptions),
+    (next) => runPersist("subscriptions", subscriptions, next),
     [subscriptions, runPersist]
   );
 
   const loadAllData = useCallback(async () => {
-    const tx = await storage.get("transactions");
-    if (tx) setTransactions(JSON.parse(tx.value));
+    const read = async (key) => {
+      const version = persistence.version(key);
+      const result = await storage.get(key);
+      if (!result) return null;
+      const rows = JSON.parse(result.value);
+      const accepted = persistence.acceptLoad(key, rows, version);
+      // El diff debe partir de las categorías realmente leídas (vacías),
+      // no de los defaults que React muestra durante la carga inicial.
+      if (accepted && key === "categories" && rows.length === 0) {
+        await runPersist(key, [], DEFAULT_CATEGORIES);
+      }
+      return result;
+    };
+    const tx = await read("transactions");
 
-    const creditTx = await storage.get("creditTransactions");
-    if (creditTx) setCreditTransactions(JSON.parse(creditTx.value));
+    const creditTx = await read("creditTransactions");
 
-    const creditStmts = await storage.get("creditStatements");
-    if (creditStmts) setCreditStatements(JSON.parse(creditStmts.value));
+    const creditStmts = await read("creditStatements");
 
-    const cats = await storage.get("categories");
-    if (cats) {
-      const parsedCats = JSON.parse(cats.value);
-      // usuario nuevo, o que quedó sin categorías: sembramos las por defecto
-      if (parsedCats.length === 0) await persistCats(DEFAULT_CATEGORIES);
-      else setCategories(parsedCats);
-    }
+    const cats = await read("categories");
 
-    const rules = await storage.get("merchantRules");
-    if (rules) setMerchantRules(JSON.parse(rules.value));
+    const rules = await read("merchantRules");
 
-    const subs = await storage.get("subscriptions");
-    if (subs) setSubscriptions(JSON.parse(subs.value));
+    const subs = await read("subscriptions");
 
     // null es un estado válido (usuario que nunca ajustó su saldo), así que
     // no cuenta para el syncError de abajo.
@@ -122,8 +132,7 @@ export function useAppData() {
     if (!tx || !cats || !rules || !subs || !creditTx || !creditStmts) {
       setSyncError("No se pudieron cargar todos tus datos. Revisa tu conexión y recarga la página.");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- persistCats solo se usa para sembrar defaults, no hace falta re-crear esta función si cambia
-  }, []);
+  }, [persistence, runPersist]);
 
   useEffect(() => {
     loadAllData().then(() => setLoaded(true));

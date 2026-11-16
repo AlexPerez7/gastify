@@ -43,11 +43,18 @@ más arriba atrapa), foco inicial al panel si ningún hijo usa autoFocus, y al
 cerrar vuelve al elemento que tenía el foco al abrir. Intercepta solo Tab (no
 `focusin`) para no pelearle el foco a los popovers en portal.
 
+`usePwaUpdates()`: suscribe el estado de `pwaClient` mediante `useSyncExternalStore`;
+expone el aviso de versión nueva y las acciones buscar/actualizar/posponer.
+
 ## Convenciones
 
 - Las acciones reciben el estado **actual** por closure (se recrean con
   `useCallback` cuando cambia); llaman a un `persistX(next)` que devuelve
   `Promise<boolean>`.
+- `useAppData` pasa la foto de esa closure y `next` a `persistenceQueue`:
+  calcula la intención por fila/campo y serializa los guardados por tabla.
+  Un fallo retira solo esa intención y conserva las posteriores. Las cargas
+  usan una versión por tabla para rechazar respuestas anteriores a una edición.
 - Para leer el error real después de un `await persistX(...)`, usar
   `data.lastPersistError.current` (el estado `syncError` llega tarde).
 - Importaciones: un ref como candado (no estado), porque dos llamadas en

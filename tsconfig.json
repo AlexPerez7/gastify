@@ -26,6 +26,8 @@
     "src/lib/reconcile.js",
     "src/lib/constants.js",
     "src/lib/storage.js",
+    "src/lib/persistenceQueue.js",
+    "src/lib/pwaUpdates.js",
     "src/lib/stats.js",
     "src/lib/importers.js",
     "src/lib/transactionOps.js",

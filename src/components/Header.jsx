@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download } from "lucide-react";
+import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download, RefreshCw } from "lucide-react";
 import { pillClass } from "./classes.js";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
@@ -55,7 +55,7 @@ function SaveIndicator({ saving }) {
 const HEADER_ICON_BTN =
   "tap-expand flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-transparent text-muted cursor-pointer";
 
-export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving }) {
+export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving, updates }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
     // pt con safe-area: instalada en iPhone la barra de estado es translúcida
@@ -89,6 +89,15 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving })
               );
             })}
           </nav>
+          {updates?.supported && (
+            <button onClick={() => updates.check()} disabled={updates.checking || updates.installing}
+              title={updates.available ? "Actualización disponible" : "Buscar actualizaciones"}
+              aria-label={updates.available ? "Actualización disponible" : "Buscar actualizaciones"}
+              className={`${HEADER_ICON_BTN} relative disabled:opacity-60 disabled:cursor-default`}>
+              <RefreshCw size={15} className={updates.checking ? "spin" : undefined} />
+              {updates.available && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />}
+            </button>
+          )}
           <button
             onClick={() => setShowHelp(true)}
             title="Cómo usar la app"

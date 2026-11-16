@@ -37,6 +37,10 @@ plata:
   se sube al repo.
 - `transactionOps.js` — alta manual, cargos de suscripción, reglas
   retroactivas, edición desde conciliación.
+- `persistenceQueue.js` — guardados simultáneos, reversión de una operación
+  fallida sin perder cambios posteriores y descarte de lecturas antiguas.
+- `pwaUpdates.js` — búsqueda manual/automática, espera de instalación,
+  activación confirmada, errores de conexión y protección durante el guardado.
 
 ## Estructura
 
@@ -73,12 +77,23 @@ supabase/
 
 ## PWA y offline
 
-La app es instalable (`vite-plugin-pwa`, `registerType: "autoUpdate"`): el
-service worker precachea todo el app shell para que abra sin conexión, y se
-autoactualiza cuando hay una versión nueva — no hace falta reinstalarla.
-Busca actualizaciones al abrirla, cada vez que vuelves a ella desde segundo
-plano (en el teléfono una PWA casi nunca se cierra del todo) y cada una hora
-si queda abierta. Cuando encuentra una, la descarga y recarga la página sola.
+La app es instalable (`vite-plugin-pwa`, `registerType: "prompt"`): el
+service worker precachea el app shell para que abra sin conexión. Busca
+actualizaciones al registrarse, al volver a primer plano, al recuperar la
+conexión y cada hora, además del botón manual en el encabezado.
+
+`pwaClient.js` mantiene un único registro y `pwaUpdates.js` su estado fuera
+de React; `usePwaUpdates` lo suscribe y `PwaUpdateDialog` muestra el aviso.
+La versión nueva espera (`skipWaiting: false`) hasta **Actualizar ahora**.
+El botón llama a `updateServiceWorker`, que envía `SKIP_WAITING`; al cambiar
+el controller se recarga la página. La acción queda deshabilitada durante
+los guardados. **Más tarde** mantiene la versión disponible en el encabezado.
+La búsqueda espera a que termine la instalación antes de informar el resultado.
+
+Verificación manual: servir dos builds sucesivos desde el mismo origen con
+la primera versión abierta; buscar, posponer y confirmar la segunda. Revisar
+también el aviso automático, modo offline, guardado en curso, móvil/escritorio
+y ambos temas. No basta con `npm run dev`: allí el SW está deshabilitado.
 
 ## Deploy
 

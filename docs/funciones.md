@@ -92,7 +92,12 @@
 - Cuenta con email/contraseña (confirmación por correo) y recuperación de
   contraseña.
 - Modo claro/oscuro con detección de la preferencia del sistema.
-- Instalable como PWA, con soporte offline y actualización automática.
+- Instalable como PWA, con soporte offline. El botón de flechas circulares
+  de la barra superior permite **buscar actualizaciones** al instante.
+  Si hay una versión nueva, aparece un popup con **Actualizar ahora** o
+  **Más tarde**. Al confirmar se recarga la app; si hay cambios guardándose,
+  debes esperar a que terminen. Si la pospones, el botón conserva un indicador
+  para volver a abrirla. La búsqueda automática también muestra el aviso.
 - Pensada primero para el teléfono: zonas táctiles amplias, hojas que suben
   desde abajo, sin zoom al escribir, respeta el notch.
 - Onboarding de 3 pasos y ayuda integrada.

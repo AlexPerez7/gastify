@@ -60,7 +60,7 @@ un falso "no tests"/FAIL la primera vez — reintentar una vez.
 ## Arquitectura en una pantalla
 
 ```
-main.jsx ─ registra SW (PWA autoUpdate, chequeo cada 1h) ─ ErrorBoundary ─ AuthGate
+main.jsx ─ registra SW (PWA prompt, búsqueda manual + cada 1h) ─ ErrorBoundary ─ AuthGate
 AuthGate.jsx ─ sesión Supabase → Auth / ResetPassword / App
 App.jsx (~260 líneas) ─ estado de UI (tab, filtros, modales) + composición + render
    ├─ hooks/useAppData ─ estado de datos, carga, persist* optimista → storage.js → Supabase

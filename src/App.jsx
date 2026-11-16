@@ -7,6 +7,8 @@ import { useCatalogActions } from "./hooks/useCatalogActions.js";
 import { useDerivedData } from "./hooks/useDerivedData.js";
 import { useToasts } from "./hooks/useToasts.js";
 import { useIsMobile } from "./hooks/useIsMobile.js";
+import { usePwaUpdates } from "./hooks/usePwaUpdates.js";
+import { PwaUpdateDialog } from "./components/PwaUpdateDialog.jsx";
 import { exportBackup } from "./lib/exportBackup.js";
 import { exportCsv } from "./lib/exportCsv.js";
 import { EMPTY_AMOUNT_RANGE } from "./lib/stats.js";
@@ -34,6 +36,7 @@ const ONBOARDING_KEY = "gastify:onboarding-done";
 // filtros, modales) y el render.
 export default function App({ onSignOut, theme, onToggleTheme }) {
   const isMobile = useIsMobile();
+  const updates = usePwaUpdates();
   const { toasts, push: pushToast, update: updateToast, dismiss: dismissToast, pause: pauseToast, resume: resumeToast } = useToasts();
 
   // ---- estado de UI ---------------------------------------------------------
@@ -131,7 +134,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
 
   return (
     <div className="bg-bg min-h-screen text-ink font-sans">
-      <Header tab={tab} setTab={setTab} onSignOut={onSignOut} theme={theme} onToggleTheme={onToggleTheme} saving={saving} />
+      <Header tab={tab} setTab={setTab} onSignOut={onSignOut} theme={theme} onToggleTheme={onToggleTheme} saving={saving} updates={updates} />
 
       <main className="app-main max-w-[1080px] mx-auto px-6 pt-7 pb-20">
         {syncError && (
@@ -275,6 +278,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
       <BottomNav tab={tab} setTab={setTab} onManual={openManualEntry} onImport={openImportFlow} />
       <ToastStack toasts={toasts} onDismiss={dismissToast} onPause={pauseToast} onResume={resumeToast} />
       {showOnboarding && <Onboarding onDone={dismissOnboarding} />}
+      <PwaUpdateDialog updates={updates} saving={saving} />
     </div>
   );
 }

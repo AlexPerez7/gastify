@@ -22,7 +22,8 @@ lo suyo y puede entrar desde cualquier dispositivo.
 - **Resumen:** saldo actual, gasto por día, proyección a fin de mes,
   presupuestos y gráficos.
 - **Conciliación:** fusiona lo que anotaste a mano con el reporte del banco.
-- **PWA:** se instala en el teléfono, abre sin conexión y se actualiza sola.
+- **PWA:** se instala en el teléfono, abre sin conexión y avisa cuando hay
+  una actualización; también puedes buscarla desde la barra superior.
 
 ## Documentación
 
