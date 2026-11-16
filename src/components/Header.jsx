@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download, RefreshCw } from "lucide-react";
+import { Tag, ListChecks, LayoutGrid, Repeat, LogOut, Sun, Moon, Plus, PenLine, Upload, HelpCircle, Loader2, Check, MoreVertical, FileSpreadsheet, Download, RefreshCw, Settings } from "lucide-react";
 import { pillClass } from "./classes.js";
+import { Modal } from "./Shared.jsx";
 import { HelpModal } from "./HelpModal.jsx";
 import logo from "../assets/logo.png";
 
@@ -50,13 +51,14 @@ function SaveIndicator({ saving }) {
   return null;
 }
 
-// botón de ícono suelto de la barra superior (ayuda, tema, cerrar sesión)
+// Acceso a ajustes desde la barra superior.
 // 36×36 visibles + tap-expand: ~52px de zona táctil sin agrandar el header
 const HEADER_ICON_BTN =
   "tap-expand flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-transparent text-muted cursor-pointer";
 
 export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving, updates }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   return (
     // pt con safe-area: instalada en iPhone la barra de estado es translúcida
     // (index.html: black-translucent + viewport-fit=cover) y sin esto el
@@ -89,44 +91,66 @@ export function Header({ tab, setTab, onSignOut, theme, onToggleTheme, saving, u
               );
             })}
           </nav>
-          {updates?.supported && (
-            <button onClick={() => updates.check()} disabled={updates.checking || updates.installing}
-              title={updates.available ? "Actualización disponible" : "Buscar actualizaciones"}
-              aria-label={updates.available ? "Actualización disponible" : "Buscar actualizaciones"}
-              className={`${HEADER_ICON_BTN} relative disabled:opacity-60 disabled:cursor-default`}>
-              <RefreshCw size={15} className={updates.checking ? "spin" : undefined} />
-              {updates.available && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />}
-            </button>
-          )}
           <button
-            onClick={() => setShowHelp(true)}
-            title="Cómo usar la app"
-            aria-label="Cómo usar la app"
-            className={HEADER_ICON_BTN}
+            onClick={() => setShowSettings(true)}
+            title={updates?.available ? "Ajustes: actualización disponible" : "Ajustes"}
+            aria-label={updates?.available ? "Ajustes: actualización disponible" : "Ajustes"}
+            aria-haspopup="dialog"
+            aria-expanded={showSettings}
+            className={`${HEADER_ICON_BTN} relative`}
           >
-            <HelpCircle size={15} />
+            <Settings size={15} />
+            {updates?.available && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-accent" />}
           </button>
-          {onToggleTheme && (
-            <button
-              onClick={onToggleTheme}
-              title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              className={HEADER_ICON_BTN}
-            >
-              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
-          )}
-          {onSignOut && (
-            <button onClick={onSignOut} title="Cerrar sesión" aria-label="Cerrar sesión" className={HEADER_ICON_BTN}>
-              <LogOut size={15} />
-            </button>
-          )}
         </div>
       </div>
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showSettings && (
+        <Modal title="Ajustes" onClose={() => setShowSettings(false)} sheetOnMobile>
+          <div className="flex flex-col gap-2">
+            {updates?.supported && (
+              <>
+                <button
+                  className={`${SETTINGS_BTN} ${updates.available ? "text-accent" : "text-ink"}`}
+                  disabled={updates.checking || updates.installing || (updates.available && saving)}
+                  onClick={() => {
+                    if (updates.available) updates.install(saving);
+                    else {
+                      setShowSettings(false);
+                      updates.check();
+                    }
+                  }}
+                >
+                  {updates.installing || updates.checking ? <Loader2 size={18} className="spin" />
+                    : updates.available ? <Download size={18} /> : <RefreshCw size={18} />}
+                  {updates.installing ? "Actualizando…" : updates.checking ? "Buscando actualizaciones…"
+                    : updates.available ? "Actualizar" : "Buscar actualizaciones"}
+                </button>
+                {updates.available && <p className="m-0 px-3 text-small text-muted" role="status">
+                  {saving ? "Espera a que terminen de guardarse tus cambios para actualizar."
+                    : "Hay una nueva versión disponible. Al actualizar, la app se recargará."}
+                </p>}
+                {updates.error && <p className="m-0 px-3 text-small text-expense" role="alert">{updates.error}</p>}
+              </>
+            )}
+            {onToggleTheme && <button className={`${SETTINGS_BTN} text-ink`} onClick={onToggleTheme}>
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            </button>}
+            <button className={`${SETTINGS_BTN} text-ink`} onClick={() => { setShowSettings(false); setShowHelp(true); }}>
+              <HelpCircle size={18} /> Cómo usar la app
+            </button>
+            {onSignOut && <button className={`${SETTINGS_BTN} text-expense`} onClick={onSignOut}>
+              <LogOut size={18} /> Cerrar sesión
+            </button>}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
+
+const SETTINGS_BTN = "flex items-center gap-3 w-full px-3 py-3 rounded-lg border border-border bg-transparent text-body text-left cursor-pointer hover:bg-surface-alt disabled:opacity-60 disabled:cursor-default";
 
 function BottomTabButton({ it, tab, setTab }) {
   const Icon = it.icon;
