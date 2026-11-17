@@ -196,12 +196,19 @@ export function StatCard({ label, value, sub, icon: Icon, accent, action }) {
 
 // Encabezado de un día en las listas ("HOY ········ −$45.300 +$1.800.000",
 // n.º 22). `totals` viene de computeDayTotals; sin él, solo la fecha.
-export function DayHeader({ date, totals }) {
+export function DayHeader({ date, totals, selection }) {
+  const DateLabel = selection ? "label" : "span";
   return (
-    <div className="flex items-baseline justify-between gap-3 px-4 py-[9px] bg-surface-alt border-b border-border">
-      <span className="text-caption font-semibold text-faint uppercase tracking-[0.03em] min-w-0 truncate">
-        {formatDayHeading(date)}
-      </span>
+    <div className="tx-day-header flex items-center justify-between gap-3 px-4 py-[9px] bg-surface-alt border-b border-border"
+      onContextMenu={selection ? (e) => e.preventDefault() : undefined}>
+      <DateLabel className={`flex items-center gap-2 text-caption font-semibold text-faint uppercase tracking-[0.03em] min-w-0 ${selection ? "cursor-pointer" : ""}`}>
+        {selection && <input type="checkbox" checked={selection.checked}
+          ref={(node) => { if (node) node.indeterminate = selection.indeterminate; }}
+          onChange={selection.onChange}
+          aria-label={`${selection.checked ? "Deseleccionar" : "Seleccionar"} día: ${date}`}
+          className="w-[18px] h-[18px] shrink-0 cursor-pointer accent-accent" />}
+        <span className="truncate">{formatDayHeading(date)}</span>
+      </DateLabel>
       {totals && (totals.expense > 0 || totals.income > 0) && (
         <span className="mono text-caption shrink-0 flex gap-2">
           {totals.expense > 0 && <span className="text-muted">{formatCLP(-totals.expense)}</span>}

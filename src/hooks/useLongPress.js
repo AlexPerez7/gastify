@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const LONG_PRESS_MS = 450;
 const MOVE_TOLERANCE = 8;
@@ -12,16 +12,22 @@ export function useLongPress(onLongPress) {
   const start = useRef(null);
   const fired = useRef(false);
 
+  useEffect(() => () => clearTimeout(timer.current), []);
+
   const clear = () => { clearTimeout(timer.current); timer.current = null; };
 
   return {
     handlers: {
       onPointerDown: (e) => {
+        if (e.button !== 0 || !e.isPrimary) return;
         fired.current = false;
         start.current = { x: e.clientX, y: e.clientY };
         clear();
         timer.current = setTimeout(() => {
           fired.current = true;
+          // Limpia cualquier selección nativa que Android haya iniciado
+          // antes de reconocer el gesto de selección de movimientos.
+          window.getSelection()?.removeAllRanges();
           navigator.vibrate?.(10);
           onLongPress();
         }, LONG_PRESS_MS);
