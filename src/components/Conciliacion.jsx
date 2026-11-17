@@ -207,6 +207,11 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const [date, setDate] = useState(t.date);
   const [amount, setAmount] = useState(String(Math.abs(t.amount)));
   const [bankId, setBankId] = useState("");
+  const [linking, setLinking] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const candidates = bankCandidates.filter((b) => !b.matchedId || Math.abs(b.amount - t.amount) < 1);
+  const selectedBank = candidates.find((b) => b.id === bankId);
+  const hasConfirmedCandidate = candidates.some((b) => b.matchedId);
   const swipeControls = useAnimation();
   const dragStartedAt = useRef(0); // para medir la rapidez del gesto (swipeShouldOpen)
   const closeSwipe = () => swipeControls.start({ x: 0, transition: SWIPE_SPRING });
@@ -220,10 +225,16 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
     close();
   };
 
-  const confirmMatch = () => {
-    if (!bankId) return;
-    onMatch(t.id, bankId);
-    close();
+  const confirmMatch = async () => {
+    if (!selectedBank || linking) return;
+    setLinking(true);
+    setLinkError("");
+    try {
+      if (await onMatch(t.id, bankId)) close();
+      else setLinkError("No se pudo guardar el vínculo. Revisa tu conexión e inténtalo de nuevo.");
+    } catch {
+      setLinkError("No se pudo guardar el vínculo. Revisa tu conexión e inténtalo de nuevo.");
+    } finally { setLinking(false); }
   };
 
   const openEdit = () => { closeSwipe(); setMode((m) => (m === "edit" ? null : "edit")); };
@@ -253,8 +264,8 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
               onClick={openLink}
               aria-label="Vincular a mano con un movimiento del banco"
               title="Vincular"
-              disabled={bankCandidates.length === 0}
-              style={bankCandidates.length === 0 ? { opacity: 0.5, cursor: "default" } : undefined}
+              disabled={candidates.length === 0}
+              style={candidates.length === 0 ? { opacity: 0.5, cursor: "default" } : undefined}
             >
               <Link2 size={16} />
             </button>
@@ -301,7 +312,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
               onClick={openLink}
               title="Vincular a mano con un movimiento del banco"
               aria-label="Vincular a mano con un movimiento del banco"
-              disabled={bankCandidates.length === 0}
+              disabled={candidates.length === 0}
               className={`bg-transparent border-0 p-[5px] disabled:opacity-40 disabled:cursor-default enabled:cursor-pointer ${
                 mode === "link" ? "text-accent" : "text-faint"
               }`}
@@ -312,6 +323,12 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
           <ChevronLeft size={13} className="tx-swipe-hint" />
         </Row>
       </div>
+
+      {hasConfirmedCandidate && mode !== "link" && (
+        <button onClick={openLink} className="my-2 px-3 py-2 rounded-lg border border-border bg-transparent text-pending text-small cursor-pointer">
+          Revisar duplicado con un movimiento confirmado
+        </button>
+      )}
 
       {mode === "edit" && (
         <div className="mt-2 px-3 py-2.5 bg-surface-alt rounded-lg">
@@ -333,27 +350,33 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
       {mode === "link" && (
         <div className="flex items-center gap-2 mt-2 px-3 py-2.5 bg-surface-alt rounded-lg flex-wrap">
           <select
+            aria-label="Movimiento del banco para vincular"
+            disabled={linking}
             value={bankId}
             onChange={(e) => setBankId(e.target.value)}
-            className="flex-[1_1_220px] px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-body"
+            className="flex-[1_1_220px] min-w-0 max-w-full px-[9px] py-[7px] rounded-[7px] border border-border bg-surface text-ink text-body"
           >
             <option value="">Elige el movimiento del banco…</option>
-            {bankCandidates.map((b) => (
+            {candidates.map((b) => (
               <option key={b.id} value={b.id}>
-                {formatDateDisplay(b.date)} · {b.description} · {formatCLP(b.amount)}
+                {formatDateDisplay(b.date)} · {b.alias || b.description} · {formatCLP(b.amount)}{b.matchedId ? " · Ya confirmado" : ""}
               </option>
             ))}
           </select>
           <button
             onClick={confirmMatch}
-            disabled={!bankId}
+            disabled={!selectedBank || linking}
             className="px-3 py-2 rounded-[7px] border-0 font-semibold text-small bg-accent text-bg disabled:opacity-60 disabled:cursor-default enabled:cursor-pointer"
           >
-            Vincular
+            {linking ? "Guardando…" : selectedBank?.matchedId ? "Conservar banco y quitar manual duplicado" : "Vincular"}
           </button>
-          <button onClick={close} aria-label="Cancelar" className="p-2 rounded-[7px] border border-border bg-transparent text-muted cursor-pointer">
+          <button onClick={close} disabled={linking} aria-label="Cancelar" className="p-2 rounded-[7px] border border-border bg-transparent text-muted cursor-pointer">
             <X size={14} />
           </button>
+          {selectedBank?.matchedId && <p className="w-full m-0 text-small text-muted">
+            Confirma solo si es el mismo gasto. Se conservarán el movimiento del banco, su categoría y su suscripción; se quitará el registro manual duplicado.
+          </p>}
+          {linkError && <p className="w-full m-0 text-small text-expense" role="alert">{linkError}</p>}
         </div>
       )}
     </div>

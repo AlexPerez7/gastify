@@ -364,17 +364,17 @@ export function computeReconcileStats(transactions, currentMonth) {
   const bankExists = banks.length > 0;
   const confirmed = banks.filter((t) => t.matchedId);
   const bankOnly = banks.filter((t) => !t.matchedId);
-  // candidatos para vincular a mano: también lo sin vincular del mes
-  // siguiente — un traspaso de fin de mes puede quedar con fecha contable ya
-  // en el mes que sigue (ver reconcileMonthTransactions).
+  // También se puede resolver explícitamente un manual duplicado contra un
+  // banco ya confirmado. La conciliación automática sigue sin reutilizarlo.
+  // Incluye el mes siguiente por la fecha contable del banco.
   const nextKey = nextMonthKey(currentMonth);
-  const nextMonthBankOnly = transactions.filter((t) => t.source === "bank" && !t.matchedId && monthKey(t.date) === nextKey);
+  const nextMonthBanks = transactions.filter((t) => t.source === "bank" && monthKey(t.date) === nextKey);
   return {
     manuals, confirmed, bankExists,
     pendingNoReport: bankExists ? [] : manuals,
     pendingMismatch: bankExists ? manuals : [],
     bankOnly,
-    linkCandidates: [...bankOnly, ...nextMonthBankOnly],
+    linkCandidates: [...banks, ...nextMonthBanks],
   };
 }
 

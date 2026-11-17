@@ -205,7 +205,8 @@ describe("conciliación", () => {
     expect(r.confirmed.map((t) => t.id)).toEqual(["b1"]);
     expect(r.pendingMismatch.map((t) => t.id)).toEqual(["m1"]);
     expect(r.pendingNoReport).toEqual([]);
-    expect(r.linkCandidates.map((t) => t.id)).toEqual(["b2", "b3"]);
+    expect(r.bankOnly.map((t) => t.id)).toEqual(["b2"]);
+    expect(r.linkCandidates.map((t) => t.id)).toEqual(["b1", "b2", "b3"]);
     expect(computeReconcileStats(list, undefined)).toBeNull();
   });
 

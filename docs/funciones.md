@@ -87,6 +87,11 @@
   categoría que le pusiste. Separa lo confirmado, lo que aún no tiene
   reporte importado y lo que no calza, con vínculo manual para los casos
   raros.
+- Si un cargo ya confirmado todavía tiene otro registro manual duplicado,
+  puedes elegirlo al vincular. Aparece como **Ya confirmado** y se pide
+  **Conservar banco y quitar manual duplicado**. Conserva la clasificación y
+  suscripción del banco; requiere el mismo monto y tu confirmación explícita.
+  Si falla el guardado, el formulario permite reintentar.
 
 **General**
 - Cuenta con email/contraseña (confirmación por correo) y recuperación de

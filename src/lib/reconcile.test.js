@@ -4,6 +4,8 @@ import {
   matchManualToBank,
   findDuplicateIds,
 } from "./reconcile.js";
+import { makeSubscriptionCharges } from "./transactionOps.js";
+import { computeReconcileStats } from "./stats.js";
 
 // helpers para armar transacciones sin repetir todos los campos
 const bank = (o) => ({ source: "bank", matchedId: null, alias: "", ...o });
@@ -86,6 +88,53 @@ describe("reconcileMonthTransactions", () => {
 });
 
 describe("matchManualToBank", () => {
+  it("resuelve un manual extra contra un banco ya confirmado sin perder su clasificación ni regenerar la suscripción", () => {
+    const confirmed = bank({ id: "b", date: "2026-08-08", amount: -7300,
+      key: "banco", description: "CARGO SERVICIO", category: "suscripciones", alias: "Servicio",
+      matchedId: "primer-manual", subscriptionId: "s" });
+    const extra = manual({ id: "m", date: "2026-08-08", amount: -7300,
+      description: "Servicio local", category: "otros" });
+    const tx = [confirmed, extra];
+    // Entrar a Revisar no absorbe otro manual automáticamente.
+    expect(reconcileMonthTransactions(tx, "2026-08").next).toBe(tx);
+    expect(computeReconcileStats(tx, "2026-08").linkCandidates).toContain(confirmed);
+    // El usuario confirma explícitamente que ambos son el mismo gasto.
+    const next = matchManualToBank(tx, "m", "b");
+    expect(next).toEqual([confirmed]);
+    expect(next[0]).toBe(confirmed);
+    expect(next.reduce((sum, t) => sum + t.amount, 0)).toBe(-7300);
+    expect(findDuplicateIds(next).size).toBe(0);
+    expect(computeReconcileStats(next, "2026-08").pendingMismatch).toEqual([]);
+    expect(makeSubscriptionCharges([{ id: "s", name: "Servicio", amount: 7300,
+      category: "suscripciones", dayOfMonth: 8, active: true }], next,
+      new Date(2026, 7, 10), "2026-08-10T12:00:00Z")).toEqual([]);
+    expect(matchManualToBank(next, "m", "b")).toBe(next);
+    expect(tx).toHaveLength(2);
+  });
+
+  it("no quita un manual contra un confirmado de distinto monto o signo", () => {
+    const tx = [manual({ id: "m", amount: -7300 }),
+      bank({ id: "b", amount: -8500, matchedId: "previo" }),
+      bank({ id: "ingreso", amount: 7300, matchedId: "otro" })];
+    expect(matchManualToBank(tx, "m", "b")).toBe(tx);
+    expect(matchManualToBank(tx, "m", "ingreso")).toBe(tx);
+  });
+
+  it("no permite vincular dos bancos ni dos manuales", () => {
+    const tx = [manual({ id: "m1" }), manual({ id: "m2" }), bank({ id: "b1" }), bank({ id: "b2" })];
+    expect(matchManualToBank(tx, "m1", "m2")).toBe(tx);
+    expect(matchManualToBank(tx, "b1", "b2")).toBe(tx);
+    expect(matchManualToBank(tx, "b1", "m1")).toBe(tx);
+  });
+
+  it("conserva el vínculo de la primera conciliación y recupera la suscripción si faltaba", () => {
+    const tx = [manual({ id: "m", amount: -7300, subscriptionId: "s" }),
+      bank({ id: "b", amount: -7300, matchedId: "previo", category: "servicios" })];
+    expect(matchManualToBank(tx, "m", "b")).toEqual([
+      { ...tx[1], subscriptionId: "s" },
+    ]);
+  });
+
   it("fusiona los dos ids indicados y borra el manual", () => {
     const tx = [
       manual({ id: "m1", date: "2026-03-01", amount: -20000, category: "arriendo", alias: "Depto" }),

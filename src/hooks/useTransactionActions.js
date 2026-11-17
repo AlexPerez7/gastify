@@ -150,9 +150,9 @@ export function useTransactionActions(data, { onManualAdded, pushToast } = {}) {
 
   // vínculo manual↔banco cuando el calce automático no lo encontró.
   const manualMatch = useCallback(
-    (manualId, bankId) => {
+    async (manualId, bankId) => {
       const next = matchManualToBank(transactions, manualId, bankId);
-      if (next !== transactions) persistTx(next);
+      return next !== transactions ? await persistTx(next) : false;
     },
     [transactions, persistTx]
   );
