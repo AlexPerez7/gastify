@@ -32,8 +32,9 @@ Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 Revisión funcional y prioridades de datos:
 [auditoría del 17-11-2026](docs/auditoria-2026-11-17.md).
 
-- [ ] Hacer atómico el upsert/delete de `storage.set` en Supabase: hoy son
-      requests independientes y pueden dejar un guardado parcial si falla el segundo.
+- [ ] Aplicar `0009_atomic_writes_and_category_delete.sql` en Supabase:
+      cliente y funciones ya preparados y probados; activa guardados
+      atómicos, control de filas obsoletas y borrado transaccional de categorías.
 
 (El "worker duplicado" no lo era: el `.js` de 430 KB era la librería
 de pdfjs con un nombre de chunk engañoso.)
@@ -198,3 +199,7 @@ Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
       completar respaldo, bloquear cargas iniciales incompletas, conservar
       saldo ante errores/lecturas antiguas, preservar altas fallidas,
       validar fechas imposibles y reiniciar datos al cambiar de usuario.
+- [x] Borrado seguro de categorías incluyendo crédito, protección de Otros,
+      espera y reintento reales; RPC y migración 0009 para transacciones y
+      conflictos entre sesiones, con pruebas PostgreSQL en CI. Activación
+      del servidor pendiente de ejecutar el SQL en Supabase.

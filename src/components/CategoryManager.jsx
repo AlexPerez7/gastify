@@ -177,11 +177,15 @@ function CategoryEditPanel({ cat, onRename, onDelete, onIconChange, onColorChang
           className="flex-1 min-w-0 px-2.5 py-2 rounded-lg border border-border bg-surface text-ink text-body"
         />
         <SavedMark show={savedField === "label"} />
-        <ConfirmDeleteButton
-          onConfirm={() => { onDelete(cat.id); onClose(); }}
+        {cat.id !== "otros" && <ConfirmDeleteButton
+          onConfirm={async () => {
+            const ok = await onDelete(cat.id);
+            if (ok) onClose();
+            return ok;
+          }}
           text={`Los movimientos en "${cat.label}" van a pasar a Otros. ¿Eliminar la categoría?`}
           title="Eliminar (los movimientos pasan a Otros)"
-        />
+        />}
       </div>
 
       <div className="text-micro text-faint mb-2">Tipo</div>

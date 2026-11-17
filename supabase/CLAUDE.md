@@ -15,7 +15,16 @@ deja el SQL listo y avisa al usuario que debe ejecutarlo.
   estados de cuenta, 0006 **opcional**: recolorea las categorías por defecto
   no personalizadas a la paleta validada, 0007 `base_balance`/`last_sync_date`
   nullables en account_settings, 0008 `match_type`/`min_amount`/`max_amount`
-  en merchant_rules y `frequency`/`month_of_year`/`end_date` en subscriptions).
+  en merchant_rules y `frequency`/`month_of_year`/`end_date` en subscriptions;
+  0009 funciones `gastify_write_table` y `gastify_delete_category`).
+
+Las funciones de 0009 son `SECURITY INVOKER`, con `search_path` vacío, RLS y
+permiso EXECUTE solo para `authenticated`. Serializan por usuario y usan
+comparación de filas previas para rechazar escrituras obsoletas. Las pruebas
+están en `tests/`: `npm ci --prefix supabase/tests` y
+`npm test --prefix supabase/tests` (PostgreSQL en memoria con PGlite, sin
+conectar a Supabase). También corren en CI. La validación en el proyecto
+real requiere aplicar la migración y probar con las sesiones reales.
 
 ## Tablas
 

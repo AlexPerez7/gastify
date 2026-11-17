@@ -151,6 +151,11 @@ const TABLES = {
 // UNIQUE de la base de datos (el error real, antes oculto, era
 // "duplicate key value violates unique constraint ...").
 const PAGE_SIZE = 1000;
+let atomicWritesAvailable;
+
+function missingRpc(error, name) {
+  return error?.code === "PGRST202" && String(error.message).includes(name);
+}
 
 export const storage = {
   /**
@@ -198,7 +203,7 @@ export const storage = {
    * @param {keyof typeof TABLES} key
    * @param {string} value       JSON.stringify del array en forma de app
    * @param {Array<{id: string}>} prevItems
-   * @returns {Promise<{ key: string, value: string } | { key: string, error: string, duplicate?: boolean } | null>}
+   * @returns {Promise<{ key: string, value: string } | { key: string, error: string, duplicate?: boolean, conflict?: boolean } | null>}
    */
   async set(key, value, prevItems = []) {
     const spec = TABLES[key];
@@ -221,6 +226,22 @@ export const storage = {
       const nextIds = new Set(items.map((i) => i.id));
       const toDelete = prevItems.map((i) => i.id).filter((id) => !nextIds.has(id));
 
+      if (changed.length === 0 && toDelete.length === 0) return { key, value };
+      if (atomicWritesAvailable !== false) {
+        const affectedIds = new Set([...changed.map((item) => item.id), ...toDelete]);
+        const { error } = await supabase.rpc("gastify_write_table", {
+          p_table: spec.table,
+          p_upserts: changed.map(spec.toRow),
+          p_deletes: toDelete,
+          p_expected: prevItems.filter((item) => affectedIds.has(item.id)).map(spec.toRow),
+        });
+        if (!error) { atomicWritesAvailable = true; return { key, value }; }
+        // Compatibilidad con instalaciones sin 0009. Un error de red,
+        // permiso o conflicto nunca se reintenta por el camino sin protección.
+        if (!missingRpc(error, "gastify_write_table")) throw error;
+        atomicWritesAvailable = false;
+      }
+
       if (changed.length > 0) {
         const { error: upsertError } = await supabase.from(spec.table).upsert(changed.map(spec.toRow));
         if (upsertError) throw upsertError;
@@ -237,8 +258,14 @@ export const storage = {
       // already exists.") — sin esto solo se veía el mensaje genérico, sin
       // ninguna pista de CUÁL fila específica ya existía.
       const detail = [e.message, e.details].filter(Boolean).join(" — ");
-      return { key, error: detail || String(e), duplicate: e.code === "23505" };
+      return { key, error: detail || String(e), duplicate: e.code === "23505", conflict: e.code === "40001" };
     }
+  },
+
+  async deleteCategory(id) {
+    const { error } = await supabase.rpc("gastify_delete_category", { p_category: id });
+    if (missingRpc(error, "gastify_delete_category")) return { unsupported: true };
+    return error ? { error: error.message } : { ok: true };
   },
 };
 

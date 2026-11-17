@@ -58,6 +58,11 @@
 - Interruptor "cuenta como gasto" para transferencias entre tus propias
   cuentas: salen de la cuenta corriente pero no son consumo real, así que se
   excluyen de todos los cálculos sin dejar de aparecer en la lista.
+- Al eliminar una categoría, también reasigna los movimientos de crédito,
+  suscripciones y reglas a **Otros**. Espera a que termine y permite
+  reintentar si falla. **Otros** no se puede eliminar. Con la migración 0009,
+  toda la operación se confirma o revierte junta; sin ella, la categoría se
+  conserva si alguna reasignación falla y algunas filas pueden ya haberse movido.
 - Una categoría puede sumar a un "Total ahorrado" aparte en Resumen (ej.
   traspasos a tu cuenta de ahorro), con un monto inicial ajustable.
 
@@ -114,6 +119,9 @@
 - Si la carga inicial falla, ofrece **Reintentar carga** antes de permitir
   editar o generar cobros automáticos. El alta manual conserva lo escrito
   cuando falla el guardado y permite reintentarlo.
+- Con la migración 0009 aplicada, cada guardado de una lista es atómico y
+  rechaza registros que cambiaron en otra sesión. El aviso ofrece
+  **Volver a cargar datos** para recuperar la versión actual.
 - Menú **Ajustes** (engranaje en la barra superior) con modo claro/oscuro,
   ayuda y cierre de sesión. El tema detecta la preferencia del sistema.
 - Instalable como PWA, con soporte offline. En **Ajustes**, el botón

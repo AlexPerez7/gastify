@@ -1177,7 +1177,8 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = nu
   const yesterday = localIsoDate(yesterdayDate);
 
   const amount = Number(amountDigits);
-  const valid = amount > 0 && description.trim() !== "" && !!date;
+  const valid = amount > 0 && description.trim() !== "" && !!date
+    && relevantCategories.some((c) => c.id === category);
   // con algo escrito, tocar fuera no cierra (no se pierde lo ingresado)
   const dirty = amountDigits !== "" || description.trim() !== "";
 

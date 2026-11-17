@@ -20,16 +20,18 @@ no se modificaron directamente los movimientos de ninguna cuenta.
 
 ## Pendientes prioritarios
 
-### 1. Guardados atómicos en servidor — alta
+### 1. Guardados atómicos en servidor — activación pendiente
 
-[`storage.set`](../src/lib/storage.js) ejecuta el upsert y el borrado en
-peticiones separadas. Si la primera funciona y la segunda falla, el cliente
-revierte su vista pero el servidor ya conserva parte del cambio. Una
-conciliación puede reaparecer duplicada al recargar.
+[`storage.set`](../src/lib/storage.js) ya admite una RPC transaccional con
+comprobación de filas previas. El cliente está preparado, pero la protección
+solo se activa al ejecutar
+[`0009`](../supabase/migrations/0009_atomic_writes_and_category_delete.sql)
+en el SQL Editor de Supabase y recargar la app.
 
-Recomendación: operación transaccional mediante RPC de Postgres, limitada al
-usuario autenticado. Requiere migración SQL y pruebas de rollback real; aún
-no está implementada.
+Sin la migración conserva compatibilidad mediante peticiones separadas:
+si una parte falla, el servidor puede conservar cambios parciales. Las
+pruebas de rollback, RLS y conflictos ya corren en PostgreSQL embebido en CI;
+la aplicación y verificación en el proyecto Supabase real siguen pendientes.
 
 Incluso una pareja única por monto/fecha sigue siendo una heurística, no
 una prueba de identidad del comercio. Conviene añadir vista previa,
@@ -39,24 +41,26 @@ original; hoy la fusión solo retiene su id y elimina la fila.
 ### 2. Edición simultánea en dispositivos — alta
 
 [`persistenceQueue`](../src/lib/persistenceQueue.js) protege operaciones de
-una sesión. Dos dispositivos pueden sobrescribir campos de la misma fila
-porque el upsert envía la fila completa sin comprobar una versión previa.
-Además, los pendientes automáticos usan UUID aleatorios: dos sesiones que
-arrancan a la vez pueden generar el mismo cobro con ids diferentes.
+una sesión. Con 0009 las RPC rechazan un cambio si la fila del servidor ya
+no coincide con la que leyó el cliente. Sin ella, dos dispositivos todavía
+pueden sobrescribirse. Los pendientes automáticos usan UUID aleatorios:
+dos sesiones que arrancan a la vez pueden generar el mismo cobro con ids
+diferentes.
 
-Recomendación: versiones por fila y rechazo de escrituras obsoletas; para
-suscripciones, unicidad del período de cobro garantizada en el servidor.
+Pendiente: activar 0009 y garantizar la unicidad del período de cobro de
+suscripción en servidor. El control de filas obsoletas no evita dos altas
+simultáneas con ids diferentes.
 
-### 3. Borrado de categorías — alta
+### 3. Borrado de categorías — cliente corregido; transacción pendiente de activar
 
-[`deleteCategory`](../src/hooks/useCatalogActions.js) recategoriza débito,
-suscripciones y reglas, pero omite `creditTransactions`. El crédito puede
-quedar apuntando a una categoría eliminada. También lanza guardados en
-varias tablas sin una transacción común ni esperar sus resultados.
+El cliente ya reasigna débito, crédito, suscripciones y reglas; impide
+eliminar Otros, espera los guardados previos y bloquea nuevas escrituras
+durante la operación. El editor espera el resultado y permite reintentar.
 
-Recomendación: reasignar también crédito, proteger la categoría de destino
-y ejecutar el cambio de forma atómica. Mostrar el resultado real antes de
-cerrar el editor.
+Con 0009 usa una sola transacción. Sin ella, reasigna por etapas y conserva
+la categoría si alguna falla; algunas filas pueden ya haberse movido a
+Otros. El reintento completa lo que falta. Probados ambos caminos en móvil
+y escritorio con un fallo intermedio simulado.
 
 ### 4. Transferencias entre cuentas propias e ingresos — alta
 
@@ -117,6 +121,6 @@ tarjeta de ese mismo resumen para evitar doble conteo.
 3. Semántica de ingresos/transferencias y consumo/flujo de caja.
 4. Restauración de respaldos, funcionamiento offline y pulido de navegación.
 
-No se aplicaron migraciones de base de datos en esta revisión. Las tareas
-de servidor deben implementarse y verificarse antes de anunciarse como
-resueltas.
+No se aplicaron migraciones a la base real desde esta sesión. 0009 está
+preparada y probada en una base desechable; su activación requiere ejecutar
+el SQL en Supabase. Las demás tareas de servidor permanecen pendientes.

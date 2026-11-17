@@ -27,6 +27,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm ci --prefix supabase/tests
+      - run: npm test --prefix supabase/tests
 
   build:
     needs: check

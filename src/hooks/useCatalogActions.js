@@ -10,7 +10,7 @@ import { saveMerchantRule, applyRuleToExisting } from "../lib/transactionOps.js"
 export function useCatalogActions(data) {
   const {
     categories, transactions, creditTransactions, subscriptions, merchantRules,
-    persistCats, persistTx, persistCreditTx, persistSubs, persistRules,
+    persistCats, persistTx, persistCreditTx, persistSubs, persistRules, removeCategory,
   } = data;
 
   // patch de una categoría por id. Devuelve la promesa de persistCats
@@ -52,17 +52,7 @@ export function useCatalogActions(data) {
   // al borrar una categoría, sus movimientos, suscripciones y reglas de
   // comercio pasan a "otros" (una regla apuntando a una categoría que ya no
   // existe seguiría categorizando importaciones hacia la nada)
-  const deleteCategory = useCallback(
-    (id) => {
-      persistCats(categories.filter((c) => c.id !== id));
-      persistTx(transactions.map((t) => (t.category === id ? { ...t, category: "otros" } : t)));
-      persistSubs(subscriptions.map((s) => (s.category === id ? { ...s, category: "otros" } : s)));
-      if (merchantRules.some((r) => r.categoryId === id)) {
-        persistRules(merchantRules.map((r) => (r.categoryId === id ? { ...r, categoryId: "otros" } : r)));
-      }
-    },
-    [categories, transactions, subscriptions, merchantRules, persistCats, persistTx, persistSubs, persistRules]
-  );
+  const deleteCategory = useCallback((id) => removeCategory(id), [removeCategory]);
 
   const addSubscription = useCallback(
     ({ name, amount, category, dayOfMonth, frequency = "monthly", monthOfYear = null, endDate = null }) => {

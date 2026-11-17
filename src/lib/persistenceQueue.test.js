@@ -15,6 +15,18 @@ function setup(initial = []) {
 }
 
 describe("persistencia concurrente", () => {
+  it("espera las escrituras de todas las tablas y expone su estado confirmado", async () => {
+    const { queue, calls } = setup([tx("a")]);
+    let finished = false;
+    const save = queue.persist("transactions", [tx("a")], [tx("a"), tx("b")]);
+    const idle = queue.whenIdle().then(() => { finished = true; });
+    await Promise.resolve();
+    expect(finished).toBe(false);
+    calls[0].resolve({ key: "transactions" });
+    await save;
+    await idle;
+    expect(queue.snapshot("transactions")).toEqual([tx("a"), tx("b")]);
+  });
   it("serializa altas desde la misma foto sin borrar la primera", async () => {
     const { queue, visible, calls, write } = setup();
     const a = queue.persist("transactions", [], [tx("a")]);

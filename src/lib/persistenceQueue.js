@@ -43,6 +43,7 @@ function applyChanges(rows, changes) {
 export function createPersistenceQueue({ write, onChange }) {
   /** @type {Map<string, {confirmed: Row[], pending: any[], running: boolean, version: number}>} */
   const tables = new Map();
+  const active = new Set();
   const tableOf = (key, initial = []) => {
     if (!tables.has(key)) tables.set(key, { confirmed: initial, pending: [], running: false, version: 0 });
     return tables.get(key);
@@ -89,9 +90,18 @@ export function createPersistenceQueue({ write, onChange }) {
       table.version += 1;
       const changes = changesBetween(prev, next);
       const result = new Promise((resolve) => table.pending.push({ changes, resolve }));
+      active.add(result);
+      void result.then(() => active.delete(result));
       publish(key, table);
       void drain(key, table);
       return result;
+    },
+    // El consumidor bloquea nuevas escrituras antes de esperar. Así una
+    // operación de catálogo parte de lo confirmado, no de una foto vieja.
+    whenIdle() { return Promise.all([...active]); },
+    snapshot(key) {
+      const table = tableOf(key);
+      return table.pending.reduce((rows, entry) => applyChanges(rows, entry.changes), table.confirmed);
     },
     version(key) { return tableOf(key).version; },
     // Una lectura iniciada antes de editar (aunque termine después del save)

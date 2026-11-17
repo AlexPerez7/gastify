@@ -50,8 +50,13 @@ Aquí no hay componentes ni hooks (esos van en `src/hooks/`, ver
   aplica las intenciones pendientes sobre lo confirmado y llama a `set` en
   orden por tabla. Si falla una, la retira y reconstruye el estado optimista
   conservando las posteriores. No restaurar fotos completas de React.
-- La cola protege concurrencia dentro de esta sesión; `storage.set` sigue
-  haciendo upsert/delete por separado, sin transacción entre requests.
+- `storage.set` intenta `gastify_write_table` (migración 0009): transacción
+  con comprobación de las filas previas. Solo si la función no existe usa
+  el camino previo de upsert/delete separado. No degradar por errores de red,
+  permisos o conflicto. El código `40001` exige recargar antes de reintentar.
+- `catalogOperations.js` elimina categorías mediante RPC o por etapas,
+  incluyendo crédito, suscripciones y reglas; protege Otros. `useAppData`
+  bloquea nuevas escrituras y espera la cola antes de esa operación.
 
 **Agregar un campo** a una entidad: `types.js` → `toRow` + `fromRow` en
 `TABLES` → columna en `supabase/schema.sql` + migración nueva. Ojo:

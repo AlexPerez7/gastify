@@ -8,6 +8,7 @@ import { storage } from "../lib/storage.js";
 import { getAccountSettings, saveAccountSettings, saveSavingsBase } from "../lib/accountSettings.js";
 import { makeSubscriptionCharges, reconcileSubscriptionCharges } from "../lib/transactionOps.js";
 import { createPersistenceQueue } from "../lib/persistenceQueue.js";
+import { removeCategorySafely } from "../lib/catalogOperations.js";
 
 export function useAppData() {
   const [transactions, setTransactions] = useState([]);
@@ -50,6 +51,7 @@ export function useAppData() {
   // aplicado localmente pero aún sin confirmar, y (2) avisar antes de
   // cerrar/recargar la pestaña si hay algo en camino.
   const pendingSaves = useRef(0);
+  const catalogLocked = useRef(false);
   // detalle del último error real de Supabase (RLS, columna inexistente,
   // sesión vencida…) — un ref porque los importadores lo leen justo después
   // de un `await persistX(...)`, y `syncError` no se actualiza a tiempo
@@ -65,6 +67,10 @@ export function useAppData() {
   // La cola publica el estado optimista y serializa por tabla. En error
   // descarta esa intención y conserva las ediciones posteriores.
   const runPersist = useCallback(async (storageKey, prev, next, { trackError = false } = {}) => {
+    if (catalogLocked.current) {
+      setSyncError("Espera a que termine la eliminación de la categoría y vuelve a intentar.");
+      return false;
+    }
     beginSave();
     const res = await persistence.persist(storageKey, prev, next);
     endSave();
@@ -72,7 +78,9 @@ export function useAppData() {
     if (!res || res.error) {
       const detail = res?.error ? ` (${res.error})` : "";
       setSyncError(
-        res && "duplicate" in res && res.duplicate
+        res && "conflict" in res && res.conflict
+          ? "El registro cambió en otra sesión. Se descartó este cambio local; vuelve a cargar los datos antes de reintentar."
+          : res && "duplicate" in res && res.duplicate
           ? `No se pudo guardar: ya existe un movimiento con la misma clave — se revirtió el cambio.${detail}`
           : `No se pudo guardar en el servidor. Revisa tu conexión — se revirtió el cambio, inténtalo de nuevo.${detail}`
       );
@@ -165,6 +173,30 @@ export function useAppData() {
     finally { setLoaded(true); }
   }, [loadAllData]);
 
+  const removeCategory = useCallback(async (id) => {
+    if (catalogLocked.current) return false;
+    catalogLocked.current = true;
+    beginSave();
+    try {
+      await persistence.whenIdle();
+      const result = await removeCategorySafely({ id,
+        read: (key) => persistence.snapshot(key),
+        persist: async (key, prev, next) => {
+          const saved = await persistence.persist(key, prev, next);
+          return !!saved && !saved.error;
+        },
+        removeAtomic: storage.deleteCategory,
+      });
+      if (!result.ok) { setSyncError(result.error); return false; }
+      if (result.atomic) await loadAllData();
+      else setSyncError(null);
+      return true;
+    } catch {
+      setSyncError("No se pudo completar la eliminación de la categoría. Recarga tus datos antes de reintentar.");
+      return false;
+    } finally { catalogLocked.current = false; endSave(); }
+  }, [beginSave, endSave, persistence, loadAllData]);
+
   useEffect(() => {
     void reload();
 
@@ -235,6 +267,6 @@ export function useAppData() {
     transactions, creditTransactions, creditStatements, categories, merchantRules, subscriptions,
     accountSettings, setAccountSettings, adjustBaseBalance, adjustSavingsBase,
     loaded, dataReady, reload, saving, syncError, setSyncError, lastPersistError,
-    persistTx, persistCreditTx, persistCreditStatements, persistCats, persistRules, persistSubs,
+    persistTx, persistCreditTx, persistCreditStatements, persistCats, persistRules, persistSubs, removeCategory,
   };
 }

@@ -1,0 +1,6 @@
+{
+  "name": "gastify-database-tests",
+  "private": true,
+  "scripts": { "test": "node atomic-writes.cjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.5.16" }
+}

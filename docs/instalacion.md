@@ -39,6 +39,14 @@ sáltalas); de la `0004` en adelante se pueden repetir sin problema:
 | `0006` | *Opcional:* recolorea las categorías por defecto a la paleta nueva |
 | `0007` | `base_balance`/`last_sync_date` nullables (ahorro base sin saldo ajustado) |
 | `0008` | Reglas con tipo de coincidencia y rango de monto; suscripciones anuales y con término |
+| `0009` | Guardados atómicos, rechazo de escrituras obsoletas y borrado transaccional de categorías |
+
+Para activar esas protecciones en una cuenta existente, ejecuta
+[`0009_atomic_writes_and_category_delete.sql`](../supabase/migrations/0009_atomic_writes_and_category_delete.sql)
+en **Supabase → SQL Editor** y vuelve a abrir la app. La migración no borra ni
+reclasifica movimientos existentes; agrega funciones con los permisos y RLS
+del usuario autenticado. La app conserva compatibilidad antes de aplicarla,
+pero los guardados no son transaccionales hasta que esas funciones existan.
 
 Después, en **Authentication → URL Configuration**, agrega la URL donde vas
 a correr o desplegar la app (ej. `http://localhost:5173` para desarrollo y
