@@ -4,7 +4,12 @@ Lista de trabajo para retomar. Ordenada por prioridad recomendada; los números
 (n.º) son los del análisis de UI/UX del 2026-10-03. Al terminar algo, se marca
 `[x]` y se mueve a "Hecho" con su commit.
 
-Última actualización: 2026-10-06 · último commit: ver tabla "Hecho (2026-10-06)".
+Última actualización: 2026-11-17.
+
+**Migraciones pendientes:** los archivos SQL quedan en el repositorio.
+La **0009 no está aplicada en Supabase**; la **0006 sigue como opcional**,
+sin aplicación confirmada. No marcar su aplicación como hecha hasta ejecutar
+el SQL en la base real y verificar el resultado.
 
 **Para retomar:** la 5 (opcional) y las ideas de la 6.2 en adelante.
 La deuda técnica quedó limpia salvo subir pdfjs/supabase, que necesita una
@@ -32,9 +37,12 @@ Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 Revisión funcional y prioridades de datos:
 [auditoría del 17-11-2026](docs/auditoria-2026-11-17.md).
 
-- [ ] Aplicar `0009_atomic_writes_and_category_delete.sql` en Supabase:
-      cliente y funciones ya preparados y probados; activa guardados
-      atómicos, control de filas obsoletas y borrado transaccional de categorías.
+- [ ] **Pendiente de aplicar en Supabase:**
+      [`0009_atomic_writes_and_category_delete.sql`](supabase/migrations/0009_atomic_writes_and_category_delete.sql).
+      El cliente y las funciones están preparados y probados localmente;
+      falta ejecutar el SQL en la base real y verificar guardados atómicos,
+      rechazo de filas obsoletas y borrado transaccional de categorías.
+      Hasta entonces se mantiene el modo de compatibilidad.
 
 (El "worker duplicado" no lo era: el `.js` de 430 KB era la librería
 de pdfjs con un nombre de chunk engañoso.)
