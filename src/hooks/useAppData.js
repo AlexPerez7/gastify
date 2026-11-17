@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { DEFAULT_CATEGORIES } from "../lib/constants.js";
 import { storage } from "../lib/storage.js";
 import { getAccountSettings, saveAccountSettings, saveSavingsBase } from "../lib/accountSettings.js";
-import { makeSubscriptionCharges } from "../lib/transactionOps.js";
+import { makeSubscriptionCharges, reconcileSubscriptionCharges } from "../lib/transactionOps.js";
 import { createPersistenceQueue } from "../lib/persistenceQueue.js";
 
 export function useAppData() {
@@ -163,8 +163,10 @@ export function useAppData() {
     if (!loaded || subscriptionChargesRanRef.current || subscriptions.length === 0) return;
     subscriptionChargesRanRef.current = true;
     const now = new Date();
-    const toGenerate = makeSubscriptionCharges(subscriptions, transactions, now, now.toISOString());
-    if (toGenerate.length > 0) persistTx([...transactions, ...toGenerate]);
+    const reconciled = reconcileSubscriptionCharges(subscriptions, transactions);
+    const toGenerate = makeSubscriptionCharges(subscriptions, reconciled, now, now.toISOString());
+    if (toGenerate.length > 0) persistTx([...reconciled, ...toGenerate]);
+    else if (reconciled !== transactions) persistTx(reconciled);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- corre una sola vez por sesión (ref guard); no hace falta re-crear el efecto con cada cambio de transactions/persistTx
   }, [loaded, subscriptions]);
 

@@ -188,3 +188,6 @@ Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
 - [x] Hacer visible **Seleccionar todo** en móvil y permitir seleccionar por
       día sobre toda la lista filtrada; proteger fechas y textos de filas
       del resaltado nativo al mantener pulsado.
+- [x] Evitar pendientes de suscripción cuando el pago ya está registrado por
+      comercio, monto y fecha; fusionar coincidencias inequívocas al abrir
+      la app e importar cartolas, dejando los casos ambiguos para revisión.

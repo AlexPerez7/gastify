@@ -64,6 +64,12 @@
   anual (ej. un dominio que se paga cada marzo) y con fecha de término
   opcional, o marcas un movimiento existente como suscripción; la app genera el movimiento
   pendiente el día del cobro y lo concilia con el cargo real del banco.
+- Antes de generar el pendiente, comprueba si el pago ya está registrado
+  con el mismo servicio y monto, entre dos días antes y cinco después del
+  cobro previsto. Reconoce nombres de comercio dentro de descripciones
+  largas y alias. Al importar la cartola o abrir la app, fusiona el pendiente
+  de suscripción con el banco si hay una única coincidencia clara. Los casos
+  ambiguos y los bancos ya confirmados se revisan manualmente.
 
 **Resumen** (siempre de un mes concreto)
 - Saldo actual (último saldo del banco + manuales cargados después) y

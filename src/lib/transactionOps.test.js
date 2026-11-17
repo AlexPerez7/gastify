@@ -3,6 +3,7 @@ import {
   makeManualTransaction, makeSubscriptionCharges, upsertMerchantRule, applyCategoryEdit,
   editManualDateAmount, linkTransactionToSubscription, entryFromTransaction, frequentManualEntries,
   subscriptionChargesInMonth, monthlySubscriptionCost, saveMerchantRule, applyRuleToExisting,
+  reconcileSubscriptionCharges,
 } from "./transactionOps.js";
 import { findDuplicateKey, makeKey } from "./utils.js";
 
@@ -50,6 +51,90 @@ describe("makeSubscriptionCharges", () => {
     // un manual con la key vieja (fecha|desc|monto) tampoco se duplica
     const legacy = { ...manual, description: "Netflix", key: makeKey("2026-08-05", "Netflix", 9000, 0) };
     expect(makeSubscriptionCharges(subs, [legacy], new Date(2026, 7, 10), NOW)).toEqual([]);
+  });
+});
+
+describe("evitar cobros duplicados de suscripciones", () => {
+  const sub = { id: "servicio", name: "Servicio Azul", amount: 7300,
+    category: "suscripciones", dayOfMonth: 8, active: true };
+  const today = new Date(2026, 7, 10);
+  const payment = (patch = {}) => ({ id: "b", key: "clave-banco", date: "2026-08-09",
+    description: "PAGO SERVICIO AZUL CIUDAD", alias: "", amount: -7300,
+    source: "bank", category: "otros", matchedId: null, ...patch });
+  const pending = () => makeSubscriptionCharges([sub], [], today, NOW)[0];
+
+  it("no genera otro gasto si ya se importó el comercio con una descripción larga", () => {
+    expect(makeSubscriptionCharges([sub], [payment()], today, NOW)).toEqual([]);
+    expect(makeSubscriptionCharges([sub], [payment({ description: "CARGO 123", alias: "Servicio Azul" })], today, NOW)).toEqual([]);
+  });
+
+  it("reconoce un manual existente con comercio y fecha cercana aunque no tenga vínculo", () => {
+    expect(makeSubscriptionCharges([sub], [payment({ source: "manual",
+      description: "Servicio Azul sede centro", date: "2026-08-08" })], today, NOW)).toEqual([]);
+  });
+
+  it("no identifica un servicio solo por monto, por subcadena o por categoría", () => {
+    for (const description of ["Servicio Verde", "Servicio Azulado", "OTRO COBRO"]) {
+      expect(makeSubscriptionCharges([sub], [payment({ description,
+        category: "suscripciones" })], today, NOW)).toHaveLength(1);
+    }
+  });
+
+  it("no confunde reembolsos, otro precio, otro período ni otra suscripción", () => {
+    for (const patch of [{ amount: 7300 }, { amount: -7500 },
+      { date: "2026-07-09" }, { date: "2026-08-14" }, { subscriptionId: "otra" }]) {
+      expect(makeSubscriptionCharges([sub], [payment(patch)], today, NOW)).toHaveLength(1);
+    }
+  });
+
+  it("al llegar el banco fusiona el pendiente inequívoco y no vuelve a generarlo al abrir", () => {
+    const manual = pending();
+    const bank = payment();
+    const original = [manual, bank];
+    const next = reconcileSubscriptionCharges([sub], original);
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({ ...bank, matchedId: manual.id, subscriptionId: sub.id,
+      category: "suscripciones", alias: sub.name });
+    expect(next.reduce((sum, t) => sum + t.amount, 0)).toBe(-7300);
+    expect(makeSubscriptionCharges([sub], next, today, NOW)).toEqual([]);
+    expect(reconcileSubscriptionCharges([sub], next)).toBe(next);
+    expect(original).toEqual([manual, bank]);
+  });
+
+  it("conserva los datos bancarios y la categoría y alias personalizados", () => {
+    const bank = payment({ category: "personalizada", alias: "Mi servicio" });
+    const manual = pending();
+    const [result] = reconcileSubscriptionCharges([sub], [manual, bank]);
+    expect(result).toMatchObject({ ...bank, matchedId: manual.id, subscriptionId: sub.id });
+  });
+
+  it("deja para revisión dos cargos candidatos o dos pendientes para el mismo banco", () => {
+    const manual = pending();
+    const twoBanks = [manual, payment(), payment({ id: "b2" })];
+    expect(reconcileSubscriptionCharges([sub], twoBanks)).toBe(twoBanks);
+    const twoManuals = [manual, { ...manual, id: "m2" }, payment()];
+    expect(reconcileSubscriptionCharges([sub], twoManuals)).toBe(twoManuals);
+    const otherSub = { ...sub, id: "otra", name: "Azul" };
+    const overlap = [manual, { ...manual, id: "otra-manual", description: "Azul", subscriptionId: "otra" }, payment()];
+    expect(reconcileSubscriptionCharges([sub, otherSub], overlap)).toBe(overlap);
+  });
+
+  it("no fusiona contra un banco confirmado ni borra manuales sin suscripción", () => {
+    for (const patch of [{ matchedId: "anterior" }, { description: "Otro servicio" }, { amount: -7500 }]) {
+      const rows = [pending(), payment(patch)];
+      expect(reconcileSubscriptionCharges([sub], rows)).toBe(rows);
+    }
+    const rows = [{ ...pending(), subscriptionId: null }, payment()];
+    expect(reconcileSubscriptionCharges([sub], rows)).toBe(rows);
+  });
+
+  it("respeta la fecha contable aunque cambie el año y nunca normaliza montos a positivo", () => {
+    const decemberSub = { ...sub, dayOfMonth: 31 };
+    const decemberToday = new Date(2026, 11, 31);
+    const manual = makeSubscriptionCharges([decemberSub], [], decemberToday, NOW)[0];
+    const bank = payment({ date: "2027-01-02" });
+    expect(makeSubscriptionCharges([decemberSub], [bank], decemberToday, NOW)).toEqual([]);
+    expect(reconcileSubscriptionCharges([decemberSub], [manual, bank])).toHaveLength(1);
   });
 });
 

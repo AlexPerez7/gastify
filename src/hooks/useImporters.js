@@ -6,6 +6,7 @@ import { useState, useCallback, useRef } from "react";
 import { readFileWithProgress } from "../lib/readFile.js";
 import { saveAccountSettings } from "../lib/accountSettings.js";
 import { formatCLP } from "../lib/utils.js";
+import { reconcileSubscriptionCharges } from "../lib/transactionOps.js";
 import {
   bankRowsFromSheet, buildBankImport, evaluateBalanceSync, buildCreditImport, replaceCreditStatement,
   importFailureMessage, latestBankDate, missingDefaultCategories,
@@ -53,7 +54,7 @@ function useImportLock() {
  */
 export function useImporters(data, { pushToast, updateToast }) {
   const {
-    transactions, creditTransactions, creditStatements, merchantRules, accountSettings, setAccountSettings,
+    transactions, creditTransactions, creditStatements, merchantRules, subscriptions, accountSettings, setAccountSettings,
     persistTx, persistCreditTx, persistCreditStatements, lastPersistError, categories, persistCats,
   } = data;
 
@@ -96,8 +97,10 @@ export function useImporters(data, { pushToast, updateToast }) {
         // aunque todo ya estuviera importado, el archivo igual puede traer un
         // Saldo útil para conciliar — por eso no se corta acá.
         await ensureCategories(imported);
-        const persisted = imported.length > 0 ? await persistTx([...transactions, ...imported]) : true;
-        if (imported.length > 0 && !persisted) {
+        const combined = imported.length > 0 ? [...transactions, ...imported] : transactions;
+        const next = reconcileSubscriptionCharges(subscriptions, combined);
+        const persisted = next !== transactions ? await persistTx(next) : true;
+        if (!persisted) {
           updateToast(toastId, "error", `No se pudieron guardar los movimientos importados. Intenta de nuevo.${persistErrorDetail()}`);
           return;
         }
@@ -141,7 +144,7 @@ export function useImporters(data, { pushToast, updateToast }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bankLock/lastPersistError son estables (ref + callbacks memoizados)
-    [transactions, merchantRules, persistTx, pushToast, updateToast, accountSettings, setAccountSettings, ensureCategories]
+    [transactions, merchantRules, subscriptions, persistTx, pushToast, updateToast, accountSettings, setAccountSettings, ensureCategories]
   );
 
   // ---- Excel "Movimientos Facturados" de la tarjeta CMR --------------------

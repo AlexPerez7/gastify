@@ -109,6 +109,58 @@ export function monthlySubscriptionCost(subscriptions, todayIso) {
     .reduce((sum, s) => sum + (s.frequency === "yearly" ? s.amount / 12 : s.amount), 0);
 }
 
+const subscriptionName = (s) => String(s || "").normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+
+// Monto con signo, comercio y fecha: el monto solo no identifica un servicio
+// (dos suscripciones pueden costar lo mismo). Coinciden palabras completas,
+// también dentro de las descripciones largas de la cartola o de un alias.
+/** @param {Subscription} sub @param {Transaction} tx @param {string} date */
+function isSubscriptionPayment(sub, tx, date) {
+  if (Math.abs(tx.amount + Math.abs(sub.amount)) >= 1) return false;
+  if (tx.subscriptionId && tx.subscriptionId !== sub.id) return false;
+  const days = (new Date(tx.date).getTime() - new Date(date).getTime()) / 86400000;
+  if (!Number.isFinite(days) || days < -2 || days > 5) return false;
+  if (tx.subscriptionId === sub.id) return true;
+  const name = subscriptionName(sub.name);
+  if (!name) return false;
+  return [tx.description, tx.alias].some((text) => {
+    const value = subscriptionName(text);
+    return name.length < 3 ? value === name : ` ${value} `.includes(` ${name} `);
+  });
+}
+
+// Solo absorbe pendientes con la forma generada por la suscripción, contra
+// un banco sin confirmar y una coincidencia única en ambas direcciones.
+// Los registros ambiguos o ya confirmados se resuelven desde Revisar.
+/** @param {Subscription[]} subscriptions @param {Transaction[]} transactions
+ * @returns {Transaction[]} */
+export function reconcileSubscriptionCharges(subscriptions, transactions) {
+  const proposals = [];
+  for (const manual of transactions) {
+    if (manual.source !== "manual" || !manual.subscriptionId) continue;
+    const sub = subscriptions.find((s) => s.id === manual.subscriptionId);
+    if (!sub || subscriptionName(manual.description) !== subscriptionName(sub.name)) continue;
+    if (Math.abs(manual.amount + Math.abs(sub.amount)) >= 1) continue;
+    const banks = transactions.filter((t) => t.source === "bank" && !t.matchedId
+      && isSubscriptionPayment(sub, t, manual.date));
+    if (banks.length === 1) proposals.push({ manual, bank: banks[0], sub });
+  }
+  const useCounts = new Map();
+  proposals.forEach(({ bank }) => useCounts.set(bank.id, (useCounts.get(bank.id) || 0) + 1));
+  const removed = new Set();
+  const updates = new Map();
+  for (const { manual, bank, sub } of proposals) {
+    if (useCounts.get(bank.id) !== 1) continue;
+    removed.add(manual.id);
+    updates.set(bank.id, { ...bank, matchedId: manual.id, subscriptionId: sub.id,
+      alias: bank.alias || sub.name,
+      category: bank.category === "otros" ? manual.category : bank.category });
+  }
+  if (removed.size === 0) return transactions;
+  return transactions.filter((t) => !removed.has(t.id)).map((t) => updates.get(t.id) || t);
+}
+
 // el movimiento manual "pendiente" del mes en curso para cada suscripción
 // activa que cobra este mes, cuyo día de cobro ya pasó (y no después de su
 // fecha de término) y que todavía no lo tiene. Se concilia después con el
@@ -126,7 +178,6 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   /** @type {Transaction[]} */
   const out = [];
-  const norm = (/** @type {string} */ s) => s.trim().toUpperCase().replace(/\s+/g, " ");
   for (const sub of subscriptions) {
     // un cobro "el 31" en un mes de 30 días (o febrero) cae el último día —
     // se compara contra el día ya ajustado, si no nunca se generaba ese mes.
@@ -135,10 +186,10 @@ export function makeSubscriptionCharges(subscriptions, transactions, today, crea
     const date = `${curMonthKey}-${String(chargeDay).padStart(2, "0")}`;
     if (sub.endDate && date > sub.endDate) continue;
     if (transactions.some((t) => t.subscriptionId === sub.id && monthKey(t.date) === curMonthKey)) continue;
-    // ese pago ya se cargó a mano sin vincularlo a la suscripción
-    const name = norm(sub.name);
+    // Puede estar importado o anotado con el nombre largo del comercio sin
+    // subscriptionId. No crear otro gasto solo porque cambia la descripción.
     const amount = -Math.abs(sub.amount);
-    if (transactions.some((t) => t.source === "manual" && t.date === date && t.amount === amount && norm(t.description) === name)) continue;
+    if (transactions.some((t) => isSubscriptionPayment(sub, t, date))) continue;
     const id = uid();
     out.push({
       id,
