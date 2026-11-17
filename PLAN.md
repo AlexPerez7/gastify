@@ -116,6 +116,9 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 
 ## Hecho (2026-11-16)
 
+- [x] Reunir tema, ayuda y cierre de sesión en **Ajustes**; el botón
+      **Buscar actualizaciones** cambia a **Actualizar** si hay una versión
+      pendiente, con bloqueo mientras se guardan cambios.
 - [x] Proteger guardados simultáneos en una sesión: cola por tabla,
       rollback por intención y descarte de lecturas antiguas. Incluido en el commit
       de actualizaciones PWA de esta sesión;

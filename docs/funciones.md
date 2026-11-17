@@ -91,13 +91,14 @@
 **General**
 - Cuenta con email/contraseña (confirmación por correo) y recuperación de
   contraseña.
-- Modo claro/oscuro con detección de la preferencia del sistema.
-- Instalable como PWA, con soporte offline. El botón de flechas circulares
-  de la barra superior permite **buscar actualizaciones** al instante.
+- Menú **Ajustes** (engranaje en la barra superior) con modo claro/oscuro,
+  ayuda y cierre de sesión. El tema detecta la preferencia del sistema.
+- Instalable como PWA, con soporte offline. En **Ajustes**, el botón
+  **Buscar actualizaciones** cambia a **Actualizar** cuando hay una versión nueva.
   Si hay una versión nueva, aparece un popup con **Actualizar ahora** o
   **Más tarde**. Al confirmar se recarga la app; si hay cambios guardándose,
-  debes esperar a que terminen. Si la pospones, el botón conserva un indicador
-  para volver a abrirla. La búsqueda automática también muestra el aviso.
+  debes esperar a que terminen. Si la pospones, el engranaje conserva un indicador
+  y puedes instalarla desde **Ajustes → Actualizar**. La búsqueda automática también muestra el aviso.
 - Pensada primero para el teléfono: zonas táctiles amplias, hojas que suben
   desde abajo, sin zoom al escribir, respeta el notch.
 - Onboarding de 3 pasos y ayuda integrada.
