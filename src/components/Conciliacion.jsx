@@ -209,7 +209,7 @@ function MismatchRow({ t, bankCandidates, onEdit, onMatch, isMobile }) {
   const [bankId, setBankId] = useState("");
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState("");
-  const candidates = bankCandidates.filter((b) => !b.matchedId || Math.abs(b.amount - t.amount) < 1);
+  const candidates = bankCandidates.filter((b) => Math.abs(b.amount - t.amount) < 1);
   const selectedBank = candidates.find((b) => b.id === bankId);
   const hasConfirmedCandidate = candidates.some((b) => b.matchedId);
   const swipeControls = useAnimation();

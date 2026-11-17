@@ -56,17 +56,35 @@ describe("reconcileMonthTransactions", () => {
     expect(reconcileMonthTransactions(tx, "2026-03").merged).toBe(0);
   });
 
-  it("no reusa un cargo del banco ya vinculado para dos manuales iguales", () => {
+  it("no elige arbitrariamente entre dos manuales para el mismo banco", () => {
     const tx = [
       manual({ id: "m1", date: "2026-03-10", amount: -10000, category: "comida" }),
       manual({ id: "m2", date: "2026-03-10", amount: -10000, category: "comida" }),
       bank({ id: "b1", date: "2026-03-11", amount: -10000, category: "otros" }),
     ];
     const { next, merged } = reconcileMonthTransactions(tx, "2026-03");
+    expect(merged).toBe(0);
+    expect(next).toBe(tx);
+  });
+
+  it("no borra el manual ni cambia categorías si hay dos cargos candidatos", () => {
+    const tx = [manual({ id: "m", date: "2026-03-10", amount: -15000, category: "comida" }),
+      bank({ id: "b1", date: "2026-03-11", amount: -15000, category: "salud" }),
+      bank({ id: "b2", date: "2026-03-12", amount: -15000, category: "transporte" })];
+    expect(reconcileMonthTransactions(tx, "2026-03")).toEqual({ next: tx, merged: 0 });
+    expect(reconcileMonthTransactions([...tx].reverse(), "2026-03").merged).toBe(0);
+  });
+
+  it("concilia las parejas inequívocas mientras deja las ambiguas pendientes", () => {
+    const tx = [manual({ id: "m1", date: "2026-03-10", amount: -15000 }),
+      bank({ id: "b1", date: "2026-03-11", amount: -15000 }),
+      bank({ id: "b2", date: "2026-03-12", amount: -15000 }),
+      manual({ id: "m2", date: "2026-03-10", amount: -2000 }),
+      bank({ id: "b3", date: "2026-03-11", amount: -2000 })];
+    const { next, merged } = reconcileMonthTransactions(tx, "2026-03");
     expect(merged).toBe(1);
-    // queda un manual sin conciliar + el banco ya fusionado
-    expect(next).toHaveLength(2);
-    expect(next.filter((t) => t.source === "manual")).toHaveLength(1);
+    expect(next.find((t) => t.id === "m1")).toBe(tx[0]);
+    expect(next.find((t) => t.id === "b3").matchedId).toBe("m2");
   });
 
   it("ignora cargos del banco que ya tienen matchedId", () => {
@@ -88,6 +106,12 @@ describe("reconcileMonthTransactions", () => {
 });
 
 describe("matchManualToBank", () => {
+  it("rechaza vínculos de distinto monto o signo también contra bancos sin confirmar", () => {
+    const tx = [manual({ id: "m", amount: -15000 }),
+      bank({ id: "b", amount: -14000 }), bank({ id: "abono", amount: 15000 })];
+    expect(matchManualToBank(tx, "m", "b")).toBe(tx);
+    expect(matchManualToBank(tx, "m", "abono")).toBe(tx);
+  });
   it("resuelve un manual extra contra un banco ya confirmado sin perder su clasificación ni regenerar la suscripción", () => {
     const confirmed = bank({ id: "b", date: "2026-08-08", amount: -7300,
       key: "banco", description: "CARGO SERVICIO", category: "suscripciones", alias: "Servicio",

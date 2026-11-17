@@ -60,7 +60,7 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
   // ---- datos, acciones y derivados ------------------------------------------
   const data = useAppData();
   const {
-    transactions, categories, subscriptions, accountSettings, loaded, saving, syncError, setSyncError,
+    transactions, categories, subscriptions, accountSettings, loaded, dataReady, reload, saving, syncError, setSyncError,
     adjustBaseBalance, adjustSavingsBase,
   } = data;
   const closeManualForm = useCallback(() => setShowManualForm(false), []);
@@ -130,6 +130,14 @@ export default function App({ onSignOut, theme, onToggleTheme }) {
 
   if (!loaded) {
     return <AppShellSkeleton />;
+  }
+  if (!dataReady) {
+    return <div className="bg-bg text-ink min-h-dvh flex flex-col items-center justify-center gap-4 p-6">
+      <p className="text-body text-center" role="alert">No se pudieron cargar todos tus datos. Revisa tu conexión y vuelve a intentar.</p>
+      <button onClick={reload} className="px-4 py-3 rounded-lg border border-border bg-surface text-ink text-body cursor-pointer">
+        Reintentar carga
+      </button>
+    </div>;
   }
 
   return (

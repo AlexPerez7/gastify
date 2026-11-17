@@ -60,8 +60,9 @@ export function useTransactionActions(data, { onManualAdded, pushToast } = {}) {
   // ---- débito: alta, borrado, edición ---------------------------------------
   const addManual = useCallback(
     async (entry) => {
-      await persistTx([...transactions, makeManualTransaction(entry, new Date().toISOString())]);
-      onManualAdded?.();
+      const ok = await persistTx([...transactions, makeManualTransaction(entry, new Date().toISOString())]);
+      if (ok) onManualAdded?.();
+      return ok;
     },
     [transactions, persistTx, onManualAdded]
   );

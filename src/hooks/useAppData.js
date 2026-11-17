@@ -21,8 +21,16 @@ export function useAppData() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [merchantRules, setMerchantRules] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
-  const [accountSettings, setAccountSettings] = useState(null); // AccountSettings | null (todavía no ajustado)
+  const [accountSettings, updateAccountSettings] = useState(null);
+  const accountVersion = useRef(0);
+  const setAccountSettings = useCallback((next) => {
+    accountVersion.current += 1;
+    updateAccountSettings(next);
+  }, []);
+  const [subscriptionDataReady, setSubscriptionDataReady] = useState(false);
+  const loadVersion = useRef(0);
   const [loaded, setLoaded] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
   const [syncError, setSyncError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [persistence] = useState(() => {
@@ -100,6 +108,8 @@ export function useAppData() {
   );
 
   const loadAllData = useCallback(async () => {
+    const loadId = ++loadVersion.current;
+    setSubscriptionDataReady(false);
     const read = async (key) => {
       const version = persistence.version(key);
       const result = await storage.get(key);
@@ -109,7 +119,7 @@ export function useAppData() {
       // El diff debe partir de las categorías realmente leídas (vacías),
       // no de los defaults que React muestra durante la carga inicial.
       if (accepted && key === "categories" && rows.length === 0) {
-        await runPersist(key, [], DEFAULT_CATEGORIES);
+        if (!await runPersist(key, [], DEFAULT_CATEGORIES)) return null;
       }
       return result;
     };
@@ -125,22 +135,47 @@ export function useAppData() {
 
     const subs = await read("subscriptions");
 
-    // null es un estado válido (usuario que nunca ajustó su saldo), así que
-    // no cuenta para el syncError de abajo.
-    setAccountSettings(await getAccountSettings());
+    // Un error de red no es "sin saldo ajustado". Conserva el ancla conocida
+    // y no permite que una lectura vieja pise un ajuste hecho mientras carga.
+    const settingsVersion = accountVersion.current;
+    let settingsFailed = false;
+    try {
+      const settings = await getAccountSettings({ throwOnError: true });
+      if (loadId === loadVersion.current && settingsVersion === accountVersion.current) {
+        updateAccountSettings(settings);
+      }
+    } catch { settingsFailed = true; }
+    if (loadId !== loadVersion.current) return;
+    const complete = !!tx && !!cats && !!rules && !!subs && !!creditTx && !!creditStmts && !settingsFailed;
+    setSubscriptionDataReady(complete);
+    if (complete) {
+      setDataReady(true);
+      setSyncError(null);
+    }
 
-    if (!tx || !cats || !rules || !subs || !creditTx || !creditStmts) {
+    if (!complete) {
       setSyncError("No se pudieron cargar todos tus datos. Revisa tu conexión y recarga la página.");
     }
   }, [persistence, runPersist]);
 
+  const reload = useCallback(async () => {
+    setLoaded(false);
+    try { await loadAllData(); }
+    catch { setSyncError("No se pudieron cargar tus datos. Revisa tu conexión y vuelve a intentar."); }
+    finally { setLoaded(true); }
+  }, [loadAllData]);
+
   useEffect(() => {
-    loadAllData().then(() => setLoaded(true));
+    void reload();
 
     // no hay sync en vivo entre dispositivos: se recarga al volver a la
     // pestaña. Se salta si hay un guardado en curso, para no pisar el estado
     // optimista con una lectura que todavía no trae el cambio.
-    const onVisible = () => { if (document.visibilityState === "visible" && pendingSaves.current === 0) loadAllData(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && pendingSaves.current === 0) {
+        void loadAllData().catch(() => setSyncError("No se pudieron actualizar tus datos. Revisa tu conexión."));
+      }
+    };
     document.addEventListener("visibilitychange", onVisible);
 
     // cerrar/recargar con un guardado en vuelo corta el request y el cambio
@@ -154,13 +189,13 @@ export function useAppData() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [loadAllData]);
+  }, [loadAllData, reload]);
 
   // genera, una sola vez por sesión, los cargos pendientes de suscripciones
   // del mes en curso (ver makeSubscriptionCharges).
   const subscriptionChargesRanRef = useRef(false);
   useEffect(() => {
-    if (!loaded || subscriptionChargesRanRef.current || subscriptions.length === 0) return;
+    if (!loaded || !subscriptionDataReady || subscriptionChargesRanRef.current || subscriptions.length === 0) return;
     subscriptionChargesRanRef.current = true;
     const now = new Date();
     const reconciled = reconcileSubscriptionCharges(subscriptions, transactions);
@@ -168,30 +203,38 @@ export function useAppData() {
     if (toGenerate.length > 0) persistTx([...reconciled, ...toGenerate]);
     else if (reconciled !== transactions) persistTx(reconciled);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- corre una sola vez por sesión (ref guard); no hace falta re-crear el efecto con cada cambio de transactions/persistTx
-  }, [loaded, subscriptions]);
+  }, [loaded, subscriptionDataReady, subscriptions]);
 
   const adjustBaseBalance = useCallback(async (newBalance) => {
-    const result = await saveAccountSettings(newBalance);
+    accountVersion.current += 1;
+    beginSave();
+    let result;
+    try { result = await saveAccountSettings(newBalance); }
+    finally { endSave(); }
     if (result && !result.error) {
       setAccountSettings((prev) => ({ ...prev, ...result }));
       return true;
     }
     return false;
-  }, []);
+  }, [beginSave, endSave, setAccountSettings]);
 
   const adjustSavingsBase = useCallback(async (newSavingsBase) => {
-    const result = await saveSavingsBase(newSavingsBase);
+    accountVersion.current += 1;
+    beginSave();
+    let result;
+    try { result = await saveSavingsBase(newSavingsBase); }
+    finally { endSave(); }
     if (result && !result.error) {
       setAccountSettings((prev) => ({ ...prev, ...result }));
       return true;
     }
     return false;
-  }, []);
+  }, [beginSave, endSave, setAccountSettings]);
 
   return {
     transactions, creditTransactions, creditStatements, categories, merchantRules, subscriptions,
     accountSettings, setAccountSettings, adjustBaseBalance, adjustSavingsBase,
-    loaded, saving, syncError, setSyncError, lastPersistError,
+    loaded, dataReady, reload, saving, syncError, setSyncError, lastPersistError,
     persistTx, persistCreditTx, persistCreditStatements, persistCats, persistRules, persistSubs,
   };
 }

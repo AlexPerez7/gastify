@@ -112,10 +112,12 @@ export function parseBankDate(raw) {
   }
   const s = String(raw).trim();
   const dmy = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
-  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
-  // por si algún origen ya entrega ISO
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  return null;
+  const iso = dmy ? `${dmy[3]}-${dmy[2]}-${dmy[1]}` : s;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const [y, m, day] = iso.split("-").map(Number);
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return parsed.getUTCFullYear() === y && parsed.getUTCMonth() + 1 === m
+    && parsed.getUTCDate() === day ? iso : null;
 }
 
 export function makeKey(date, desc, cargo, abono) {

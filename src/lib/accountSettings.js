@@ -4,9 +4,9 @@
 import { supabase } from "./supabaseClient.js";
 
 // Devuelve null tanto si el usuario todavía no ajustó su saldo (no hay fila)
-// como si falló la lectura — en ambos casos el dashboard debe mostrar el
-// estado "sin ajustar" en vez de romper.
-export async function getAccountSettings() {
+// como si falló la lectura por defecto. Los consumidores que deben distinguir
+// ambos casos (carga inicial y respaldo) usan throwOnError.
+export async function getAccountSettings({ throwOnError = false } = {}) {
   try {
     const { data, error } = await supabase
       .from("account_settings")
@@ -24,6 +24,7 @@ export async function getAccountSettings() {
     };
   } catch (e) {
     console.error("No se pudo leer account_settings desde Supabase", e);
+    if (throwOnError) throw e;
     return null;
   }
 }

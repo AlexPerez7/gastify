@@ -1,19 +1,22 @@
 import { storage } from "./storage.js";
 import { localIsoDate } from "./utils.js";
+import { getAccountSettings } from "./accountSettings.js";
 
-// Trae transactions y categories directamente desde Supabase (no del estado
-// local de React) para respaldar siempre lo que realmente quedó guardado,
-// y fuerza la descarga de un .json con todo. JSON en vez de CSV: no hay que
-// escapar comas/comillas en las descripciones y quedan categorías y
-// movimientos juntos en un solo archivo, listos para reimportar a futuro.
+// Lee todas las entidades guardadas. Un error en una sola lectura cancela
+// la descarga: un archivo parcial no debe presentarse como respaldo completo.
 export async function exportBackup() {
-  const [tx, cats] = await Promise.all([storage.get("transactions"), storage.get("categories")]);
-  if (!tx || !cats) throw new Error("No se pudieron leer los datos desde Supabase.");
+  const keys = ["transactions", "categories", "merchantRules", "subscriptions", "creditTransactions", "creditStatements"];
+  const [tables, accountSettings] = await Promise.all([
+    Promise.all(keys.map((key) => storage.get(key))),
+    getAccountSettings({ throwOnError: true }),
+  ]);
+  if (tables.some((table) => !table)) throw new Error("No se pudieron leer todos los datos desde Supabase.");
 
   const payload = {
+    schemaVersion: 2,
     exportedAt: new Date().toISOString(),
-    transactions: JSON.parse(tx.value),
-    categories: JSON.parse(cats.value),
+    ...Object.fromEntries(tables.map((table, i) => [keys[i], JSON.parse(table.value)])),
+    accountSettings,
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });

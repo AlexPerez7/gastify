@@ -27,6 +27,12 @@ describe("parseClpNumber", () => {
 });
 
 describe("parseBankDate", () => {
+  it("rechaza fechas imposibles sin normalizarlas al mes siguiente", () => {
+    for (const date of ["31/02/2026", "2026-02-29", "2026-04-31", "2026-13-01", "00/12/2026"]) {
+      expect(parseBankDate(date)).toBeNull();
+    }
+    expect(parseBankDate("29/02/2024")).toBe("2024-02-29");
+  });
   it("convierte una fecha serial de Excel a ISO", () => {
     // 45000 = 2023-03-15 en el epoch de Excel (1899-12-30)
     expect(parseBankDate(45000)).toBe("2023-03-15");

@@ -29,6 +29,9 @@ Hecho (ver "Hecho (2026-10-07)"): n.º 17, 22, 23, 25 e "Importar cartola".
 
 ## 4. Deuda técnica
 
+Revisión funcional y prioridades de datos:
+[auditoría del 17-11-2026](docs/auditoria-2026-11-17.md).
+
 - [ ] Hacer atómico el upsert/delete de `storage.set` en Supabase: hoy son
       requests independientes y pueden dejar un guardado parcial si falla el segundo.
 
@@ -191,3 +194,7 @@ Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
 - [x] Evitar pendientes de suscripción cuando el pago ya está registrado por
       comercio, monto y fecha; fusionar coincidencias inequívocas al abrir
       la app e importar cartolas, dejando los casos ambiguos para revisión.
+- [x] Revisión funcional: proteger conciliaciones ambiguas y montos/signos,
+      completar respaldo, bloquear cargas iniciales incompletas, conservar
+      saldo ante errores/lecturas antiguas, preservar altas fallidas,
+      validar fechas imposibles y reiniciar datos al cambiar de usuario.

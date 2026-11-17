@@ -41,5 +41,5 @@ export function AuthGate() {
 
   if (!session) return <Auth initialError={authLinkError} />;
 
-  return <App onSignOut={() => supabase.auth.signOut()} theme={theme} onToggleTheme={toggleTheme} />;
+  return <App key={session.user.id} onSignOut={() => supabase.auth.signOut()} theme={theme} onToggleTheme={toggleTheme} />;
 }

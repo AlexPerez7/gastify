@@ -26,7 +26,9 @@
   aparece (el movimiento vuelve tal cual estaba).
 - Búsqueda y filtros por categoría, tipo (ingreso/gasto), origen
   (manual/banco) y rango de monto; aviso de posibles duplicados entre un manual y uno del banco.
-- Exportación a `.csv` y respaldo completo a `.json`.
+- Exportación a `.csv` y respaldo completo a `.json`: débito, crédito,
+  estados de cuenta, categorías, reglas, suscripciones y ajustes de
+  saldo/ahorro. Si alguna lectura falla, se cancela el respaldo.
 
 **Tarjeta de crédito (CMR)**
 - Importa el Excel de "Movimientos Facturados" por ciclo, con cuotas
@@ -97,6 +99,9 @@
   categoría que le pusiste. Separa lo confirmado, lo que aún no tiene
   reporte importado y lo que no calza, con vínculo manual para los casos
   raros.
+- La conciliación automática exige una pareja única en ambas direcciones;
+  los montos repetidos ambiguos requieren revisión. Al vincular a mano,
+  el monto y su signo deben coincidir.
 - Si un cargo ya confirmado todavía tiene otro registro manual duplicado,
   puedes elegirlo al vincular. Aparece como **Ya confirmado** y se pide
   **Conservar banco y quitar manual duplicado**. Conserva la clasificación y
@@ -106,6 +111,9 @@
 **General**
 - Cuenta con email/contraseña (confirmación por correo) y recuperación de
   contraseña.
+- Si la carga inicial falla, ofrece **Reintentar carga** antes de permitir
+  editar o generar cobros automáticos. El alta manual conserva lo escrito
+  cuando falla el guardado y permite reintentarlo.
 - Menú **Ajustes** (engranaje en la barra superior) con modo claro/oscuro,
   ayuda y cierre de sesión. El tema detecta la preferencia del sistema.
 - Instalable como PWA, con soporte offline. En **Ajustes**, el botón

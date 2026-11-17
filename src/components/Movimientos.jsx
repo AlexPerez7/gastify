@@ -461,7 +461,11 @@ export function Movimientos({
         <ManualForm
           categories={categories} initial={duplicateFrom} onAddCategory={onAddCategory}
           onClose={() => setDuplicateFrom(null)}
-          onSubmit={async (entry) => { await addManual(entry); setDuplicateFrom(null); }}
+          onSubmit={async (entry) => {
+            const ok = await addManual(entry);
+            if (ok) setDuplicateFrom(null);
+            return ok;
+          }}
         />
       )}
 
@@ -1139,6 +1143,9 @@ const formatThousands = (digits) => (digits ? Number(digits).toLocaleString("es-
 // `initial` precarga todo (Duplicar); `frequent` son atajos de un toque que
 // llenan el formulario sin guardar (ver frequentManualEntries).
 function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = null, frequent = [] }) {
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const submitting = useRef(false);
   const [type, setType] = useState(initial?.type || "expense");
   const [date, setDate] = useState(() => localIsoDate());
   const [description, setDescription] = useState(initial?.description || "");
@@ -1174,9 +1181,20 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = nu
   // con algo escrito, tocar fuera no cierra (no se pierde lo ingresado)
   const dirty = amountDigits !== "" || description.trim() !== "";
 
-  const submit = () => {
-    if (!valid) return;
-    onSubmit({ type, date, description: description.trim(), amount, category });
+  const submit = async () => {
+    if (!valid || submitting.current) return;
+    submitting.current = true;
+    setSaving(true);
+    setSaveError("");
+    try {
+      const ok = await onSubmit({ type, date, description: description.trim(), amount, category });
+      if (!ok) setSaveError("No se pudo guardar. Tus datos siguen aquí; puedes reintentar.");
+    } catch {
+      setSaveError("No se pudo guardar. Tus datos siguen aquí; puedes reintentar.");
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
   };
 
   const accent = type === "expense" ? TOKENS.expense : TOKENS.income;
@@ -1338,12 +1356,13 @@ function ManualForm({ categories, onClose, onSubmit, onAddCategory, initial = nu
       </div>
 
       <div className="sheet-footer px-5 py-3.5 border-t border-border bg-surface-alt shrink-0">
+        {saveError && <p className="m-0 mb-2 text-small text-expense" role="alert">{saveError}</p>}
         <button
           onClick={submit}
-          disabled={!valid}
+          disabled={!valid || saving}
           className="w-full py-[11px] rounded-lg border-0 bg-accent text-bg font-semibold text-body-lg disabled:opacity-50 disabled:cursor-default enabled:cursor-pointer"
         >
-          {valid
+          {saving ? "Guardando…" : valid
             ? `Guardar ${type === "expense" ? "gasto" : "ingreso"} de $${formatThousands(amountDigits)}`
             : amount > 0 ? "Falta la descripción" : "Ingresa el monto"}
         </button>

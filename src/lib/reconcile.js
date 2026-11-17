@@ -32,20 +32,25 @@ export function reconcileMonthTransactions(transactions, mKey) {
     (t) => t.source === "bank" && (monthKey(t.date) === mKey || monthKey(t.date) === nextKey)
   );
 
+  // Solo parejas inequívocas en ambas direcciones: tomar el primer cargo
+  // del mismo monto podía borrar un manual y reclasificar el pago equivocado.
+  const candidates = new Map();
+  const bankUses = new Map();
+  for (const m of manuals) {
+    const matches = banks.filter((b) => {
+      if (b.matchedId) return false;
+      const days = (new Date(b.date).getTime() - new Date(m.date).getTime()) / 86400000;
+      return Math.abs(b.amount - m.amount) < 1 && days >= -2 && days <= 5;
+    });
+    candidates.set(m.id, matches);
+    matches.forEach((b) => bankUses.set(b.id, (bankUses.get(b.id) || 0) + 1));
+  }
   const bankUpdates = new Map();
   const mergedManualIds = new Set();
   for (const m of manuals) {
-    const match = banks.find((b) => {
-      if (bankUpdates.has(b.id) || b.matchedId) return false;
-      const sameAmount = Math.abs(b.amount - m.amount) < 1;
-      // la fecha contable del banco solo se atrasa respecto a la real, nunca
-      // se adelanta — ventana asimétrica hacia adelante (hasta 5 días, para
-      // cubrir fines de semana largos con feriado) y un margen chico hacia
-      // atrás por si la fecha anotada a mano quedó un día después de la real.
-      const dDate = (new Date(b.date).getTime() - new Date(m.date).getTime()) / 86400000;
-      return sameAmount && dDate >= -2 && dDate <= 5;
-    });
-    if (match) {
+    const matches = candidates.get(m.id);
+    const match = matches.length === 1 ? matches[0] : null;
+    if (match && bankUses.get(match.id) === 1) {
       bankUpdates.set(match.id, {
         ...match,
         matchedId: m.id,
@@ -77,11 +82,12 @@ export function matchManualToBank(transactions, manualId, bankId) {
   const manual = transactions.find((t) => t.id === manualId);
   const bank = transactions.find((t) => t.id === bankId);
   if (!manual || !bank || manual.source !== "manual" || bank.source !== "bank") return transactions;
+  if (!Number.isFinite(manual.amount) || !Number.isFinite(bank.amount)
+    || Math.abs(bank.amount - manual.amount) >= 1) return transactions;
   // Un cargo ya confirmado puede tener otro manual duplicado. Solo se
   // resuelve con elección explícita y el mismo monto; conserva la primera
   // conciliación y su clasificación, en especial el vínculo a suscripción.
   if (bank.matchedId) {
-    if (Math.abs(bank.amount - manual.amount) >= 1) return transactions;
     return transactions.filter((t) => t.id !== manualId)
       .map((t) => t.id === bankId && !t.subscriptionId && manual.subscriptionId
         ? { ...t, subscriptionId: manual.subscriptionId } : t);
