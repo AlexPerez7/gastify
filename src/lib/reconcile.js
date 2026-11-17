@@ -76,7 +76,16 @@ export function reconcileMonthTransactions(transactions, mKey) {
 export function matchManualToBank(transactions, manualId, bankId) {
   const manual = transactions.find((t) => t.id === manualId);
   const bank = transactions.find((t) => t.id === bankId);
-  if (!manual || !bank) return transactions;
+  if (!manual || !bank || manual.source !== "manual" || bank.source !== "bank") return transactions;
+  // Un cargo ya confirmado puede tener otro manual duplicado. Solo se
+  // resuelve con elección explícita y el mismo monto; conserva la primera
+  // conciliación y su clasificación, en especial el vínculo a suscripción.
+  if (bank.matchedId) {
+    if (Math.abs(bank.amount - manual.amount) >= 1) return transactions;
+    return transactions.filter((t) => t.id !== manualId)
+      .map((t) => t.id === bankId && !t.subscriptionId && manual.subscriptionId
+        ? { ...t, subscriptionId: manual.subscriptionId } : t);
+  }
   return transactions
     .filter((t) => t.id !== manualId)
     .map((t) =>

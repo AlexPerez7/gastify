@@ -182,3 +182,6 @@ OFX/QIF/MT940/GnuCash, OIDC/2FA, self-hosting en Docker.
 | `75908d4` | `npm audit` en 0: vitest 4.1.11 + lock regenerado con npm 11; CI a Node 24 / npm 11 (npm 10 ya no resolvía el árbol) |
 
 Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
+- [x] Permitir resolver explícitamente un manual duplicado contra un banco
+      ya confirmado, conservando la primera conciliación y su suscripción;
+      mostrar errores al guardar el vínculo y permitir reintentar.
