@@ -70,9 +70,10 @@ export function Movimientos({
     if (onlyRecent && recentImportIds.length === 0) setOnlyRecent(false);
   }, [onlyRecent, recentImportIds.length]);
 
-  // Selección múltiple: por ahora solo rastrea IDs elegidos (base para
-  // futuras acciones masivas — categorizar/borrar en lote, etc.), sin
-  // ninguna acción real todavía.
+  // Los grupos incluyen todas las filas filtradas, aunque la lista todavía
+  // no las haya montado: seleccionar un día no debe quedarse en la tanda.
+  const idsByDate = useMemo(() => new Map(groupByDate(visibleTx)
+    .map((group) => [group.date, group.items.map((t) => t.id)])), [visibleTx]);
   const [selectedIds, setSelectedIds] = useState([]);
   // "Duplicar" desde el editor de una fila: abre el formulario de alta
   // precargado (con fecha de hoy), aparte del showManualForm de App.
@@ -105,13 +106,13 @@ export function Movimientos({
   // puede estar cortado y su total tiene que ser el del día entero
   const dayTotals = useMemo(() => computeDayTotals(visibleTx, excludedCategoryIdsOf(categories)), [visibleTx, categories]);
 
-  const toggleSelectAll = () => {
-    if (allVisibleSelected) {
-      const visibleSet = new Set(visibleIds);
-      setSelectedIds((prev) => prev.filter((id) => !visibleSet.has(id)));
-    } else {
-      setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
-    }
+  const toggleSelectMany = (ids) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const remove = ids.every((id) => next.has(id));
+      ids.forEach((id) => { if (remove) next.delete(id); else next.add(id); });
+      return [...next];
+    });
   };
 
   // el estado "indeterminado" (algunas, no todas) del checkbox nativo solo
@@ -233,19 +234,22 @@ export function Movimientos({
       )}
 
       <div className="flex gap-2.5 mb-3.5 flex-wrap items-center">
-        {hasTransactions && (!isMobile || selectedIds.length > 0) && (
-          <div className="flex items-center gap-[7px] shrink-0">
-            <input
-              ref={selectAllRef}
-              type="checkbox"
-              checked={allVisibleSelected}
-              onChange={toggleSelectAll}
-              disabled={visibleTx.length === 0}
-              aria-label={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-              title={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-              className="w-[18px] h-[18px]"
-              style={{ accentColor: "var(--c-accent)", cursor: filteredTx.length === 0 ? "default" : "pointer" }}
-            />
+        {hasTransactions && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="flex items-center gap-2 text-small text-muted cursor-pointer py-2">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={allVisibleSelected}
+                onChange={() => toggleSelectMany(visibleIds)}
+                disabled={visibleTx.length === 0}
+                aria-label={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+                title={allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+                className="w-[18px] h-[18px]"
+                style={{ accentColor: "var(--c-accent)", cursor: filteredTx.length === 0 ? "default" : "pointer" }}
+              />
+              <span>{allVisibleSelected ? "Deseleccionar todo" : "Seleccionar todo"} ({visibleTx.length})</span>
+            </label>
             {selectedIds.length > 0 && (
               <span className="text-small text-muted whitespace-nowrap">
                 {selectedIds.length} seleccionado{selectedIds.length === 1 ? "" : "s"}
@@ -503,31 +507,39 @@ export function Movimientos({
             />
           )
         ) : (
-          groupByDate(renderedTx).map((group) => (
-            <div key={group.date}>
-              <DayHeader date={group.date} totals={dayTotals[group.date]} />
-              {group.items.map((t, i) => (
-                <TxRow
-                  key={t.id}
-                  t={t}
-                  isLast={i === group.items.length - 1}
-                  categories={categories}
-                  getCat={getCat}
-                  saveTxEdit={saveTxEdit}
-                  onDelete={deleteTransaction}
-                  onDuplicate={(tx) => setDuplicateFrom(entryFromTransaction(tx))}
-                  selected={selectedSet.has(t.id)}
-                  selectionMode={selectedIds.length > 0}
-                  onToggleSelect={toggleSelectOne}
-                  onStartSelect={(id) => setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
-                  isRecent={recentSet.has(t.id)}
-                  isDuplicate={duplicateIds?.has(t.id)}
-                  isMobile={isMobile}
-                  onToggleSubscription={onToggleSubscription}
-                />
-              ))}
-            </div>
-          ))
+          groupByDate(renderedTx).map((group) => {
+            const dayIds = idsByDate.get(group.date) || [];
+            const daySelected = dayIds.every((id) => selectedSet.has(id));
+            return (
+              <div key={group.date}>
+                <DayHeader date={group.date} totals={dayTotals[group.date]} selection={{
+                  checked: daySelected,
+                  indeterminate: !daySelected && dayIds.some((id) => selectedSet.has(id)),
+                  onChange: () => toggleSelectMany(dayIds),
+                }} />
+                {group.items.map((t, i) => (
+                  <TxRow
+                    key={t.id}
+                    t={t}
+                    isLast={i === group.items.length - 1}
+                    categories={categories}
+                    getCat={getCat}
+                    saveTxEdit={saveTxEdit}
+                    onDelete={deleteTransaction}
+                    onDuplicate={(tx) => setDuplicateFrom(entryFromTransaction(tx))}
+                    selected={selectedSet.has(t.id)}
+                    selectionMode={selectedIds.length > 0}
+                    onToggleSelect={toggleSelectOne}
+                    onStartSelect={(id) => setSelectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]))}
+                    isRecent={recentSet.has(t.id)}
+                    isDuplicate={duplicateIds?.has(t.id)}
+                    isMobile={isMobile}
+                    onToggleSubscription={onToggleSubscription}
+                  />
+                ))}
+              </div>
+            );
+          })
         )}
         {renderedTx.length < visibleTx.length && (
           <LoadMore onMore={showMore} remaining={visibleTx.length - renderedTx.length} />
@@ -907,7 +919,7 @@ function TxRow({ t, isLast, categories, getCat, saveTxEdit, onDelete, onDuplicat
               role="button"
               aria-pressed={selectionMode ? selected : undefined}
               aria-label={`${name}, ${formatCLP(t.amount)}`}
-              className="relative flex items-center gap-3 px-4 py-3 touch-pan-y select-none cursor-pointer bg-surface"
+              className="tx-touch-row relative flex items-center gap-3 px-4 py-3 touch-pan-y select-none cursor-pointer bg-surface"
               style={{
                 WebkitTouchCallout: "none",
                 boxShadow: isRecent ? `inset 3px 0 0 ${TOKENS.accent}` : "none",

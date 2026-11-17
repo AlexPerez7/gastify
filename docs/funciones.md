@@ -17,7 +17,11 @@
   tocar edita, deslizar muestra editar/borrar y mantener presionado entra al
   modo selección. En desktop: edición en la misma fila.
 - Selección múltiple con barra de acciones masivas para recategorizar o
-  borrar varios movimientos a la vez.
+  borrar varios movimientos a la vez. **Seleccionar todo** está siempre
+  visible e incluye toda la lista filtrada, aunque aún no se haya cargado
+  en pantalla. La casilla junto a una fecha selecciona todos los movimientos
+  de ese día que pasan los filtros; puedes quitar filas individuales.
+  En móvil, mantener pulsado selecciona la fila sin resaltar el texto.
 - Borrar es inmediato y siempre se puede **deshacer** desde el aviso que
   aparece (el movimiento vuelve tal cual estaba).
 - Búsqueda y filtros por categoría, tipo (ingreso/gasto), origen

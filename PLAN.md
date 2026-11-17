@@ -185,3 +185,6 @@ Resueltos del análisis: n.º 1–16, 20, 21, 24, 27.
 - [x] Permitir resolver explícitamente un manual duplicado contra un banco
       ya confirmado, conservando la primera conciliación y su suscripción;
       mostrar errores al guardar el vínculo y permitir reintentar.
+- [x] Hacer visible **Seleccionar todo** en móvil y permitir seleccionar por
+      día sobre toda la lista filtrada; proteger fechas y textos de filas
+      del resaltado nativo al mantener pulsado.

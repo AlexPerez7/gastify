@@ -232,6 +232,17 @@ button,
   -webkit-touch-callout: none;
 }
 
+/* El gesto empieza también sobre fechas o texto dentro de la fila. En
+   móviles Android hay que proteger esos descendientes, no solo el botón.
+   Los formularios de edición quedan fuera para permitir copiar y pegar. */
+@media (max-width: 640px), (pointer: coarse) {
+  .tx-day-header, .tx-day-header *, .tx-touch-row, .tx-touch-row * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
 /* agranda la zona táctil de un botón chico (ícono suelto) sin cambiar su
    tamaño visual ni el layout: el ::after invisible recibe los toques. */
 .tap-expand {
